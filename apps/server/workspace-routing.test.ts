@@ -7,6 +7,49 @@ import { WorkspaceState } from "../../packages/sdk/workspace.ts";
 import { openOwnerProfile } from "./profile.ts";
 import { deferred, plan, png, workspaceFixture } from "./testing/workspace.ts";
 
+test("Home can correct an invalid image index before using its single genuine route", async (t) => {
+  const f = await workspaceFixture(t);
+  const { first } = await f.confirm();
+  f.faux.setResponses([
+    fauxAssistantMessage(
+      fauxToolCall("route_to_area", {
+        areaId: first,
+        text: "Invalid image reference",
+        imageIndexes: [3],
+      }),
+      { stopReason: "toolUse" },
+    ),
+    (context) => {
+      const error = context.messages.findLast(
+        (message) => message.role === "toolResult",
+      );
+      assert(error && error.role === "toolResult" && error.isError);
+      return fauxAssistantMessage(
+        fauxToolCall("route_to_area", {
+          areaId: first,
+          text: "Corrected explicit request",
+        }),
+        { stopReason: "toolUse" },
+      );
+    },
+    fauxAssistantMessage("Genuine corrected area answer"),
+    fauxAssistantMessage("Home received the corrected area answer"),
+  ]);
+  await f.request("messages", {
+    text: "Route the explicit synthetic task",
+    requestId: randomUUID(),
+  });
+  assert.equal(
+    (await f.settled()).thread.messages.at(-1)?.text,
+    "Home received the corrected area answer",
+  );
+  assert.deepEqual(
+    (await f.area(first)).thread.messages.map((message) => message.text),
+    ["Corrected explicit request", "Genuine corrected area answer"],
+  );
+  assert.equal(f.faux.state.callCount, 4);
+});
+
 test("Home can propose a workspace but only the exact owner API confirmation creates areas", async (t) => {
   const f = await workspaceFixture(t);
   assert(openOwnerProfile(f.db).action("skip"));

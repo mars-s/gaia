@@ -95,7 +95,6 @@ export function createWorkspaceTools(areasEnabled: boolean) {
                   throw new Error(
                     "Only one area request is allowed per Home turn.",
                   );
-                turn.routed = true;
                 workspace.snapshot(route.areaId);
                 const images = (route.imageIndexes ?? []).map((index) => {
                   const image = turn.input.images?.[index];
@@ -116,6 +115,7 @@ export function createWorkspaceTools(areasEnabled: boolean) {
                   AbortSignal.timeout(120000),
                   ...(context.abortSignal ? [context.abortSignal] : []),
                 ]);
+                turn.routed = true;
                 const pending = workspace.run({
                   areaId: route.areaId,
                   text: route.text,
