@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Attachment, AttachmentId, imageLimits } from "./attachments.ts";
 export const ThinkingLevel = z.enum([
   "off",
   "minimal",
@@ -19,6 +20,7 @@ export const Message = z.object({
   text: z.string(),
   createdAt: z.string(),
   selection: ChatSelection.optional(),
+  attachments: z.array(Attachment).max(imageLimits.count).optional(),
 });
 export type Message = z.infer<typeof Message>;
 export const Run = z.discriminatedUnion("kind", [
@@ -88,9 +90,19 @@ export const Event = z.object({ type: z.literal("snapshot"), data: Snapshot });
 export const Send = z
   .object({
     requestId: z.string().uuid(),
-    text: z.string().trim().min(1).max(32000),
+    text: z.string().trim().max(32000),
+    attachments: z.array(AttachmentId).max(imageLimits.count).optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (value) => value.text.length > 0 || Boolean(value.attachments?.length),
+    "Enter a message or attach an image.",
+  )
+  .refine(
+    (value) =>
+      new Set(value.attachments).size === (value.attachments?.length ?? 0),
+    "Image references must be unique.",
+  );
 export const AuthReply = z
   .object({ value: z.string().min(1).max(4096) })
   .strict();

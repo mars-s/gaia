@@ -15,6 +15,12 @@ import {
   type Connection,
 } from "../../packages/protocol/index.ts";
 import { openOwnerProfile } from "./profile.ts";
+import { openAttachments, AttachmentError } from "./attachments.ts";
+import {
+  ImageUpload,
+  imageLimits,
+  type Attachment,
+} from "../../packages/protocol/attachments.ts";
 import {
   ProfileConfirmation,
   type OwnerCapability,
@@ -43,14 +49,14 @@ class HttpError extends Error {
     super(message);
   }
 }
-async function body(req: IncomingMessage): Promise<unknown> {
+async function body(req: IncomingMessage, limit = 140000): Promise<unknown> {
   if (req.headers["content-type"] !== "application/json")
     throw new HttpError(415, "Use application/json.");
   req.setEncoding("utf8");
   let content = "";
   for await (const chunk of req) {
     content += String(chunk);
-    if (Buffer.byteLength(content) > 140000)
+    if (Buffer.byteLength(content) > limit)
       throw new HttpError(413, "Request too large.");
   }
   try {
@@ -78,6 +84,7 @@ export function createChatServer({
     "CREATE TABLE IF NOT EXISTS chat (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL); CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY)",
   );
   const profile = openOwnerProfile(db);
+  const attachments = openAttachments(db);
   const saved = db.prepare("SELECT value FROM chat WHERE id=1").get();
   let thread: Thread = saved
     ? Thread.parse(JSON.parse(String(saved.value)))
@@ -136,10 +143,34 @@ export function createChatServer({
     requestId: string,
     addUser: boolean,
     selection?: Thread["messages"][number]["selection"],
+    files: Attachment[] = [],
   ) {
     requireIdle();
     if (auth.status().kind !== "connected")
       throw new HttpError(409, "Connect ChatGPT before sending.");
+    const model = adapter
+      .controls?.()
+      .models.find(
+        (model) =>
+          model.id === (selection?.modelId ?? adapter.controls?.().modelId),
+      );
+    if (files.length && !model?.capabilities?.images)
+      throw new HttpError(
+        409,
+        "This model does not accept images. Choose an image-capable model or remove the images.",
+      );
+    const images = files.map((file) => {
+      const stored = attachments.read(file.id);
+      if (JSON.stringify(stored.attachment) !== JSON.stringify(file))
+        throw new AttachmentError(
+          "Stored image details changed. Attach it again.",
+        );
+      return {
+        type: "image" as const,
+        data: stored.data,
+        mimeType: stored.attachment.mimeType,
+      };
+    });
     const id = randomUUID();
     const now = new Date().toISOString();
     if (addUser)
@@ -148,6 +179,7 @@ export function createChatServer({
         role: "user",
         text,
         createdAt: now,
+        ...(files.length ? { attachments: files } : {}),
         ...(adapter.controls
           ? {
               selection: {
@@ -193,6 +225,7 @@ export function createChatServer({
         adapter.run({
           owner,
           text,
+          images,
           requestId,
           onText(value) {
             answer.text = value;
@@ -263,6 +296,25 @@ export function createChatServer({
       }
       if (req.method === "GET" && url.pathname === "/api/v1/state")
         return json(200, snapshot());
+      if (
+        req.method === "GET" &&
+        url.pathname.startsWith("/api/v1/attachments/")
+      ) {
+        if (auth.status().kind !== "connected")
+          throw new HttpError(409, "Connect ChatGPT first.");
+        const stored = attachments.read(
+          url.pathname.slice("/api/v1/attachments/".length),
+        );
+        res.writeHead(200, {
+          "Content-Type": stored.attachment.mimeType,
+          "Content-Length": stored.bytes.length,
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+          "Content-Disposition": "inline",
+          "Content-Security-Policy": "default-src 'none'; sandbox",
+        });
+        return res.end(stored.bytes);
+      }
       if (req.method === "GET" && url.pathname === "/api/v1/events") {
         res.writeHead(200, {
           "Content-Type": "text/event-stream",
@@ -281,7 +333,12 @@ export function createChatServer({
         return;
       }
       if (req.method !== "POST") throw new HttpError(404, "Not found.");
-      const input = await body(req);
+      const input = await body(
+        req,
+        url.pathname === "/api/v1/attachments"
+          ? Math.ceil(imageLimits.bytes / 3) * 4 + 4096
+          : 140000,
+      );
       if (closing) throw new HttpError(503, "Gaia is shutting down.");
       if (allowWrite && !(await allowWrite())) {
         res.setHeader("Retry-After", "2");
@@ -324,6 +381,24 @@ export function createChatServer({
         return json(202, snapshot());
       }
       switch (url.pathname) {
+        case "/api/v1/attachments": {
+          const parsed = ImageUpload.safeParse(input);
+          if (!parsed.success)
+            throw new HttpError(
+              400,
+              "Choose PNG, JPEG or WebP images up to 3 MB.",
+            );
+          requireIdle();
+          if (auth.status().kind !== "connected")
+            throw new HttpError(409, "Connect ChatGPT first.");
+          const controls = adapter.controls?.();
+          if (
+            !controls?.models.find((model) => model.id === controls.modelId)
+              ?.capabilities?.images
+          )
+            throw new HttpError(409, "This model does not accept images.");
+          return json(201, attachments.put(parsed.data));
+        }
         case "/api/v1/model": {
           const parsed = ModelSelection.safeParse(input);
           if (!parsed.success)
@@ -390,16 +465,36 @@ export function createChatServer({
           if (!parsed.success)
             throw new HttpError(
               400,
-              "Enter a message of 1 to 32000 characters and a UUID requestId.",
+              "Enter up to 32000 characters or attach up to four images, with a UUID requestId.",
             );
-          requireIdle();
+          const original = thread.messages.find(
+            (message) =>
+              message.id === parsed.data.requestId && message.role === "user",
+          );
           if (
+            original ||
             db
               .prepare("SELECT id FROM requests WHERE id=?")
               .get(parsed.data.requestId)
-          )
+          ) {
+            if (
+              !original ||
+              original.text !== parsed.data.text ||
+              JSON.stringify(
+                original.attachments?.map((file) => file.id) ?? [],
+              ) !== JSON.stringify(parsed.data.attachments ?? [])
+            )
+              throw new HttpError(
+                409,
+                "That requestId belongs to a different message.",
+              );
             return json(200, snapshot());
-          run(parsed.data.text, parsed.data.requestId, true);
+          }
+          requireIdle();
+          const files = (parsed.data.attachments ?? []).map(
+            (id) => attachments.read(id).attachment,
+          );
+          run(parsed.data.text, parsed.data.requestId, true, undefined, files);
           db.prepare("INSERT INTO requests VALUES (?)").run(
             parsed.data.requestId,
           );
@@ -413,7 +508,7 @@ export function createChatServer({
           const last = thread.messages.findLast((m) => m.role === "user");
           if (!last) throw new HttpError(409, "No message to retry.");
           // Retry asks for another answer to the same retained user message.
-          run(last.text, randomUUID(), false, last.selection);
+          run(last.text, randomUUID(), false, last.selection, last.attachments);
           break;
         }
         case "/api/v1/auth/connect":
@@ -431,10 +526,19 @@ export function createChatServer({
       }
       json(202, snapshot());
     } catch (error) {
-      json(error instanceof HttpError ? error.status : 500, {
-        error:
-          error instanceof HttpError ? error.message : "Local server error.",
-      });
+      json(
+        error instanceof HttpError
+          ? error.status
+          : error instanceof AttachmentError
+            ? 400
+            : 500,
+        {
+          error:
+            error instanceof HttpError || error instanceof AttachmentError
+              ? error.message
+              : "Local server error.",
+        },
+      );
     }
   });
   server.on("connection", (socket) => {

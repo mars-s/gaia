@@ -14,6 +14,7 @@ import { z } from "zod";
 import {
   getSupportedThinkingLevels,
   clampThinkingLevel,
+  type ImageContent,
 } from "@earendil-works/pi-ai";
 import type { createAuth } from "./auth.ts";
 import type { Chat, ThinkingLevel } from "../../packages/protocol/index.ts";
@@ -28,6 +29,7 @@ export interface ChatAdapter {
   run(input: {
     owner?: OwnerCapability;
     text: string;
+    images?: ImageContent[];
     requestId: string;
     onText: (text: string) => void;
     signal: AbortSignal;
@@ -199,13 +201,24 @@ export async function createPi(
         await stopping;
       }
     },
-    async run({ text, requestId, onText, signal, owner }) {
+    async run({ text, images = [], requestId, onText, signal, owner }) {
       signal.throwIfAborted();
+      if (
+        images.length &&
+        !auth.models.getModel("openai-codex", modelId)?.input.includes("image")
+      )
+        throw new Error("This model does not accept images.");
       if (current) throw new Error("A model run is already active.");
       current = owner ? { owner, signal } : undefined;
       try {
         const submission = await root.submit(
-          { type: "input", content: text, requestId },
+          {
+            type: "input",
+            content: images.length
+              ? [...(text ? [{ type: "text" as const, text }] : []), ...images]
+              : text,
+            requestId,
+          },
           ctx,
         );
         const watch = await root.watch(ctx);
