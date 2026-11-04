@@ -56,22 +56,22 @@ export function ComposerControls({
   const [open, setOpen] = useState(false);
   const chosenModel = useRef<HTMLLabelElement>(null);
   const [selection, setSelection] = useState<ModelSelection>();
-  const [queue] = useState(() =>
-    createModelSelectionQueue(
+  const queue = useRef<ReturnType<typeof createModelSelectionQueue>>(undefined);
+  useEffect(() => {
+    const current = createModelSelectionQueue(
       (value) => onModelRef.current(value.modelId, value.thinkingLevel),
       (value) => {
         setSelection(value);
         onPendingRef.current(Boolean(value));
       },
-    ),
-  );
-  useEffect(
-    () => () => {
-      queue.dispose();
+    );
+    queue.current = current;
+    return () => {
+      current.dispose();
+      queue.current = undefined;
       onPendingRef.current(false);
-    },
-    [queue],
-  );
+    };
+  }, []);
   const modelId = selection?.modelId ?? chat.modelId;
   const model = chat.models.find((model) => model.id === modelId);
   const levels = model?.capabilities?.thinkingLevels ?? [];
@@ -107,7 +107,7 @@ export function ComposerControls({
               const supported =
                 chat.models.find((item) => item.id === id)?.capabilities
                   ?.thinkingLevels ?? [];
-              queue.select({
+              queue.current?.select({
                 modelId: id,
                 thinkingLevel:
                   selectedLevel && supported.includes(selectedLevel)
@@ -159,7 +159,7 @@ export function ComposerControls({
                 onChange={(event) => {
                   const level = levels[Number(event.target.value)];
                   if (level && !disabled)
-                    queue.select({ modelId, thinkingLevel: level });
+                    queue.current?.select({ modelId, thinkingLevel: level });
                 }}
               />
               <div aria-hidden className="effort-ticks">

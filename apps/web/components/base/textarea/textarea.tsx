@@ -165,6 +165,19 @@ export function TextareaBase({
   // so `onInput` handles keystrokes and this catches every other reason the
   // value moved (a controlled parent, a form reset, an autofill).
   useLayoutEffect(fit);
+  useLayoutEffect(() => {
+    const field = innerRef.current;
+    if (!field || !autoResize) return;
+    let width = 0;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry && entry.contentRect.width !== width) {
+        width = entry.contentRect.width;
+        fit();
+      }
+    });
+    observer.observe(field);
+    return () => observer.disconnect();
+  });
 
   return (
     <AriaGroup
