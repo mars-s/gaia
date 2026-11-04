@@ -3,12 +3,14 @@ import { z } from "zod";
 export const OwnerProfile = z.strictObject({
   name: z.string().trim().min(1).max(100),
   purpose: z.string().trim().min(1).max(1000),
-  lifeAreas: z.array(z.string().trim().min(1).max(100)).max(12),
+  lifeAreas: z.array(z.string().trim().min(1).max(100)).max(12).default([]),
   workingStyle: z.enum(["chat", "balanced", "agentic"]),
   approvalPreferences: z.string().trim().min(1).max(1000).optional(),
 });
 export type OwnerProfile = z.infer<typeof OwnerProfile>;
-export const OwnerAnswers = OwnerProfile.partial();
+export const OwnerAnswers = OwnerProfile.partial().extend({
+  lifeAreas: OwnerProfile.shape.lifeAreas.removeDefault().optional(),
+});
 export type OwnerAnswers = z.infer<typeof OwnerAnswers>;
 export const OwnerAnswerUpdate = OwnerAnswers.refine(
   (answers) => Object.values(answers).some((value) => value !== undefined),
@@ -43,16 +45,8 @@ const questions = [
   ["name", "What should Gaia call you?"],
   ["purpose", "What would you most like Gaia to help you with?"],
   [
-    "lifeAreas",
-    "Which parts of your life should Gaia help with? You can also say none for now.",
-  ],
-  [
     "workingStyle",
     "Would you prefer to chat things through, get balanced help, or have Gaia take initiative within an agreed scope?",
-  ],
-  [
-    "approvalPreferences",
-    "Which actions should Gaia ask you to approve first?",
   ],
 ] satisfies [keyof OwnerAnswers, string][];
 

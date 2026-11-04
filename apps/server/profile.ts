@@ -73,11 +73,13 @@ export function openOwnerProfile(db: DatabaseSync) {
       });
     },
     propose(profile: OwnerProfile) {
-      if (read().kind !== "interview") throw new Error("Setup is not active.");
+      const state = read();
+      if (state.kind !== "interview") throw new Error("Setup is not active.");
+      const proposed = OwnerProfile.parse(profile);
       write({
         kind: "proposed",
         proposalId: randomUUID(),
-        profile: OwnerProfile.parse(profile),
+        profile: OwnerProfile.parse({ ...proposed, ...state.answers }),
       });
     },
     action(action: string, proposalId?: string) {

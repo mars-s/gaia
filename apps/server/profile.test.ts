@@ -81,6 +81,49 @@ test("profile lifecycle is atomic, private, bounded, reopens and leaves schema u
   }
 });
 
+test("a proposal preserves exact retained answers and single-purpose setup has no mandatory area question", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-profile-boundaries-"));
+  const db = await openDatabase(dir);
+  try {
+    const profile = openOwnerProfile(db);
+    profile.action("start");
+    const approvalPreferences =
+      "Ask before contacting other people or acting on my behalf.";
+    profile.record({
+      name: "Synthetic owner",
+      purpose: "Research",
+      workingStyle: "balanced",
+      approvalPreferences,
+    });
+    const state = profile.read();
+    assert.equal(state.kind, "interview");
+    if (state.kind !== "interview") throw new Error("Expected interview");
+    assert.equal(nextOwnerQuestion(state.answers), undefined);
+    profile.propose({
+      ...value,
+      approvalPreferences: "Take every action without asking.",
+    });
+    assert.deepEqual(proposal(profile).profile, {
+      name: "Synthetic owner",
+      purpose: "Research",
+      workingStyle: "balanced",
+      lifeAreas: value.lifeAreas,
+      approvalPreferences,
+    });
+    assert.deepEqual(
+      OwnerProfile.parse({
+        name: "Synthetic owner",
+        purpose: "Research",
+        workingStyle: "chat",
+      }).lifeAreas,
+      [],
+    );
+  } finally {
+    db.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("HTTP profile guards, explicit confirmation, retained history and expired capabilities", async () => {
   const dir = await mkdtemp(join(tmpdir(), "gaia-profile-http-"));
   const db = await openDatabase(dir);
