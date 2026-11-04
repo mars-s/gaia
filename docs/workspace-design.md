@@ -1,6 +1,6 @@
 # Workspace domain and restart recovery
 
-These modules implement workspace proposals, atomic confirmation and isolated Pi conversations. They add no HTTP handlers, protocol messages, sidebar, routing tool or adapter integration. They use the installed Pi Durable 1.5.0 subscription backend.
+The domain modules implement workspace proposals, atomic confirmation and isolated Pi conversations through the installed Pi Durable 1.5.0 subscription backend. The adapter and HTTP integration now use these modules. See [Workspace backend API](workspace-api.md) for endpoint contracts, Home tools, the default-disabled area gate and parent integration steps. There are no new protocol fields or UI changes.
 
 ## Contracts
 
@@ -48,7 +48,7 @@ Each area receives only its own purpose and the explicitly supplied shared prefe
 
 Area configuration explicitly sets `extensions: []`, `tools: []` and `modelTools: []`. It cannot inherit Home's profile-writing, self-change or routing tools through the registry's default selection. `configureArea` changes only model and effort. It preserves these restrictions and the area's purpose. Prompt wording alone is not a security boundary; the empty capability lists enforce the tool restriction.
 
-`resolveArea` returns a private handle for later server integration. A bounded Home `route_to_area` tool can use that lookup after owner confirmation. This increment implements no routing. Any later routing tool must await cancellation for the selected area, since Home abort does not reach independent ownerless conversations. Areas have no routing tool, so this module introduces no delegation loop. Selected-area images, effort, compaction and submissions belong on the returned conversation's normal Pi APIs.
+`resolveArea` returns a private handle for server integration. The bounded Home `route_to_area` tool uses that lookup after owner confirmation. It explicitly awaits cancellation for the selected area, since Home abort does not reach independent ownerless conversations. Areas have no routing tool, so there is no delegation loop. Selected-area images, effort, compaction and submissions use the returned conversation's normal Pi APIs.
 
 ## Recovery before any scheduler resume
 
@@ -76,4 +76,4 @@ Workspace tests cover exact and stale confirmation, concurrent duplicate confirm
 
 Recovery tests close real live runs across Home and two ownerless areas, leave queued input and write submissions plus a sleeping background task, then reopen and cancel everything. They assert unchanged provider generation counts until the next explicit user action. A deferred-response case separately proves zero deferred fetch and cancellation calls on restart.
 
-Run the focused tests with `npx tsx --test apps/server/workspace.test.ts apps/server/workspace-recovery.test.ts`. Repository typecheck, desktop typecheck, lint, all tests, build, protocol conformance and `git diff --check` remain the integration gates. App routing, HTTP, UI, baseline upgrades and runtime acceptance remain with the parent owner.
+Run the focused tests with `npx tsx --test apps/server/workspace*.test.ts apps/server/pi.test.ts`. Repository typecheck, desktop typecheck, lint, all tests, build, protocol conformance and `git diff --check` remain the integration gates. The backend tests now include HTTP, routing and SDK integration. UI, baseline upgrades and live runtime acceptance remain with the parent owner.

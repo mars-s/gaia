@@ -26,6 +26,12 @@ import {
   type OwnerCapability,
 } from "../../packages/sdk/onboarding.ts";
 import type { ChatAdapter } from "./pi.ts";
+import { HttpError } from "./http-error.ts";
+import { WorkspaceError } from "./pi-workspace.ts";
+import {
+  createWorkspaceRoutes,
+  type WorkspaceScope,
+} from "./workspace-http.ts";
 export interface AuthService {
   status(): Connection;
   connect(): void;
@@ -40,14 +46,6 @@ export async function openDatabase(dataDir: string) {
   await chmod(path, 0o600);
   db.exec("PRAGMA journal_mode=WAL");
   return db;
-}
-class HttpError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
 }
 async function body(req: IncomingMessage, limit = 140000): Promise<unknown> {
   if (req.headers["content-type"] !== "application/json")
@@ -83,6 +81,18 @@ export function createChatServer({
   db.exec(
     "CREATE TABLE IF NOT EXISTS chat (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL); CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY)",
   );
+  const rememberedAreaRequests = new Set<string>();
+  const rememberRequest = db.prepare(
+    "INSERT OR IGNORE INTO requests VALUES (?)",
+  );
+  function rememberAreaRequests() {
+    for (const requestId of adapter.workspace?.requestIds() ?? []) {
+      if (rememberedAreaRequests.has(requestId)) continue;
+      rememberRequest.run(requestId);
+      rememberedAreaRequests.add(requestId);
+    }
+  }
+  rememberAreaRequests();
   const profile = openOwnerProfile(db);
   const attachments = openAttachments(db);
   const saved = db.prepare("SELECT value FROM chat WHERE id=1").get();
@@ -121,7 +131,12 @@ export function createChatServer({
     for (const listener of listeners) listener(snapshot());
   };
   let active:
-    { controller: AbortController; done: Promise<unknown> } | undefined;
+    | {
+        controller: AbortController;
+        done: Promise<unknown>;
+        scope: "home" | WorkspaceScope;
+      }
+    | undefined;
   let closing = false;
   function requireIdle() {
     if (closing) throw new HttpError(503, "Gaia is shutting down.");
@@ -134,6 +149,7 @@ export function createChatServer({
     operation: "model" | "compact" | "upload" = "model",
   ) {
     requireIdle();
+    const previous = thread.run;
     const controller = new AbortController();
     const cancel = () => controller.abort();
     external?.addEventListener("abort", cancel, { once: true });
@@ -143,11 +159,11 @@ export function createChatServer({
       .then(() => work(controller.signal))
       .finally(() => {
         external?.removeEventListener("abort", cancel);
-        thread.run = { kind: "idle" };
+        thread.run = previous;
         active = undefined;
         publish();
       });
-    active = { controller, done };
+    active = { controller, done, scope: "home" };
     publish();
     return done;
   }
@@ -244,6 +260,7 @@ export function createChatServer({
           owner,
           text,
           images,
+          attachments: files,
           requestId,
           onText(value) {
             answer.text = value;
@@ -271,8 +288,50 @@ export function createChatServer({
         active = undefined;
         publish();
       });
-    active = { controller, done };
+    active = { controller, done, scope: "home" };
   }
+  const workspaceRoutes = createWorkspaceRoutes({
+    workspace: adapter.workspace,
+    db,
+    attachments,
+    connected: () => auth.status().kind === "connected",
+    admit<T>(
+      scope: WorkspaceScope,
+      work: (signal: AbortSignal) => Promise<T>,
+      external?: AbortSignal,
+    ) {
+      requireIdle();
+      const controller = new AbortController();
+      const cancel = () => controller.abort();
+      external?.addEventListener("abort", cancel, { once: true });
+      if (external?.aborted) cancel();
+      let begin = () => {};
+      const done = new Promise<T>((resolve, reject) => {
+        begin = () => {
+          try {
+            resolve(work(controller.signal));
+          } catch (error) {
+            reject(error);
+          }
+        };
+      }).finally(() => {
+        external?.removeEventListener("abort", cancel);
+        active = undefined;
+      });
+      active = { controller, done, scope };
+      begin();
+      return done;
+    },
+    async stop(areaId) {
+      if (active && active.scope !== areaId)
+        throw new HttpError(
+          409,
+          "Active work belongs to another conversation.",
+        );
+      active?.controller.abort();
+      await active?.done.catch(() => {});
+    },
+  });
   const serverSockets = new Set<Socket>();
   const server = createServer(async (req, res) => {
     const json = (status: number, value: unknown) => {
@@ -301,6 +360,10 @@ export function createChatServer({
         throw new HttpError(403, "Cross-site requests are not allowed.");
       if (req.method === "GET" && url.pathname === "/healthz")
         return json(200, { ok: true });
+      if (req.method === "GET") {
+        const result = workspaceRoutes.get(url.pathname);
+        if (result) return json(result.status, result.value);
+      }
       if (req.method === "GET" && url.pathname === "/api/v1/onboarding")
         return json(200, {
           version: 1,
@@ -353,7 +416,8 @@ export function createChatServer({
       if (req.method !== "POST") throw new HttpError(404, "Not found.");
       const input = await body(
         req,
-        url.pathname === "/api/v1/attachments"
+        url.pathname === "/api/v1/attachments" ||
+          /^\/api\/v1\/areas\/[^/]+\/attachments$/.test(url.pathname)
           ? Math.ceil(imageLimits.bytes / 3) * 4 + 4096
           : 140000,
       );
@@ -362,6 +426,14 @@ export function createChatServer({
         res.setHeader("Retry-After", "2");
         throw new HttpError(503, "Gaia is checking a release. Retry shortly.");
       }
+      rememberAreaRequests();
+      const workspaceResult = await workspaceRoutes.post(
+        url.pathname,
+        input,
+        res,
+      );
+      if (workspaceResult)
+        return json(workspaceResult.status, workspaceResult.value);
       if (
         [
           "/api/v1/stop",
@@ -387,7 +459,7 @@ export function createChatServer({
           );
         if (auth.status().kind !== "connected")
           throw new HttpError(409, "Connect ChatGPT first.");
-        if (action === "skip" && active) {
+        if (action === "skip" && active?.scope === "home") {
           active.controller.abort();
           await active.done.catch(() => {});
         }
@@ -542,6 +614,11 @@ export function createChatServer({
           break;
         }
         case "/api/v1/stop":
+          if (active && active.scope !== "home")
+            throw new HttpError(
+              409,
+              "Active work belongs to another conversation.",
+            );
           active?.controller.abort();
           break;
         case "/api/v1/retry": {
@@ -571,12 +648,16 @@ export function createChatServer({
       json(
         error instanceof HttpError
           ? error.status
-          : error instanceof AttachmentError
-            ? 400
-            : 500,
+          : error instanceof WorkspaceError
+            ? 409
+            : error instanceof AttachmentError
+              ? 400
+              : 500,
         {
           error:
-            error instanceof HttpError || error instanceof AttachmentError
+            error instanceof HttpError ||
+            error instanceof AttachmentError ||
+            error instanceof WorkspaceError
               ? error.message
               : "Local server error.",
         },
