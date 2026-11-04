@@ -44,6 +44,7 @@
     "concurrently": "^9.2.0",
     "electron": "45.2.2",
     "eslint": "^10.14.0",
+    "fake-indexeddb": "6.2.7",
     "prettier": "^3.9.10",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",

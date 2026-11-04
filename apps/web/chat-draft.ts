@@ -163,7 +163,7 @@ function draftTransaction<T>(
 }
 
 const DraftReferences = ChatDraft.omit({ images: true }).extend({
-  version: z.literal(2),
+  version: z.union([z.literal(2), z.literal(3)]),
   imageIds: z.array(z.string().uuid()).max(imageLimits.count),
 });
 
@@ -217,7 +217,13 @@ export function browserDraftPersistence(key = "local"): DraftPersistence {
           const images: ImageUpload[] = [];
           value = { requestId, text, images };
           imageIds.forEach((id, index) => {
-            const image = transaction.objectStore("images").get(id);
+            const image = transaction
+              .objectStore("images")
+              .get(
+                references.data.version === 2 && key === "local"
+                  ? id
+                  : `${key}:${id}`,
+              );
             image.onsuccess = () => {
               const parsed = ImageUpload.safeParse(image.result);
               if (!parsed.success || parsed.data.id !== id) transaction.abort();
@@ -232,14 +238,15 @@ export function browserDraftPersistence(key = "local"): DraftPersistence {
       await draftTransaction(await database(), "readwrite", (transaction) => {
         const images = transaction.objectStore("images");
         for (const image of draft.images) {
-          const existing = images.getKey(image.id);
+          const imageKey = `${key}:${image.id}`;
+          const existing = images.getKey(imageKey);
           existing.onsuccess = () => {
-            if (existing.result === undefined) images.add(image, image.id);
+            if (existing.result === undefined) images.add(image, imageKey);
           };
         }
         transaction.objectStore("drafts").put(
           {
-            version: 2,
+            version: 3,
             requestId: draft.requestId,
             text: draft.text,
             imageIds: draft.images.map((image) => image.id),

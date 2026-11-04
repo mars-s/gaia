@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { createModelSelectionQueue } from "./model-selection";
 import {
   RiAddLine,
   RiContractLeftRightLine,
@@ -40,38 +39,17 @@ const effortLabels: Record<ThinkingLevel, string> = {
 export function ComposerControls({
   chat,
   disabled,
-  onModel,
-  onPendingChange,
+  onSelect,
+  selection,
 }: {
   chat: NonNullable<Snapshot["chat"]>;
   disabled: boolean;
-  onModel: (modelId: string, thinkingLevel?: ThinkingLevel) => Promise<boolean>;
-  onPendingChange: (pending: boolean) => void;
+  onSelect: (selection: ModelSelection) => void;
+  selection?: ModelSelection;
 }) {
   const effortId = useId();
-  const onModelRef = useRef(onModel);
-  onModelRef.current = onModel;
-  const onPendingRef = useRef(onPendingChange);
-  onPendingRef.current = onPendingChange;
   const [open, setOpen] = useState(false);
   const chosenModel = useRef<HTMLLabelElement>(null);
-  const [selection, setSelection] = useState<ModelSelection>();
-  const queue = useRef<ReturnType<typeof createModelSelectionQueue>>(undefined);
-  useEffect(() => {
-    const current = createModelSelectionQueue(
-      (value) => onModelRef.current(value.modelId, value.thinkingLevel),
-      (value) => {
-        setSelection(value);
-        onPendingRef.current(Boolean(value));
-      },
-    );
-    queue.current = current;
-    return () => {
-      current.dispose();
-      queue.current = undefined;
-      onPendingRef.current(false);
-    };
-  }, []);
   const modelId = selection?.modelId ?? chat.modelId;
   const model = chat.models.find((model) => model.id === modelId);
   const levels = model?.capabilities?.thinkingLevels ?? [];
@@ -107,7 +85,7 @@ export function ComposerControls({
               const supported =
                 chat.models.find((item) => item.id === id)?.capabilities
                   ?.thinkingLevels ?? [];
-              queue.current?.select({
+              onSelect({
                 modelId: id,
                 thinkingLevel:
                   selectedLevel && supported.includes(selectedLevel)
@@ -159,7 +137,7 @@ export function ComposerControls({
                 onChange={(event) => {
                   const level = levels[Number(event.target.value)];
                   if (level && !disabled)
-                    queue.current?.select({ modelId, thinkingLevel: level });
+                    onSelect({ modelId, thinkingLevel: level });
                 }}
               />
               <div aria-hidden className="effort-ticks">
