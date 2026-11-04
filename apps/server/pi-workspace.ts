@@ -90,11 +90,15 @@ export async function createWorkspaceChat(
       if (snapshot.areaId !== area.areaId)
         throw new Error("Area projection belongs to another area.");
       if (snapshot.thread.run.kind === "running")
-        snapshot.thread.run = {
-          kind: "error",
-          message:
-            "The server restarted during this work. Try again when ready.",
-        };
+        snapshot.thread.run =
+          snapshot.thread.run.operation &&
+          snapshot.thread.run.operation !== "reply"
+            ? { kind: "idle" }
+            : {
+                kind: "error",
+                message:
+                  "The server restarted during this work. Try again when ready.",
+              };
       if (snapshot.chat.compaction.kind === "running")
         snapshot.chat.compaction = {
           kind: "error",

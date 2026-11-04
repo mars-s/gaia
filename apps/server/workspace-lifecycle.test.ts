@@ -219,6 +219,62 @@ for (const operation of ["reply", "compact"] as const)
     },
   );
 
+test(
+  "reopening captured area compaction preserves history and exposes no unrelated reply error",
+  { timeout: 10000 },
+  async (t) => {
+    const f = await workspaceFixture(t);
+    const { first } = await f.confirm();
+    f.faux.setResponses([
+      fauxAssistantMessage("First retained answer"),
+      fauxAssistantMessage("Recent retained answer"),
+    ]);
+    for (const text of ["Synthetic old context", "Synthetic recent context"]) {
+      await f.request(`areas/${first}/messages`, {
+        text,
+        requestId: randomUUID(),
+      });
+      await f.settled(first);
+    }
+    const messages = (await f.area(first)).thread.messages;
+    const started = deferred();
+    f.faux.setResponses([
+      async (_context, options) => {
+        assert(options?.signal);
+        started.resolve();
+        if (!options.signal.aborted)
+          await new Promise<void>((resolve) =>
+            options.signal?.addEventListener("abort", () => resolve(), {
+              once: true,
+            }),
+          );
+        return fauxAssistantMessage("", { stopReason: "aborted" });
+      },
+    ]);
+    await f.request(`areas/${first}/compact`, {});
+    await started.promise;
+    const captured = await mkdtemp(join(tmpdir(), "gaia-compact-captured-"));
+    const observer = new DatabaseSync(join(f.dir, "pi.sqlite"));
+    try {
+      observer.exec(
+        `VACUUM INTO '${join(captured, "pi.sqlite").replaceAll("'", "''")}'`,
+      );
+    } finally {
+      observer.close();
+    }
+    f.db.exec(
+      `VACUUM INTO '${join(captured, "gaia.sqlite").replaceAll("'", "''")}'`,
+    );
+    await f.close();
+    const restored = await workspaceFixture(t, true, captured);
+    const snapshot = await restored.area(first);
+    assert.equal(snapshot.thread.run.kind, "idle");
+    assert.equal(snapshot.chat.compaction.kind, "error");
+    assert.deepEqual(snapshot.thread.messages, messages);
+    assert.equal(restored.faux.state.callCount, 0);
+  },
+);
+
 for (const routed of [false, true])
   test(
     `reopening captured interrupted ${routed ? "routed Home and area" : "area"} tasks makes zero provider calls and preserves retry target`,

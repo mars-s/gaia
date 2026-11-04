@@ -129,7 +129,7 @@ export async function conversationAdapter(
         },
         ctx,
       );
-      const watch = await conversation.watch(ctx);
+      let watch: Awaited<ReturnType<Conversation["watch"]>> | undefined;
       const update = (value: ConversationView) => {
         const live = Partial.safeParse(value.docs["pi.live"]);
         const partial = live.success
@@ -139,15 +139,18 @@ export async function conversationAdapter(
       };
       let stopping: Promise<void> | undefined;
       const abort = () => {
-        stopping = conversation.abort(ctx);
+        stopping ??= conversation.abort(ctx);
+        void stopping.catch(() => {});
       };
       signal.addEventListener("abort", abort, { once: true });
       if (signal.aborted) abort();
-      update(watch.value);
-      watch.start(async (call) => {
-        if (call.kind === "value") update(call.value);
-      });
+      let failed = false;
       try {
+        watch = await conversation.watch(ctx);
+        update(watch.value);
+        watch.start(async (call) => {
+          if (call.kind === "value") update(call.value);
+        });
         const result = await submission.wait(ctx);
         if (result.status === "done" && result.type === "input") {
           const entry = await conversation.commit(
@@ -158,10 +161,26 @@ export async function conversationAdapter(
             if (message.role === "assistant")
               onText(textContent(message.content));
         } else if (!signal.aborted) throw new Error("Model request failed");
+      } catch (error) {
+        failed = true;
+        abort();
+        try {
+          await stopping;
+        } catch (cleanup) {
+          throw new AggregateError(
+            [error, cleanup],
+            "Conversation failed and could not be stopped.",
+            { cause: cleanup },
+          );
+        }
+        throw error;
       } finally {
         signal.removeEventListener("abort", abort);
-        await stopping;
-        await watch.stop();
+        try {
+          if (!failed) await stopping;
+        } finally {
+          await watch?.stop();
+        }
       }
     },
     async close() {},

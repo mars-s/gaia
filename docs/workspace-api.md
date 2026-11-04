@@ -73,19 +73,21 @@ Before enabling it, the parent must upgrade both the active runtime and the GOOD
 
 After that gate, the parent can pass `{ areasEnabled: true }` from its owned runtime integration. The UI must keep Home at the existing endpoints, render proposals for explicit exact-ID/revision approval, use the explicit area endpoints for area controls and retry, and refresh the relevant area after commands. A single workspace must remain Home without a sidebar. Browser, real owner data and live provider acceptance belong to the parent.
 
-### Merge the parent's reviewed fixes
+### Shared effort and interruption handling
 
-This branch is based on `0972cd8`. The parent's later `172d422`, `6c0973f`, `2192629`, `3520f13` and `9a8c499` commits are not included. Keep their image validation, upload timeout, exact-answer profile approval, owner prompt, draft and UI changes during integration.
+Home and areas use `pi-conversation.ts` with the shared `effortLevels` and `supportedEffort` policy. The catalogue exposes one stop per provider effort, rejects hidden aliases and defaults unsupported stored levels from medium. The HTTP area regression verifies the installed Sol catalogue, actual provider options and independent settings after reopen.
 
-The existing Pi effort and image calls moved from `apps/server/pi.ts` to `apps/server/pi-conversation.ts`. Home and every area use this one conversation adapter. Once the parent's `apps/server/model-effort.ts` exists in the integrated checkout:
+A failure after submission, including watcher setup, aborts and joins the conversation before releasing admission. Restarted area replies become an explicit retryable error. Interrupted control operations reopen idle, with any interrupted compaction reported separately. A compact operation does not manufacture an unrelated reply retry.
 
-1. Import `effortLevels` and `supportedEffort` in `pi-conversation.ts`.
-2. Replace `getSupportedThinkingLevels(model)` with `effortLevels(model)` for both advertised capabilities and selection validation.
-3. Replace startup `clampThinkingLevel(selected, thinkingLevel)` with `supportedEffort(selected, thinkingLevel)`.
-4. Replace configure's fallback `clampThinkingLevel(model, thinkingLevel)` with `supportedEffort(model, thinkingLevel)`.
-5. Remove the moved Pi effort imports. Keep the parent's canonical alias/default tests and add an area request to that coverage.
+### Initial limits
 
-No duplicate effort policy or absent helper import is introduced here. Preserve the parent's owner-interview and confirmed-preference prompt hunks in `pi.ts`. This branch changes only the older baseline warning to refer to unavailable agents, since confirmed area agents can now exist.
+Area projections are validated on startup. A corrupt projection can fail startup rather than being silently replaced; no automatic document repair is performed. Home and area history currently grow without pagination and persist whole projections during streaming.
+
+The supervisor's deployment drain currently observes Home. A direct area operation may therefore be stopped during an owner-requested update; the child still aborts and joins it before shutdown. It remains visible as stopped rather than resuming automatically.
+
+Recovery is application code, with caller and helper regressions protected by `core/install.ts`: self-change cannot edit or remove `*.test.ts` or `*.test.tsx`. The trusted recipe discovers and runs those tests. This is regression protection, not an OS boundary against hostile code running as the same user.
+
+Request and area IDs are opaque strings and must be reused exactly. Routed inputs currently use the area's user-message role without an additional author marker. Images routed from Home retain the preparation applied by Home's selected model. New models with smaller image limits will need preparation before routing.
 
 ## Verification
 
