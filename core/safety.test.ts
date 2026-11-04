@@ -34,6 +34,7 @@ test(
       const core = join(dir, "protected");
       await mkdir(stage);
       await mkdir(core);
+      await writeFile(join(core, "guardian.ts"), "trusted guardian");
       const profile = await sandboxProfile(
         stage,
         core,
@@ -45,7 +46,7 @@ test(
       const attack = join(stage, "attack.mjs");
       await writeFile(
         attack,
-        `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(join(stage, ".scratch/.sandbox.sb"))}, '(version 1)(allow default)'); let denied=false; try { writeFileSync(${JSON.stringify(profile)}, '(version 1)(allow default)'); } catch(e) {denied=e.code==='EPERM';} if(!denied) throw Error('Policy overwritten'); let sourceDenied=false; try {writeFileSync(${JSON.stringify(join(stage, "source.ts"))}, 'unverified source');} catch(e) {sourceDenied=e.code==='EPERM';} if(!sourceDenied) throw Error('Source mutated after checks');`,
+        `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(join(stage, ".scratch/.sandbox.sb"))}, '(version 1)(allow default)'); let denied=false; try { writeFileSync(${JSON.stringify(profile)}, '(version 1)(allow default)'); } catch(e) {denied=e.code==='EPERM';} if(!denied) throw Error('Policy overwritten'); let guardianDenied=false; try {writeFileSync(${JSON.stringify(join(core, "guardian.ts"))}, 'replaced');} catch(e) {guardianDenied=e.code==='EPERM';} if(!guardianDenied) throw Error('Guardian overwritten'); let sourceDenied=false; try {writeFileSync(${JSON.stringify(join(stage, "source.ts"))}, 'unverified source');} catch(e) {sourceDenied=e.code==='EPERM';} if(!sourceDenied) throw Error('Source mutated after checks');`,
       );
       await command(
         "/usr/bin/sandbox-exec",
@@ -62,6 +63,10 @@ test(
         stage,
       );
       assert.equal(await readFile(sentinel, "utf8"), "original");
+      assert.equal(
+        await readFile(join(core, "guardian.ts"), "utf8"),
+        "trusted guardian",
+      );
       assert.equal(
         await readFile(join(stage, "source.ts"), "utf8"),
         "verified source",

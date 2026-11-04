@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { once } from "node:events";
+import { fileURLToPath } from "node:url";
 export async function command(
   file: string,
   args: string[],
@@ -10,30 +11,34 @@ export async function command(
   raw = false,
 ) {
   await mkdir(join(cwd, ".scratch"), { recursive: true });
-  const child = spawn(file, args, {
+  const child = guarded(
+    file,
+    args,
     cwd,
-    env: { ...cleanEnv(), HOME: cwd, TMPDIR: join(cwd, ".scratch") },
-    stdio: ["ignore", "pipe", "pipe"],
-    detached: true,
-  });
+    {
+      ...cleanEnv(),
+      HOME: cwd,
+      TMPDIR: join(cwd, ".scratch"),
+    },
+    timeout,
+  );
   let output = "";
   let diagnostics = "";
   let overflow = false;
-  child.stdout.setEncoding("utf8");
-  child.stderr.setEncoding("utf8");
-  child.stdout.on("data", (chunk: string) => {
+  child.stdout?.setEncoding("utf8");
+  child.stderr?.setEncoding("utf8");
+  child.stdout?.on("data", (chunk: string) => {
     output += chunk;
     if (output.length > 32000000) {
       overflow = true;
       kill(child);
     }
   });
-  child.stderr.on("data", (chunk: string) => {
+  child.stderr?.on("data", (chunk: string) => {
     diagnostics = (diagnostics + chunk).slice(-16000);
   });
-  const timer = setTimeout(() => kill(child), timeout);
   try {
-    const [code] = await once(child, "exit");
+    const [code] = await once(child, "close");
     if (overflow)
       throw new Error("Command output exceeded the bounded capture limit.");
     if (code !== 0)
@@ -42,9 +47,30 @@ export async function command(
       );
     return raw ? output : output.trim();
   } finally {
-    clearTimeout(timer);
     kill(child);
   }
+}
+const guardians = new WeakSet<ChildProcess>();
+export function guarded(
+  file: string,
+  args: string[],
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+  timeout: number,
+) {
+  const child = spawn(
+    process.execPath,
+    [fileURLToPath(new URL("./guardian.ts", import.meta.url))],
+    {
+      cwd,
+      env: cleanEnv(),
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe", "ipc"],
+    },
+  );
+  guardians.add(child);
+  child.send({ file, args, cwd, env, timeout });
+  return child;
 }
 export function cleanEnv(): NodeJS.ProcessEnv {
   return {
@@ -55,6 +81,11 @@ export function cleanEnv(): NodeJS.ProcessEnv {
   };
 }
 export function kill(child: ChildProcess, signal: NodeJS.Signals = "SIGKILL") {
+  if (guardians.has(child)) {
+    if (child.exitCode === null && child.signalCode === null)
+      child.kill("SIGTERM");
+    return;
+  }
   if (child.pid) {
     try {
       process.kill(-child.pid, signal);

@@ -12,6 +12,7 @@ import { installCore, importBaseline } from "./install.ts";
 import { control } from "./control-client.ts";
 import { freePort, waitHealth } from "./sandbox.ts";
 import { stop } from "./process.ts";
+import { execFileSync } from "node:child_process";
 import { z } from "zod";
 import {
   fauxProvider,
@@ -175,7 +176,7 @@ test(
 
       await writeFile(
         join(root, "runner.mts"),
-        `import {Supervisor} from ${JSON.stringify(join(core, "core/supervisor.ts"))}; const supervisor=new Supervisor(${JSON.stringify({ data, core, dependencies, host: "127.0.0.1", port, testProvider: true, probeTimeout: 3000 })}); await supervisor.open(); process.send?.('ready'); process.on('SIGTERM',()=>{void supervisor.close().then(()=>process.exit(0));});`,
+        `import {Supervisor} from ${JSON.stringify(join(core, "core/supervisor.ts"))}; const supervisor=new Supervisor(${JSON.stringify({ data, core, dependencies, host: "127.0.0.1", port, testProvider: true, probeTimeout: 3000, bootTimeout: 2000 })}); await supervisor.open(); process.send?.('ready'); process.on('SIGTERM',()=>{void supervisor.close().then(()=>process.exit(0));});`,
       );
       await start();
       const original = await readFile(
@@ -615,6 +616,164 @@ test(
           );
         },
       );
+      for (const phase of ["check", "boot"]) {
+        await t.test(
+          `SIGKILL during a real hanging sandbox ${phase} cleans descendants and recovers checking`,
+          async () => {
+            await reset();
+            const marker =
+              phase === "boot"
+                ? ".probe-data/hanging.json"
+                : ".scratch/hanging.json";
+            const condition =
+              phase === "boot"
+                ? 'process.argv.includes("--sandbox-probe")'
+                : "process.env.NODE_TEST_CONTEXT";
+            const prefix = `import {spawn as hangingSpawn} from 'node:child_process';
+import {writeFileSync as hangingWrite} from 'node:fs';
+if (${condition}) {
+  const children = [1, 2].map(() => hangingSpawn(process.execPath, ['-e', 'setInterval(()=>{},1000)'], {stdio:'ignore'}));
+  hangingWrite(${JSON.stringify(marker)}, JSON.stringify([process.pid, ...children.map(child=>child.pid)]));
+  await new Promise(()=>{});
+}
+`;
+            const entry = await stage(prefix + original);
+            await control(socket, { kind: "submit", id: entry.id });
+            const path = join(data, "staging", entry.id, marker);
+            const pids: number[] = await until(
+              async () => {
+                try {
+                  return JSON.parse(await readFile(path, "utf8"));
+                } catch {
+                  return [];
+                }
+              },
+              (value) => value.length === 3,
+            );
+            assert.equal((await readState(data)).kind, "checking");
+            assert(processOwner?.pid);
+            process.kill(processOwner.pid, "SIGKILL");
+            await once(processOwner, "exit");
+            await until(
+              async () =>
+                pids.every((pid) => {
+                  try {
+                    return execFileSync(
+                      "/bin/ps",
+                      ["-p", String(pid), "-o", "stat="],
+                      { stdio: ["ignore", "pipe", "ignore"] },
+                    )
+                      .toString()
+                      .trim()
+                      .startsWith("Z");
+                  } catch {
+                    return true;
+                  }
+                }),
+              (value) => value,
+              10000,
+            );
+            await start();
+            const recovered = await readState(data);
+            assert.deepEqual(recovered.active, stable);
+            assert.equal(recovered.failures, 1);
+            assert.equal(
+              (await history()).find((item) => item.id === entry.id)?.outcome,
+              "interrupted",
+            );
+          },
+        );
+      }
+      await t.test(
+        "restart failure pins safe code and retains the latest compatible conversation",
+        async () => {
+          await reset();
+          const prefix = `import {readFileSync as bootRead, writeFileSync as bootWrite, appendFileSync as bootAppend} from 'node:fs';
+if (process.argv.includes('--test-provider')) {
+  const marker = process.env.GAIA_GENERATION + '/restart-count';
+  let count = 0;
+  try { count = Number(bootRead(marker, 'utf8')); } catch { /* First boot. */ }
+  bootWrite(marker, String(count + 1));
+  bootAppend(process.env.GAIA_GENERATION + '/restart-pids', process.pid + '\\n');
+  if (count > 0) await new Promise(()=>{});
+}
+`;
+          const accepted = await submit(await stage(prefix + original));
+          assert.equal(accepted.outcome, "accepted", accepted.detail);
+          const promoted = await readState(data);
+          assert.equal(promoted.failures, 0);
+          assert.notEqual(promoted.active.release, promoted.good.release);
+          await fetch(base + "/api/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              requestId: randomUUID(),
+              text: "Keep the conversation written after promotion.",
+            }),
+          });
+          const beforeRestart = await until(
+            async () => (await fetch(base + "/api/v1/state")).json(),
+            (value) => value.thread.run.kind === "idle",
+          );
+          assert(
+            beforeRestart.thread.messages.some(
+              (message: { text: string }) =>
+                message.text ===
+                "Keep the conversation written after promotion.",
+            ),
+          );
+          assert(processOwner);
+          await stop(processOwner);
+          await start();
+          const recovered = await readState(data);
+          assert.equal(recovered.kind, "safe");
+          assert.equal(recovered.failures, 3);
+          assert.equal(recovered.active.release, recovered.good.release);
+          assert.equal(recovered.active.generation, promoted.active.generation);
+          assert.deepEqual(
+            (await (await fetch(base + "/api/v1/state")).json()).thread
+              .messages,
+            beforeRestart.thread.messages,
+          );
+          assert.equal(
+            await readFile(
+              join(
+                data,
+                "generations",
+                promoted.active.generation,
+                "restart-count",
+              ),
+              "utf8",
+            ),
+            "4",
+          );
+          assert.equal(
+            (await (await fetch(base + "/healthz")).json()).mode,
+            "safe",
+          );
+          await assert.rejects(stage(original), /safe mode/);
+          const failedPids = (
+            await readFile(
+              join(
+                data,
+                "generations",
+                promoted.active.generation,
+                "restart-pids",
+              ),
+              "utf8",
+            )
+          )
+            .trim()
+            .split("\n")
+            .map(Number);
+          assert.equal(failedPids.length, 4);
+          for (const pid of failedPids)
+            assert.throws(() => process.kill(pid, 0));
+          await stop(processOwner);
+          await start();
+          assert.equal((await readState(data)).failures, 3);
+        },
+      );
       await t.test(
         "checking and switching journal states restore the previous pair on restart",
         async () => {
@@ -707,6 +866,53 @@ test(
             (await (await fetch(base + "/healthz")).json()).mode,
             "safe",
           );
+        },
+      );
+      await t.test(
+        "broken active and safe baseline fail closed after four counted boots without a leaked child",
+        async () => {
+          await reset();
+          assert(processOwner);
+          await stop(processOwner);
+          const state = await readState(data);
+          for (const release of new Set([
+            state.active.release,
+            state.good.release,
+          ])) {
+            const path = join(
+              data,
+              "releases",
+              release,
+              "apps/server/server.ts",
+            );
+            await writeFile(
+              path,
+              `import {appendFileSync} from 'node:fs'; appendFileSync(process.env.GAIA_GENERATION + '/failed-pids', process.pid + '\\n'); throw Error('broken baseline');\n` +
+                (await readFile(path, "utf8")),
+            );
+          }
+          await assert.rejects(start(), /Health probe deadline exceeded/);
+          const failed = await readState(data);
+          assert.equal(failed.kind, "safe");
+          assert.equal(failed.failures, 4);
+          assert.equal(failed.active.release, failed.good.release);
+          assert.equal(failed.active.generation, state.active.generation);
+          await assert.rejects(
+            readFile(join(data, "control/child.json")),
+            /ENOENT/,
+          );
+          for (const generation of [state.active.generation]) {
+            const pids = (
+              await readFile(
+                join(data, "generations", generation, "failed-pids"),
+                "utf8",
+              )
+            )
+              .trim()
+              .split("\n")
+              .map(Number);
+            for (const pid of pids) assert.throws(() => process.kill(pid, 0));
+          }
         },
       );
     } catch (error) {

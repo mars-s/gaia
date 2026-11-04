@@ -1,9 +1,8 @@
 import { createServer } from "node:net";
-import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, realpath, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { once } from "node:events";
-import { cleanEnv, command, stop } from "./process.ts";
+import { cleanEnv, command, guarded, stop } from "./process.ts";
 export async function freePort() {
   const server = createServer();
   server.listen(0, "127.0.0.1");
@@ -83,7 +82,7 @@ export async function candidateBoot({
     10000,
   );
   const port = await freePort();
-  const child = spawn(
+  const child = guarded(
     "/usr/bin/sandbox-exec",
     [
       "-f",
@@ -94,31 +93,28 @@ export async function candidateBoot({
       join(core, "core/child.ts"),
       "--sandbox-probe",
     ],
+    stage,
     {
-      cwd: stage,
-      detached: true,
-      stdio: ["ignore", "pipe", "pipe"],
-      env: {
-        ...cleanEnv(),
-        HOME: data,
-        TMPDIR: data,
-        GAIA_RELEASE: release,
-        GAIA_RELEASE_DIR: stage,
-        GAIA_GENERATION: data,
-        GAIA_DATA_DIR: data,
-        GAIA_CREDENTIALS: join(data, "credentials.sqlite"),
-        GAIA_HOST: "127.0.0.1",
-        GAIA_PORT: String(port),
-        GAIA_PROBE_TOKEN: "sandbox",
-        GAIA_CONTROL_SOCKET: join(data, "unavailable.sock"),
-      },
+      ...cleanEnv(),
+      HOME: data,
+      TMPDIR: data,
+      GAIA_RELEASE: release,
+      GAIA_RELEASE_DIR: stage,
+      GAIA_GENERATION: data,
+      GAIA_DATA_DIR: data,
+      GAIA_CREDENTIALS: join(data, "credentials.sqlite"),
+      GAIA_HOST: "127.0.0.1",
+      GAIA_PORT: String(port),
+      GAIA_PROBE_TOKEN: "sandbox",
+      GAIA_CONTROL_SOCKET: join(data, "unavailable.sock"),
     },
+    20000,
   );
   let output = "";
-  child.stdout.on("data", (chunk) => {
+  child.stdout?.on("data", (chunk) => {
     output = (output + chunk).slice(-4000);
   });
-  child.stderr.on("data", (chunk) => {
+  child.stderr?.on("data", (chunk) => {
     output = (output + chunk).slice(-4000);
   });
   try {

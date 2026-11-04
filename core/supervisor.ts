@@ -26,6 +26,7 @@ export interface Options {
   port: number;
   testProvider: boolean;
   probeTimeout?: number;
+  bootTimeout?: number;
 }
 export class Supervisor {
   state!: State;
@@ -113,7 +114,12 @@ export class Supervisor {
     await new Promise<void>((resolve) =>
       this.controlServer.listen(this.socket, resolve),
     );
-    await this.boot();
+    try {
+      await this.bootRecovering();
+    } catch (error) {
+      await this.close();
+      throw error;
+    }
     this.watcher = setInterval(() => {
       void this.watch().catch((error) =>
         process.stderr.write(`Watchdog ${String(error)}\n`),
@@ -169,6 +175,10 @@ export class Supervisor {
     await this.saveHistory();
   }
   private async pinSafe(reason: string) {
+    await compatible(
+      join(this.options.data, "generations", this.state.good.generation),
+      join(this.options.data, "generations", this.state.active.generation),
+    );
     await this.persist({
       kind: "safe",
       receipt: this.state.receipt,
@@ -217,7 +227,28 @@ export class Supervisor {
       });
     child.stdout?.on("data", (chunk) => process.stdout.write(chunk));
     child.stderr?.on("data", (chunk) => process.stderr.write(chunk));
-    await waitHealth(this.base, pair.release, 15000);
+    await waitHealth(
+      this.base,
+      pair.release,
+      this.options.bootTimeout ?? 15000,
+    );
+  }
+  private async bootRecovering() {
+    for (;;) {
+      try {
+        await this.boot();
+        return;
+      } catch (error) {
+        await this.halt();
+        await this.persist({
+          ...this.state,
+          failures: this.state.failures + 1,
+        });
+        if (this.state.kind === "safe") throw error;
+        if (this.state.failures >= 3)
+          await this.pinSafe("Child boot failures. Self-change disabled.");
+      }
+    }
   }
   private async halt() {
     const child = this.child;
@@ -250,7 +281,7 @@ export class Supervisor {
         });
         if (this.state.failures >= 3)
           await this.pinSafe("Child crash loop. Self-change disabled.");
-        await this.boot();
+        await this.bootRecovering();
       } finally {
         this.busy = false;
       }
@@ -559,8 +590,8 @@ export class Supervisor {
         await this.pinSafe(
           "Three consecutive failed promotions. Self-change disabled.",
         );
-        await this.boot();
-      } else if (switching) await this.boot();
+        await this.bootRecovering();
+      } else if (switching) await this.bootRecovering();
       entry.outcome = outcome;
     } finally {
       await this.saveHistory();
