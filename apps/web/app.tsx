@@ -118,9 +118,11 @@ export function App() {
   }, [draft, observeRelease, state?.runtime?.release]);
 
   const lastMessage = state?.thread.messages.at(-1);
+  const proposalId =
+    profile?.kind === "proposed" ? profile.proposalId : undefined;
   useEffect(() => {
     if (followReply.current) bottom.current?.scrollIntoView({ block: "end" });
-  }, [lastMessage?.text, lastMessage?.id]);
+  }, [lastMessage?.text, lastMessage?.id, profile?.kind, proposalId]);
 
   async function act(path: string, input: unknown = {}) {
     if (inFlight.current) return false;
