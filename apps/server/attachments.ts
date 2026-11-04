@@ -13,7 +13,8 @@ import {
   chmodSync,
 } from "node:fs";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
+import type { ImageLimits } from "@earendil-works/pi-durable/tools";
 import type { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
 import {
@@ -24,53 +25,17 @@ import {
 } from "../../packages/protocol/attachments.ts";
 import { generationDirectory } from "./data-path.ts";
 
-export class AttachmentError extends Error {}
+import { AttachmentError, imageBytes, prepareImage } from "./prepare-image.ts";
+export { AttachmentError } from "./prepare-image.ts";
 
-function imageBytes(upload: ImageUpload) {
-  const bytes = Buffer.from(upload.data, "base64");
-  if (
-    !bytes.length ||
-    bytes.length > imageLimits.bytes ||
-    bytes.toString("base64") !== upload.data
-  )
-    throw new AttachmentError(
-      "Image data is invalid or too large. Use images up to 3 MB.",
-    );
-  const png =
-    bytes.length >= 45 &&
-    bytes
-      .subarray(0, 8)
-      .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) &&
-    bytes.toString("ascii", 12, 16) === "IHDR" &&
-    bytes.readUInt32BE(16) > 0 &&
-    bytes.readUInt32BE(20) > 0 &&
-    bytes
-      .subarray(-12)
-      .equals(Buffer.from([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130]));
-  const jpeg =
-    bytes.length >= 12 &&
-    bytes[0] === 255 &&
-    bytes[1] === 216 &&
-    bytes[2] === 255 &&
-    bytes.at(-2) === 255 &&
-    bytes.at(-1) === 217;
-  const webp =
-    bytes.length >= 30 &&
-    bytes.toString("ascii", 0, 4) === "RIFF" &&
-    bytes.toString("ascii", 8, 12) === "WEBP" &&
-    bytes.readUInt32LE(4) === bytes.length - 8 &&
-    ["VP8 ", "VP8L", "VP8X"].includes(bytes.toString("ascii", 12, 16));
-  if (
-    !(upload.mimeType === "image/png"
-      ? png
-      : upload.mimeType === "image/jpeg"
-        ? jpeg
-        : webp)
-  )
-    throw new AttachmentError(
-      "Image contents do not match PNG, JPEG or WebP. Choose a supported image.",
-    );
-  return bytes;
+function uploadDigest(upload: ImageUpload) {
+  return createHash("sha256")
+    .update(upload.mimeType)
+    .update("\0")
+    .update(displayName(upload.name))
+    .update("\0")
+    .update(imageBytes(upload))
+    .digest("hex");
 }
 
 function displayName(name: string) {
@@ -86,6 +51,10 @@ function displayName(name: string) {
 const StoredImage = z.strictObject({
   attachment: Attachment,
   data: ImageUpload.shape.data,
+  requestDigest: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .optional(),
 });
 
 export function openAttachments(db: DatabaseSync) {
@@ -118,7 +87,7 @@ export function openAttachments(db: DatabaseSync) {
       const stat = fstatSync(fd);
       if (
         !stat.isFile() ||
-        stat.size > Math.ceil(imageLimits.bytes / 3) * 4 + 2048
+        stat.size > Math.ceil(imageLimits.preparedBytes / 3) * 4 + 2048
       )
         throw new AttachmentError("Stored image is invalid.");
       const stored = StoredImage.parse(JSON.parse(readFileSync(fd, "utf8")));
@@ -134,33 +103,49 @@ export function openAttachments(db: DatabaseSync) {
   }
   return {
     read,
-    put(input: ImageUpload): Attachment {
-      const upload = ImageUpload.parse(input);
-      const bytes = imageBytes(upload);
-      const attachment: Attachment = {
-        id: upload.id,
-        name: displayName(upload.name),
-        mimeType: upload.mimeType,
-        size: bytes.length,
-      };
+    async put(
+      input: ImageUpload,
+      signal?: AbortSignal,
+      limits?: ImageLimits,
+    ): Promise<Attachment> {
+      const original = ImageUpload.parse(input);
+      const digest = uploadDigest(original);
       ensureDirectory();
-      const path = join(directory, `${upload.id}.json`);
-      if (lstatExists(path)) {
-        const existing = read(upload.id);
-        if (
-          existing.data !== upload.data ||
-          existing.attachment.name !== attachment.name ||
-          existing.attachment.mimeType !== attachment.mimeType
-        )
+      const path = join(directory, `${original.id}.json`);
+      const existingAttachment = () => {
+        if (!lstatExists(path)) return undefined;
+        const existing = read(original.id);
+        const fingerprint =
+          existing.requestDigest ??
+          uploadDigest({ ...existing.attachment, data: existing.data });
+        if (fingerprint !== digest)
           throw new AttachmentError(
             "That image ID already belongs to another upload.",
           );
         return existing.attachment;
-      }
+      };
+      const existing = existingAttachment();
+      if (existing) return existing;
+      const upload = await prepareImage(original, signal, limits);
+      const attachment = Attachment.parse({
+        id: upload.id,
+        name: displayName(upload.name),
+        mimeType: upload.mimeType,
+        size: Buffer.from(upload.data, "base64").length,
+      });
+      const raced = existingAttachment();
+      if (raced) return raced;
       const temporary = join(directory, `.${randomUUID()}.tmp`);
       const fd = openSync(temporary, "wx", 0o600);
       try {
-        writeFileSync(fd, JSON.stringify({ attachment, data: upload.data }));
+        writeFileSync(
+          fd,
+          JSON.stringify({
+            attachment,
+            data: upload.data,
+            requestDigest: digest,
+          }),
+        );
         fsyncSync(fd);
         renameSync(temporary, path);
       } finally {

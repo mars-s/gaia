@@ -12,7 +12,7 @@ export async function readImageFiles(files: File[]): Promise<ImageUpload[]> {
       const mime = ImageMime.safeParse(file.type);
       if (!mime.success) throw new Error("Choose PNG, JPEG or WebP images.");
       if (!file.size || file.size > imageLimits.bytes)
-        throw new Error("Each image must be between 1 byte and 3 MB.");
+        throw new Error("Each image must be between 1 byte and 10 MB.");
       const bytes = new Uint8Array(await file.arrayBuffer());
       let binary = "";
       for (let i = 0; i < bytes.length; i += 8192)

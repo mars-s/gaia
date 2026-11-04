@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { once } from "node:events";
+import { crc32, deflateSync } from "node:zlib";
 import { fauxProvider, fauxAssistantMessage } from "@earendil-works/pi-ai";
 import {
   Attachment,
@@ -25,7 +26,7 @@ import { createChatServer, openDatabase } from "./server.ts";
 import { openAttachments } from "./attachments.ts";
 
 const png =
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jSioAAAAASUVORK5CYII=";
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
 const upload = () => ({
   id: randomUUID(),
   name: "photo.png",
@@ -72,11 +73,17 @@ async function fixture(dir: string) {
   assert(address && typeof address !== "string");
   const base = `http://127.0.0.1:${address.port}`;
   origins.push(base);
-  const request = (path: string, input?: unknown, headers = {}) =>
+  const request = (
+    path: string,
+    input?: unknown,
+    headers = {},
+    signal?: AbortSignal,
+  ) =>
     fetch(base + "/api/v1/" + path, {
       method: input === undefined ? "GET" : "POST",
       headers: { "Content-Type": "application/json", ...headers },
       ...(input === undefined ? {} : { body: JSON.stringify(input) }),
+      signal,
     });
   const state = async () =>
     Snapshot.parse(await (await request("state")).json());
@@ -104,6 +111,159 @@ async function fixture(dir: string) {
     },
   };
 }
+
+function image(width: number, height: number, padding = 0) {
+  const chunk = (type: string, value: Buffer) => {
+    const content = Buffer.concat([Buffer.from(type), value]);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(value.length);
+    const checksum = Buffer.alloc(4);
+    checksum.writeUInt32BE(crc32(content));
+    return Buffer.concat([length, content, checksum]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 2;
+  const pixels = Buffer.alloc((width * 3 + 1) * height);
+  for (let row = 0; row < height; row++)
+    for (let column = 0; column < width; column++)
+      pixels[row * (width * 3 + 1) + column * 3 + 1] = 255;
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk("IHDR", header),
+    ...(padding ? [chunk("raWd", Buffer.alloc(padding))] : []),
+    chunk("IDAT", deflateSync(pixels)),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+test("real image decoding refuses corrupt payloads and prepares dimensions and byte limits before storage", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-images-prepared-"));
+  const f = await fixture(dir);
+  try {
+    const corrupt =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jSioAAAAASUVORK5CYII=";
+    const invalid = await f.request("attachments", {
+      ...upload(),
+      data: corrupt,
+    });
+    assert.equal(invalid.status, 400);
+    assert.match(JSON.stringify(await invalid.json()), /could not be decoded/);
+    assert.deepEqual(await readdir(join(dir, "attachments")), []);
+    const wide = { ...upload(), data: image(2400, 1).toString("base64") };
+    const saved = Attachment.parse(
+      await (await f.request("attachments", wide)).json(),
+    );
+    const download = await f.request(`attachments/${saved.id}`);
+    const prepared = Buffer.from(await download.arrayBuffer());
+    assert.equal(prepared.readUInt32BE(16), 2000);
+    assert.equal(prepared.readUInt32BE(20), 1);
+    assert.deepEqual(
+      await (await f.request("attachments", wide)).json(),
+      saved,
+    );
+    const padded = {
+      ...upload(),
+      data: image(1, 1, 4 * 1024 * 1024).toString("base64"),
+    };
+    const reduced = Attachment.parse(
+      await (await f.request("attachments", padded)).json(),
+    );
+    assert(
+      reduced.size < 1024,
+      "Prepared pixels must not retain the oversized ancillary chunk",
+    );
+    assert.deepEqual(
+      await (await f.request("attachments", padded)).json(),
+      reduced,
+    );
+    const bomb = image(1, 1);
+    bomb.writeUInt32BE(100000, 16);
+    bomb.writeUInt32BE(100000, 20);
+    const refused = await f.request("attachments", {
+      ...upload(),
+      data: bomb.toString("base64"),
+    });
+    assert.equal(refused.status, 400);
+    assert.match(JSON.stringify(await refused.json()), /50 megapixels/);
+    assert.equal(f.faux.state.callCount, 0);
+  } finally {
+    await f.app.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("cancelled upload preparation is drained and a captured interrupted control operation reopens without retrying old chat", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-image-drain-"));
+  const backup = await mkdtemp(join(tmpdir(), "gaia-image-drain-backup-"));
+  const f = await fixture(dir);
+  let closed = false;
+  let restored: Awaited<ReturnType<typeof fixture>> | undefined;
+  const stream = await f.request("events");
+  const reader = stream.body?.getReader();
+  assert(reader);
+  try {
+    f.faux.setResponses([fauxAssistantMessage("Existing reply")]);
+    await f.request("messages", {
+      text: "Existing message",
+      requestId: randomUUID(),
+    });
+    const retained = (await f.settle()).thread.messages;
+    const controller = new AbortController();
+    const result = f
+      .request(
+        "attachments",
+        { ...upload(), data: image(4000, 3000).toString("base64") },
+        {},
+        controller.signal,
+      )
+      .then(
+        (response) => ({ kind: "response", response }),
+        () => ({ kind: "cancelled" }),
+      );
+    let content = "";
+    const decoder = new TextDecoder();
+    while (true) {
+      const next = await reader.read();
+      assert(!next.done);
+      content += decoder.decode(next.value, { stream: true });
+      const frames = content.split("\n\n");
+      content = frames.pop() ?? "";
+      if (
+        frames.some((frame) => {
+          const snapshot = Snapshot.parse(JSON.parse(frame.slice(6)).data);
+          return (
+            snapshot.thread.run.kind === "running" &&
+            snapshot.thread.run.operation === "upload"
+          );
+        })
+      )
+        break;
+    }
+    f.db.exec(
+      `VACUUM INTO '${join(backup, "gaia.sqlite").replaceAll("'", "''")}'`,
+    );
+    controller.abort();
+    assert.equal((await result).kind, "cancelled");
+    await reader.cancel();
+    await f.app.close();
+    closed = true;
+    assert.deepEqual(await readdir(join(dir, "attachments")), []);
+    restored = await fixture(backup);
+    const state = await restored.state();
+    assert.equal(state.thread.run.kind, "idle");
+    assert.deepEqual(state.thread.messages, retained);
+    assert.equal(restored.faux.state.callCount, 0);
+  } finally {
+    await reader.cancel().catch(() => {});
+    if (!closed) await f.app.close();
+    if (restored) await restored.app.close();
+    await rm(dir, { recursive: true, force: true });
+    await rm(backup, { recursive: true, force: true });
+  }
+});
 
 test("image-only and mixed sends reach real Pi as image blocks, retain selection and retry after reopen", async () => {
   const dir = await mkdtemp(join(tmpdir(), "gaia-images-"));

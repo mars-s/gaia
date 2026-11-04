@@ -92,10 +92,14 @@ export function createChatServer({
   if (thread.run.kind === "running")
     thread = {
       ...thread,
-      run: {
-        kind: "error",
-        message: "The server restarted during this work. Try again when ready.",
-      },
+      run:
+        thread.run.operation && thread.run.operation !== "reply"
+          ? { kind: "idle" }
+          : {
+              kind: "error",
+              message:
+                "The server restarted during this work. Try again when ready.",
+            },
     };
   const persist = () =>
     db
@@ -116,20 +120,29 @@ export function createChatServer({
     persist();
     for (const listener of listeners) listener(snapshot());
   };
-  let active: { controller: AbortController; done: Promise<void> } | undefined;
+  let active:
+    { controller: AbortController; done: Promise<unknown> } | undefined;
   let closing = false;
   function requireIdle() {
     if (closing) throw new HttpError(503, "Gaia is shutting down.");
     if (active || thread.run.kind === "running")
       throw new HttpError(409, "Work is already running.");
   }
-  function controlOperation(work: (signal: AbortSignal) => Promise<void>) {
+  function controlOperation<T>(
+    work: (signal: AbortSignal) => Promise<T>,
+    external?: AbortSignal,
+    operation: "model" | "compact" | "upload" = "model",
+  ) {
     requireIdle();
     const controller = new AbortController();
-    thread.run = { kind: "running", id: randomUUID() };
+    const cancel = () => controller.abort();
+    external?.addEventListener("abort", cancel, { once: true });
+    if (external?.aborted) cancel();
+    thread.run = { kind: "running", id: randomUUID(), operation };
     const done = Promise.resolve()
       .then(() => work(controller.signal))
       .finally(() => {
+        external?.removeEventListener("abort", cancel);
         thread.run = { kind: "idle" };
         active = undefined;
         publish();
@@ -395,7 +408,7 @@ export function createChatServer({
           if (!parsed.success)
             throw new HttpError(
               400,
-              "Choose PNG, JPEG or WebP images up to 3 MB.",
+              "Choose PNG, JPEG or WebP images up to 10 MB.",
             );
           requireIdle();
           if (auth.status().kind !== "connected")
@@ -406,7 +419,22 @@ export function createChatServer({
               ?.capabilities?.images
           )
             throw new HttpError(409, "This model does not accept images.");
-          return json(201, attachments.put(parsed.data));
+          const disconnected = new AbortController();
+          const disconnect = () => {
+            if (!res.writableEnded) disconnected.abort();
+          };
+          res.once("close", disconnect);
+          try {
+            const saved = await controlOperation(
+              (signal) =>
+                attachments.put(parsed.data, signal, adapter.imageLimits?.()),
+              disconnected.signal,
+              "upload",
+            );
+            return json(201, saved);
+          } finally {
+            res.removeListener("close", disconnect);
+          }
         }
         case "/api/v1/model": {
           const parsed = ModelSelection.safeParse(input);
@@ -446,27 +474,31 @@ export function createChatServer({
             kind: "running",
             message: "Compacting conversation context.",
           };
-          void controlOperation(async (signal) => {
-            try {
-              const kind = await compact(signal);
-              compaction = signal.aborted
-                ? { kind: "error", message: "Compaction stopped." }
-                : {
-                    kind,
-                    message:
-                      kind === "done"
-                        ? "Conversation context compacted."
-                        : "No older context to compact.",
-                  };
-            } catch {
-              compaction = {
-                kind: "error",
-                message: signal.aborted
-                  ? "Compaction stopped."
-                  : "Compaction failed. Try again when ready.",
-              };
-            }
-          });
+          void controlOperation(
+            async (signal) => {
+              try {
+                const kind = await compact(signal);
+                compaction = signal.aborted
+                  ? { kind: "error", message: "Compaction stopped." }
+                  : {
+                      kind,
+                      message:
+                        kind === "done"
+                          ? "Conversation context compacted."
+                          : "No older context to compact.",
+                    };
+              } catch {
+                compaction = {
+                  kind: "error",
+                  message: signal.aborted
+                    ? "Compaction stopped."
+                    : "Compaction failed. Try again when ready.",
+                };
+              }
+            },
+            undefined,
+            "compact",
+          );
           break;
         }
         case "/api/v1/messages": {
@@ -535,6 +567,7 @@ export function createChatServer({
       }
       json(202, snapshot());
     } catch (error) {
+      if (res.destroyed) return;
       json(
         error instanceof HttpError
           ? error.status

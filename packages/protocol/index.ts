@@ -25,7 +25,11 @@ export const Message = z.object({
 export type Message = z.infer<typeof Message>;
 export const Run = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("idle") }),
-  z.object({ kind: z.literal("running"), id: z.string() }),
+  z.object({
+    kind: z.literal("running"),
+    id: z.string(),
+    operation: z.enum(["reply", "model", "compact", "upload"]).optional(),
+  }),
   z.object({ kind: z.literal("stopped") }),
   z.object({ kind: z.literal("error"), message: z.string() }),
 ]);

@@ -587,7 +587,10 @@ export function App() {
               {running
                 ? compacting
                   ? "Compacting context"
-                  : "Gaia is replying"
+                  : state.thread.run.kind === "running" &&
+                      state.thread.run.operation === "upload"
+                    ? "Preparing images"
+                    : "Gaia is replying"
                 : state.thread.run.kind === "stopped"
                   ? "Reply stopped"
                   : ""}

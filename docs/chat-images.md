@@ -4,13 +4,15 @@ Pi Durable 1.5.0 accepts a `UserMessage["content"]` array in `root.submit({type:
 
 ## Upload and read
 
-`POST /api/v1/attachments` accepts exactly `{id, name, mimeType, data}`. `id` is an opaque UUID chosen once per draft image. `data` is canonical base64, without a data-URL prefix. Supported types are PNG, JPEG and WebP. Each decoded file is at most 3 MiB. A message contains at most four unique image references. Empty text is valid only with an image.
+`POST /api/v1/attachments` accepts exactly `{id, name, mimeType, data}`. `id` is an opaque UUID chosen once per draft image. `data` is canonical base64, without a data-URL prefix. Supported types are PNG, JPEG and WebP. Each original file is at most 10 MiB. Prepared images are at most 3 MiB and 2000 by 2000 pixels, or the selected model’s smaller preparation limits. A message contains at most four unique image references. Empty text is valid only with an image.
 
-The server checks base64, byte count, format signature and basic container boundaries before writing or submitting. It does not promise to decode or resize every image. PNG requires its signature, nonzero IHDR dimensions and IEND. JPEG requires start and end markers. WebP requires a matching RIFF length and a supported VP8 container. A corrupt compressed payload can still be rejected by the provider. The 3 MiB limit keeps base64 below Pi's installed default 4.5 MiB image budget. No SVG, GIF or arbitrary client filesystem paths are accepted.
+The server checks canonical base64, byte count, declared format, container boundaries and dimensions, then uses Pi’s installed Photon image processor to decode, orient, resize and re-encode before storage. Corrupt pixel payloads are rejected before a provider request. Input dimensions are bounded to 50 megapixels and 20000 pixels per side before decoding. Preparation runs in Pi’s worker, whose idle memory is released after two seconds. No SVG, GIF or arbitrary client filesystem paths are accepted.
+
+Prepared image bytes stay below both Gaia’s 3 MiB storage limit and Pi’s base64 budget. Original upload fingerprints keep retries idempotent when preparation changes the bytes or format. The model receives prepared pixels, and sent thumbnails use those same prepared files.
 
 Success returns 201 and `{id, name, mimeType, size}`. The display name has path separators, control characters and format characters removed. It never becomes a filesystem path. The same upload ID and content return the same reference. Conflicting reuse is refused.
 
-`GET /api/v1/attachments/<UUID>` returns bounded original bytes with their validated image MIME type, no-store, nosniff and a sandbox CSP. Only a connected session can upload or read. Existing trusted host, origin, same-site and managed authentication boundaries apply. Uploads also use release admission and idle-run guards. Shutdown refuses new writes. Requests exceeding the upload body bound return 413. Invalid uploads return 400, and unsupported models return 409 before model submission.
+`GET /api/v1/attachments/<UUID>` returns bounded prepared bytes with their validated image MIME type, no-store, nosniff and a sandbox CSP. Only a connected session can upload or read. Existing trusted host, origin, same-site and managed authentication boundaries apply. Uploads also use release admission and idle-run guards. Preparation is an admitted control operation, so release drain and shutdown wait for it. Client cancellation aborts admission before file storage. Interrupted control operations reopen idle instead of offering to retry the last unrelated chat message. Shutdown refuses new writes. Requests exceeding the upload body bound return 413. Invalid uploads return 400, and unsupported models return 409 before model submission.
 
 ## Persistence and retry
 
@@ -33,3 +35,5 @@ The model and effort popover uses the installed Apache-2.0 React Aria controls a
 ## Verification boundary
 
 `apps/server/attachments.test.ts` exercises real Pi with a deterministic faux-provider, image-only and mixed input, retries after reopen, retained effort, duplicate concurrent admission, bounds, guards, file permissions, symlinks, cancellation and unsupported models. `apps/web/chat-draft.test.ts` checks image bytes and admission identity after reopen, failed storage, newer edits, write coalescing, duplicate files and bounds. These checks do not establish live subscription-provider or native Electron behaviour. Parent acceptance includes dark and light themes, 320px width, keyboard effort changes, paste and drop, IME, thumbnail removal, upload cancellation, network failure, release reload and service restart.
+
+Image preparation regressions also cover full decoding, corrupt compressed data, oversized dimensions, resized and re-encoded files, idempotent prepared uploads, cancellation, shutdown drain and an interrupted-operation SQLite snapshot reopened without a provider call.

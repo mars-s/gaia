@@ -17,6 +17,10 @@ import {
   type ImageContent,
 } from "@earendil-works/pi-ai";
 import type { createAuth } from "./auth.ts";
+import {
+  DEFAULT_IMAGE_LIMITS,
+  type ImageLimits,
+} from "@earendil-works/pi-durable/tools";
 import type { Chat, ThinkingLevel } from "../../packages/protocol/index.ts";
 import {
   OwnerProfile,
@@ -25,6 +29,7 @@ import {
   type OwnerCapability,
 } from "../../packages/sdk/onboarding.ts";
 export interface ChatAdapter {
+  imageLimits?(): ImageLimits;
   controls?(): Omit<Chat, "compaction">;
   configure?(modelId: string, thinkingLevel?: ThinkingLevel): Promise<void>;
   compact?(signal: AbortSignal): Promise<"done" | "noop">;
@@ -192,6 +197,15 @@ export async function createPi(
       },
     }));
   return {
+    imageLimits() {
+      const limits = auth.models.getModel("openai-codex", modelId)?.inputLimits
+        ?.images?.resize;
+      return {
+        maxWidth: limits?.maxWidth ?? DEFAULT_IMAGE_LIMITS.maxWidth,
+        maxHeight: limits?.maxHeight ?? DEFAULT_IMAGE_LIMITS.maxHeight,
+        maxBytes: limits?.maxBytes ?? DEFAULT_IMAGE_LIMITS.maxBytes,
+      };
+    },
     controls: () => ({ models: models(), modelId, thinkingLevel }),
     async configure(id, effort) {
       const model = auth.models.getModel("openai-codex", id);
