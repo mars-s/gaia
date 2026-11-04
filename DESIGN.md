@@ -1,6 +1,6 @@
 # Gaia client design
 
-The user's corrective brief replaces the previous labelled web form with a minimal, familiar Board UI conversation. This direction is supplied by the task, not a new approval claim.
+The user's corrective brief replaces the previous labelled web form with a minimal conversation. The overnight brief adds the reference model-and-effort popover and image attachments. Follow `SPEC.md` for library choices.
 
 ## Surface
 
@@ -25,7 +25,7 @@ Supporting text overrides the upstream faint neutral defaults for readability. T
 
 ## Composition
 
-No sidebar, decorative graphics, gradients, permanent auth panels or model labels. Board UI's free registry `SocialButton` provides the ChatGPT action, with a Remix icon. `IconButton` provides account, send and stop. The free Board UI `Textarea` grows from one to eight lines inside the composer. The Pro composer and templates are not used.
+Model, effort and attachment actions belong in the compact composer. Keep navigation optional and avoid decorative graphics, gradients and permanent auth panels. The installed Board UI `SocialButton`, `IconButton` and `Textarea` currently provide sign-in, actions and input. They may be retained or replaced under the spec's library policy. Paid templates are not used.
 
 Messages have 32px separation. User text has a quiet secondary fill and aligns right. Assistant text sits directly on the page. The composer remains available when the transcript scrolls. At 320px, content has 16px side insets. Hover, focus and disabled states use the installed component vocabulary. No authored animation is needed.
 

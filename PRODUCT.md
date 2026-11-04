@@ -19,7 +19,7 @@ Connect a ChatGPT subscription through the existing Pi OAuth flow. Finish sign-i
 ## Constraints
 
 - `SPEC.md` is the locked product authority. This file describes the current client slice.
-- Use free MIT-licensed Board UI components. No Radix or paid templates.
+- Use free, openly licensed components. Follow the current UI library policy in `SPEC.md`.
 - Keep the existing Pi backend. Do not replace subscription sign-in with API keys.
 - The desktop seed opens the configured Gaia web address. It does not yet manage the server, package an installer or expose terminal and file tools.
 - The user wants a minimal custom title bar, short onboarding and a conversation without permanent account banners or telemetry.

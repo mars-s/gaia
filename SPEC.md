@@ -1,12 +1,13 @@
 # Gaia: product spec and architecture
 
-Status: locked v1.2, 4 Nov 2026. Decisions from Avi, 1 to 4 Nov 2026.
+Status: locked v1.3, 5 Nov 2026. Decisions from Avi, 1 to 5 Nov 2026.
 
 Changelog:
 - v0.2 (4 Nov 2026): sign-in and model traffic through Pi's built-in OAuth; Electron gets full terminal and file access; generative UI is real code changes through the self-mod pipeline.
 - v1.0 (4 Nov 2026): locked. Homelab hosting requirements added as v0.1 musts (see `docs/hosting.md`).
 - v1.1 (4 Nov 2026): Avi removed the fixed 1 GB RAM requirement. RAM allocation can grow as homelab capacity is freed up.
 - v1.2 (4 Nov 2026): Avi chose Board UI instead of assistant-ui. Use free MIT-licensed components with a plain default theme and editable theme tokens.
+- v1.3 (5 Nov 2026): Avi authorised UI library and stack decisions for the overnight work. Base UI is preferred for new primitives. Radix is permitted where needed; assistant-ui, shadcn and existing React Aria or Board UI components may be used when they fit. Libraries must be free and openly licensed. Add genuine Pi effort controls and image attachments, and make onboarding progress after answers.
 
 ## One-line pitch
 
@@ -21,7 +22,7 @@ Gaia is an open-source agent you run on your own machine. It starts as a single 
 - Local and owned: data, credentials and memory stay on the owner's machine.
 - Plan sign-in, no API keys: Claude and ChatGPT plans through Pi's built-in OAuth; all model traffic routed through Pi.
 - The owner holds the power: full machine access by default, and the responsibility that comes with it.
-- Plain by default: free MIT-licensed Board UI components, plain theme, restyled by asking through editable theme tokens. No Radix. Board UI's React Aria components replace the earlier assistant-ui and Base UI choices.
+- Plain by default: a minimal, themeable interface using free, openly licensed components and editable theme tokens. Prefer Base UI for new primitives. Existing React Aria and Board UI components may remain; Radix, assistant-ui and shadcn are permitted when they fit. Choose for the actual interaction, footprint and accessibility.
 - Open from day one: Apache 2.0, commercial use allowed.
 
 ## User journeys
@@ -115,7 +116,7 @@ Hosting (detail in `docs/hosting.md`):
 | v0.1 | Later |
 | --- | --- |
 | Docker Compose and native systemd seed | LXC template, Nix package |
-| Chat box, tool hints, compaction hints | Rich trace and DeepSeek-style views (generated) |
+| Chat box, model and effort controls, image attachments, tool and compaction hints | Rich trace and DeepSeek-style views (generated) |
 | Claude and ChatGPT sign-in via Pi OAuth | More providers |
 | Onboarding interview, multi-agent setup | Routines, cross-agent planning |
 | Self-mod pipeline, safe mode, history | Approval mode polish |
@@ -125,7 +126,7 @@ Hosting (detail in `docs/hosting.md`):
 
 ## Borrow from Aegis and Mars
 
-- Mars (github.com/mars-s/mars): Pi Durable host (`packages/pi-host`), owner sign-in URL from setup, ChatGPT and Claude connection, staged host changes with health check and rollback watchdog, plugin cards and on-demand tool discovery. Gaia uses Board UI for chat.
+- Mars (github.com/mars-s/mars): Pi Durable host (`packages/pi-host`), owner sign-in URL from setup, ChatGPT and Claude connection, staged host changes with health check and rollback watchdog, plugin cards and on-demand tool discovery. Gaia keeps its own minimal, themeable chat.
 - Aegis (github.com/mars-s/Aegis): first-run greeting and local profile, patched UI that yields to newer built-ins after update, Tauri signed updater with backup and restore, DESIGN.md discipline.
 - Leave behind: Aegis's canvas and Tauri shell, Mars's Next.js-coupled UI.
 

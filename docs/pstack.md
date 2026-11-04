@@ -26,6 +26,8 @@ interrogate reviewers: gpt-6.1-sol, gpt-6.1-sol, gpt-6.1-sol
 
 Choose any supported reasoning effort to suit the task. Use higher effort for difficult design, recovery and concurrency work. Panels keep their configured number of reviewers, all on Sol 6.1; their diversity comes from independent angles and reasoning effort rather than different models. Do not use Claude models for project work. This development policy does not remove Gaia's planned support for Claude subscription sign-in.
 
+For the overnight run starting 5 November 2026, Avi explicitly requested Sonnet 5.5 to critique the spec, north-star alignment and UI. That review role is the authorised exception to the Sol-only defaults above. Implementation remains on Sol 6.1, with high, xhigh or max effort as useful.
+
 In T3 Code, follow the session's orchestration instructions for dispatch, isolation and waiting. Use native subagents for Sol 6.1 when inheriting session settings; use `delegate_task` when separate settings or a separate checkout are needed. Report an unavailable model rather than substituting one silently.
 
 ## Coordination
