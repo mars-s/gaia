@@ -29,11 +29,11 @@ Compared with the `6f7c3fd` lockfile, 105 package entries were added: 102 MIT, o
 
 ## Bundle measurement
 
-Both measurements use `npm run build`, the same lockfile resolutions for existing dependencies, and Node `gzipSync` defaults on the emitted assets. Values are bytes. The baseline was built at `6f7c3fd` before adding dependencies. The final row is measured from this increment's production build.
+Both measurements use `npm run build`, the same lockfile resolutions for existing dependencies, and Node `gzipSync` defaults on the emitted assets. Values are bytes. The baseline was built at `6f7c3fd` before adding dependencies. The final row was remeasured at runtime implementation commit `0402286`, after the recovery fixes.
 
 | Asset      | Baseline raw | Final raw | Baseline gzip | Final gzip |
 | ---------- | -----------: | --------: | ------------: | ---------: |
-| JavaScript |       646139 |   1095362 |        207127 |     340307 |
+| JavaScript |       646139 |   1096856 |        207127 |     340826 |
 | CSS        |       110957 |    113366 |         19064 |      19526 |
 
 The added runtime and Markdown renderer increase the JavaScript bundle. Vite still reports its chunk-size warning. The separately served licence notices add 136940 bytes and are not fetched by the app. These measurements do not establish native startup time or memory use.
