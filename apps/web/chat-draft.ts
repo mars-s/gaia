@@ -143,15 +143,15 @@ export function createChatDraft(
 function draftTransaction<T>(
   db: IDBDatabase,
   mode: IDBTransactionMode,
-  operation: (store: IDBObjectStore) => IDBRequest<T>,
+  operation: (transaction: IDBTransaction) => () => T,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const transaction = db.transaction("drafts", mode);
-    const timer = setTimeout(() => transaction.abort(), 5000);
-    const request = operation(transaction.objectStore("drafts"));
+    const transaction = db.transaction(["drafts", "images"], mode);
+    const timer = setTimeout(() => transaction.abort(), 30000);
+    const result = operation(transaction);
     transaction.oncomplete = () => {
       clearTimeout(timer);
-      resolve(request.result);
+      resolve(result());
     };
     const failed = () => {
       clearTimeout(timer);
@@ -162,11 +162,16 @@ function draftTransaction<T>(
   });
 }
 
-export function browserDraftPersistence(): DraftPersistence {
+const DraftReferences = ChatDraft.omit({ images: true }).extend({
+  version: z.literal(2),
+  imageIds: z.array(z.string().uuid()).max(imageLimits.count),
+});
+
+export function browserDraftPersistence(key = "local"): DraftPersistence {
   let connection: Promise<IDBDatabase> | undefined;
   function database() {
     connection ??= new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("gaia-chat-drafts", 1);
+      const request = indexedDB.open("gaia-chat-drafts", 2);
       let expired = false;
       const fail = () => {
         expired = true;
@@ -174,8 +179,11 @@ export function browserDraftPersistence(): DraftPersistence {
         reject(new Error("Draft storage unavailable."));
       };
       const timer = setTimeout(fail, 5000);
-      request.onupgradeneeded = () =>
-        request.result.createObjectStore("drafts");
+      request.onupgradeneeded = () => {
+        for (const store of ["drafts", "images"])
+          if (!request.result.objectStoreNames.contains(store))
+            request.result.createObjectStore(store);
+      };
       request.onerror = fail;
       request.onblocked = fail;
       request.onsuccess = () => {
@@ -198,14 +206,48 @@ export function browserDraftPersistence(): DraftPersistence {
   }
   return {
     async load() {
-      return draftTransaction(await database(), "readonly", (store) =>
-        store.get("local"),
-      );
+      return draftTransaction(await database(), "readonly", (transaction) => {
+        let value: unknown;
+        const request = transaction.objectStore("drafts").get(key);
+        request.onsuccess = () => {
+          value = request.result;
+          const references = DraftReferences.safeParse(value);
+          if (!references.success) return;
+          const { imageIds, requestId, text } = references.data;
+          const images: ImageUpload[] = [];
+          value = { requestId, text, images };
+          imageIds.forEach((id, index) => {
+            const image = transaction.objectStore("images").get(id);
+            image.onsuccess = () => {
+              const parsed = ImageUpload.safeParse(image.result);
+              if (!parsed.success || parsed.data.id !== id) transaction.abort();
+              else images[index] = parsed.data;
+            };
+          });
+        };
+        return () => value;
+      });
     },
     async save(draft) {
-      await draftTransaction(await database(), "readwrite", (store) =>
-        store.put(draft, "local"),
-      );
+      await draftTransaction(await database(), "readwrite", (transaction) => {
+        const images = transaction.objectStore("images");
+        for (const image of draft.images) {
+          const existing = images.getKey(image.id);
+          existing.onsuccess = () => {
+            if (existing.result === undefined) images.add(image, image.id);
+          };
+        }
+        transaction.objectStore("drafts").put(
+          {
+            version: 2,
+            requestId: draft.requestId,
+            text: draft.text,
+            imageIds: draft.images.map((image) => image.id),
+          },
+          key,
+        );
+        return () => undefined;
+      });
     },
   };
 }
