@@ -1,11 +1,61 @@
 :root {
   --font-inter:
     system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Board UI's muted text defaults are too faint for sustained conversation. */
+  --color-text-secondary: var(--color-neutral-600);
+  --color-text-tertiary: var(--color-neutral-600);
+  color-scheme: light;
 }
+
+:root.dark {
+  --color-text-secondary: var(--color-neutral-400);
+  --color-text-tertiary: var(--color-neutral-400);
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   background: var(--color-background-full);
 }
+
+::selection {
+  background: var(--color-accent-200);
+  color: var(--color-neutral-950);
+}
+
+.app-shell {
+  min-width: 320px;
+}
+
+.app-bar {
+  height: 52px;
+  -webkit-app-region: drag;
+}
+
+[data-desktop="darwin"] .app-bar {
+  padding-left: 88px;
+}
+
+[data-desktop]:not([data-desktop="darwin"]) .app-bar {
+  padding-right: 152px;
+}
+
+.app-control {
+  -webkit-app-region: no-drag;
+}
+
 .message-text {
-  line-height: 1.65;
+  line-height: 1.7;
+}
+
+.composer {
+  caret-color: var(--color-text-primary);
+}
+
+.composer:focus-within {
+  border-color: var(--color-border-focus-ring);
+}
+
+.auth-help summary::marker {
+  color: var(--color-text-secondary);
 }
