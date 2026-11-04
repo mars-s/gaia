@@ -114,7 +114,7 @@ app.server.on("request", async (req, res) => {
         release: env.GAIA_RELEASE,
         mode,
         schema: 1,
-        provider: test ? "deterministic-test-only" : "pi-sol6.1",
+        provider: test ? "deterministic-test-only" : "pi-openai-codex",
       });
     if (url.pathname.startsWith("/api/v1/probe/")) {
       if (req.headers["x-gaia-probe"] !== env.GAIA_PROBE_TOKEN)

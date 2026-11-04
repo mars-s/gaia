@@ -81,9 +81,15 @@ export async function recipe({
     "core",
     "selfmod",
   ]);
-  const tests = (await sourceFiles(stage, "apps/server")).filter((path) =>
-    path.endsWith(".test.ts"),
-  );
+  const tests = (
+    await Promise.all(
+      ["apps/server", "apps/web"].map((directory) =>
+        sourceFiles(stage, directory),
+      ),
+    )
+  )
+    .flat()
+    .filter((path) => path.endsWith(".test.ts"));
   await run("unit tests", [
     "--import",
     bin("tsx/dist/loader.mjs"),
