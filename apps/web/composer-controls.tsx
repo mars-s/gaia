@@ -41,30 +41,48 @@ export function ComposerControls({
   chat,
   disabled,
   onModel,
+  onPendingChange,
 }: {
   chat: NonNullable<Snapshot["chat"]>;
   disabled: boolean;
   onModel: (modelId: string, thinkingLevel?: ThinkingLevel) => Promise<boolean>;
+  onPendingChange: (pending: boolean) => void;
 }) {
   const effortId = useId();
   const onModelRef = useRef(onModel);
   onModelRef.current = onModel;
+  const onPendingRef = useRef(onPendingChange);
+  onPendingRef.current = onPendingChange;
+  const [open, setOpen] = useState(false);
+  const chosenModel = useRef<HTMLLabelElement>(null);
   const [selection, setSelection] = useState<ModelSelection>();
   const [queue] = useState(() =>
     createModelSelectionQueue(
       (value) => onModelRef.current(value.modelId, value.thinkingLevel),
-      setSelection,
+      (value) => {
+        setSelection(value);
+        onPendingRef.current(Boolean(value));
+      },
     ),
   );
-  useEffect(() => () => queue.dispose(), [queue]);
+  useEffect(
+    () => () => {
+      queue.dispose();
+      onPendingRef.current(false);
+    },
+    [queue],
+  );
   const modelId = selection?.modelId ?? chat.modelId;
   const model = chat.models.find((model) => model.id === modelId);
   const levels = model?.capabilities?.thinkingLevels ?? [];
   const selectedLevel = selection
     ? selection.thinkingLevel
     : chat.thinkingLevel;
+  useEffect(() => {
+    if (open) chosenModel.current?.scrollIntoView({ block: "nearest" });
+  }, [open, modelId]);
   return (
-    <DialogTrigger>
+    <DialogTrigger onOpenChange={setOpen}>
       <AriaButton
         type="button"
         aria-label={`Model and reasoning effort, ${model?.name ?? modelId}${selectedLevel ? `, ${effortLabels[selectedLevel]}` : ""}`}
@@ -103,7 +121,12 @@ export function ComposerControls({
             className="model-options"
           >
             {chat.models.map((model) => (
-              <Radio key={model.id} value={model.id} className="model-option">
+              <Radio
+                ref={model.id === modelId ? chosenModel : undefined}
+                key={model.id}
+                value={model.id}
+                className="model-option"
+              >
                 <span className="min-w-0 wrap-anywhere">{model.name}</span>
                 <span className="model-radio" aria-hidden />
               </Radio>

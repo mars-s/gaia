@@ -39,6 +39,7 @@ import { createAuthBrowserFlow, openAuthInBrowser } from "./browser-auth";
 
 export function App() {
   const inFlight = useRef(false);
+  const modelSelectionPending = useRef(false);
   const [profile, setProfile] = useState<OwnerState>();
   const [profileError, setProfileError] = useState(false);
   const [profileReader] = useState(() =>
@@ -81,6 +82,7 @@ export function App() {
     createReleaseObserver(
       () =>
         !inFlight.current &&
+        !modelSelectionPending.current &&
         imageReads.current === 0 &&
         !composing.current &&
         draftSession.prepareReload(),
@@ -122,6 +124,7 @@ export function App() {
     !offline &&
     !running &&
     !pending &&
+    !modelPending &&
     !readingImages &&
     draftState.kind === "ready" &&
     (Boolean(draft.trim()) || images.length > 0) &&
@@ -183,6 +186,7 @@ export function App() {
   }, [
     draftState,
     pending,
+    modelPending,
     readingImages,
     observeRelease,
     state?.runtime?.release,
@@ -845,17 +849,16 @@ export function App() {
                     disabled={
                       offline || ((pending || running) && !changingModel)
                     }
-                    onModel={async (modelId, thinkingLevel) => {
-                      setModelPending(true);
-                      try {
-                        return await act("model", {
-                          modelId,
-                          ...(thinkingLevel ? { thinkingLevel } : {}),
-                        });
-                      } finally {
-                        setModelPending(false);
-                      }
+                    onPendingChange={(value) => {
+                      modelSelectionPending.current = value;
+                      setModelPending(value);
                     }}
+                    onModel={(modelId, thinkingLevel) =>
+                      act("model", {
+                        modelId,
+                        ...(thinkingLevel ? { thinkingLevel } : {}),
+                      })
+                    }
                   />
                 ) : null}
                 <IconButton
