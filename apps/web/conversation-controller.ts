@@ -165,7 +165,14 @@ export function createConversationController({
     homeVersion++;
     home = value;
     offline = false;
-    workspace.setConnected(value.connection.kind === "connected");
+    workspace.setConnected(
+      value.connection.kind === "connected" && !safeMode(),
+    );
+    if (safeMode() && selected.kind === "area") {
+      selected = homeScope;
+      workspace.select(homeScope);
+      void session(homeScope).draft.load();
+    }
     acknowledge(homeScope, value.thread);
     changed();
     if (
@@ -183,16 +190,23 @@ export function createConversationController({
   }
   function busyScope(): ConversationScope | undefined {
     if (home?.thread.run.kind === "running") return homeScope;
+    if (safeMode()) return;
     const areaId = workspace.busy();
     return areaId ? { kind: "area", areaId } : undefined;
   }
   function selectionPending() {
-    return [...sessions.values()].some((entry) => entry.selection);
+    return [...sessions.values()].some(
+      (entry) =>
+        entry.selection && (!safeMode() || entry.scope.kind === "home"),
+    );
+  }
+  function safeMode() {
+    return home?.runtime?.mode === "safe";
   }
   function available(scope: ConversationScope) {
+    if (offline || home?.connection.kind !== "connected") return false;
+    if (safeMode()) return scope.kind === "home";
     return (
-      !offline &&
-      home?.connection.kind === "connected" &&
       workspace.ready() &&
       (scope.kind === "home" ||
         workspace.areas.get(scope.areaId)?.status === "ready")
@@ -308,6 +322,10 @@ export function createConversationController({
     busyScope,
     supportsImages,
     canSend,
+    available,
+    get safeMode() {
+      return safeMode();
+    },
     subscribe(notify: () => void) {
       listeners.add(notify);
       return () => {
@@ -331,6 +349,7 @@ export function createConversationController({
       return selectionPending();
     },
     select(scope: ConversationScope) {
+      if (safeMode() && scope.kind === "area") return;
       if (
         scope.kind === "area" &&
         !workspace.areaList().some((area) => area.areaId === scope.areaId)
@@ -353,7 +372,9 @@ export function createConversationController({
       workspace.setConnected(false);
     },
     resume() {
-      workspace.setConnected(!offline && home?.connection.kind === "connected");
+      workspace.setConnected(
+        !offline && home?.connection.kind === "connected" && !safeMode(),
+      );
       const scope = selected;
       void session(scope)
         .draft.load()
@@ -365,9 +386,10 @@ export function createConversationController({
       return (
         !pending &&
         !configuring(home?.thread) &&
-        ![...workspace.areas.values()].some((area) =>
-          configuring(area.snapshot?.thread),
-        ) &&
+        (safeMode() ||
+          ![...workspace.areas.values()].some((area) =>
+            configuring(area.snapshot?.thread),
+          )) &&
         [...sessions.values()].every(
           (entry) =>
             !entry.reads &&
@@ -408,6 +430,7 @@ export function createConversationController({
       return perform(target, "stop", () => request(target, "stop"), "stop");
     },
     async confirm(input: WorkspaceConfirmation) {
+      if (safeMode()) return false;
       const proposal = workspace.state;
       if (
         proposal?.kind !== "proposed" ||

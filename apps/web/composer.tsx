@@ -84,7 +84,7 @@ export function Composer({
           </button>
         </p>
       )}
-      {!controller.workspace.ready() && !offline && (
+      {!controller.safeMode && !controller.workspace.ready() && !offline && (
         <p role="status" className="text-caption-1-regular text-text-secondary">
           {controller.workspace.error
             ? "Workspace unavailable."
@@ -128,7 +128,7 @@ export function Composer({
                 offline ||
                 running ||
                 Boolean(busy) ||
-                !controller.workspace.ready()
+                !controller.available(scope)
               }
               onClick={() => void controller.act(scope, "retry")}
             >
@@ -283,7 +283,7 @@ export function Composer({
               pending ||
               offline ||
               Boolean(busy) ||
-              !controller.workspace.ready()
+              !controller.available(scope)
             }
             onAttach={
               supportsImages && state.kind === "ready"

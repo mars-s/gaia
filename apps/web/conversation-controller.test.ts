@@ -103,6 +103,85 @@ function draft(
   return value.draft;
 }
 
+test("safe-mode startup admits Home without fetching unavailable area conversations", async (t) => {
+  const h = await harness(t);
+  h.respond(async ({ path }) =>
+    path.startsWith("/api/v1/areas/")
+      ? Response.json({ error: "Areas are disabled." }, { status: 409 })
+      : undefined,
+  );
+  const c = createConversationController({
+    persistence: (scope) => h.drafts.store(scopeKey(scope)),
+    legacy: "Safe recovery question",
+  });
+  t.after(() => c.pause());
+  const before = h.calls.length;
+  c.resume();
+  c.receiveHome({
+    ...h.home,
+    runtime: {
+      release: "safe-baseline",
+      mode: "safe",
+      selfModification: false,
+    },
+  });
+  await settle();
+  assert(c.canSend(homeScope));
+  assert(!c.canSend(areaA));
+  c.select(areaA);
+  assert.deepEqual(c.selected, homeScope);
+  assert.equal(h.calls.length, before);
+});
+
+test("entering safe mode preserves area drafts and bypasses stale area work until normal mode returns", async (t) => {
+  const h = await harness(t);
+  const c = h.controller;
+  c.select(areaA);
+  await settle();
+  c.session(areaA).draft.update((value) => ({
+    ...value,
+    text: "Keep private Study draft",
+  }));
+  await settle();
+  const pending = areaSnapshot();
+  pending.thread.run = {
+    kind: "running",
+    operation: "model",
+    id: "interrupted-model",
+  };
+  h.areaStates.set(firstArea, pending);
+  await c.workspace.refreshArea(firstArea);
+  assert(c.busyScope());
+  assert(!c.prepareReload());
+  const before = h.calls.length;
+  c.receiveHome({
+    ...h.home,
+    runtime: {
+      release: "safe-baseline",
+      mode: "safe",
+      selfModification: false,
+    },
+  });
+  await settle();
+  assert.deepEqual(c.selected, homeScope);
+  assert.equal(c.busyScope(), undefined);
+  assert(c.canSend(homeScope));
+  assert(!c.canSend(areaA));
+  assert(c.prepareReload());
+  c.select(areaA);
+  assert.deepEqual(c.selected, homeScope);
+  assert.equal(draft(c, areaA).text, "Keep private Study draft");
+  assert.equal(h.calls.length, before);
+  h.areaStates.set(firstArea, areaSnapshot());
+  c.receiveHome(h.home);
+  await settle();
+  c.select(areaA);
+  await settle();
+  assert.deepEqual(c.selected, areaA);
+  assert.equal(draft(c, areaA).text, "Keep private Study draft");
+  assert(c.canSend(areaA));
+});
+
 test("area endpoints receive exact scope payloads and delayed send completion retains newer and other-scope drafts", async (t) => {
   const h = await harness(t);
   const { controller: c } = h;

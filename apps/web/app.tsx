@@ -338,11 +338,13 @@ export function App() {
         </main>
       ) : (
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <WorkspaceNavigation
-            state={controller.workspace.state}
-            selected={scope}
-            onSelect={controller.select}
-          />
+          {!controller.safeMode && (
+            <WorkspaceNavigation
+              state={controller.workspace.state}
+              selected={scope}
+              onSelect={controller.select}
+            />
+          )}
           <div
             className="min-h-0 flex-1 overflow-y-auto"
             ref={transcript}
@@ -386,18 +388,20 @@ export function App() {
                       state.thread.messages.length === 0)) && (
                     <div className="py-4">{profilePanel()}</div>
                   )}
-                  <WorkspaceProposalPanel
-                    state={controller.workspace.state}
-                    error={controller.workspace.error}
-                    disabled={
-                      pending ||
-                      running ||
-                      offline ||
-                      !controller.workspace.ready()
-                    }
-                    onConfirm={(input) => void controller.confirm(input)}
-                    onRetry={() => void controller.workspace.refresh()}
-                  />
+                  {!controller.safeMode && (
+                    <WorkspaceProposalPanel
+                      state={controller.workspace.state}
+                      error={controller.workspace.error}
+                      disabled={
+                        pending ||
+                        running ||
+                        offline ||
+                        !controller.workspace.ready()
+                      }
+                      onConfirm={(input) => void controller.confirm(input)}
+                      onRetry={() => void controller.workspace.refresh()}
+                    />
+                  )}
                 </>
               )}
               <div ref={bottom} />
