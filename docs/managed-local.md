@@ -1,6 +1,6 @@
 # Run the local managed backend
 
-This backend is the safe self-change slice for macOS. Desktop, onboarding presentation, browser sign-in and live account verification belong to the parent integration task. This does not by itself complete M2.
+This is the local macOS runtime for checked self-change. It serves the same chat interface as the development server and supports the Electron window. This slice does not implement remote pairing or production hosting.
 
 Install Node 24.21 or newer, then run these commands from the checkout.
 
@@ -23,7 +23,7 @@ If the data directory contains the seed's `gaia.sqlite` and `pi.sqlite` on its f
 
 All public routes validate the exact loopback Host and Origin, and reject cross-site requests. The existing `/api/v1/auth/connect`, `/api/v1/auth/reply`, `/api/v1/messages`, `/api/v1/retry`, `/api/v1/stop`, `/api/v1/state` and `/api/v1/events` remain available. API version is 1.
 
-`GET /healthz` returns `ok`, `release`, `mode`, `schema` and `provider`. Managed responses include `X-Gaia-Release`. State and SSE snapshots add an optional `runtime` object with `release`, `mode` and `selfModification`. Clients should reconnect EventSource on disconnect and reload their UI when the release changes. The parent owns that client integration.
+`GET /healthz` returns `ok`, `release`, `mode`, `schema` and `provider`. Managed responses include `X-Gaia-Release`. State and SSE snapshots add an optional `runtime` object with `release`, `mode` and `selfModification`. The web and Electron clients reconnect stale streams, retain unsent drafts and reload the actual UI bundle when the release changes. Managed HTML and asset URLs identify their release, so a switch during page loading cannot mix bundles.
 
 `GET /api/v1/onboarding` returns `{version:1,kind:"connect"|"ready",connection}`. `connection` uses the existing disconnected, connecting and connected union. The connect action continues an active login. It does not cancel and restart it.
 
@@ -74,4 +74,4 @@ npm run build
 npm run check:protocol
 ```
 
-The process integration suite uses temporary data directories and ephemeral ports. It imports and boots the actual app under the OS sandbox, promotes actual server source, checks observable HTTP behaviour, reverts new files and byte-exact source, forces failed checks and runtime probes, checks message retention and the separate credential database, kills the supervisor during probation, kills it during real hanging sandbox checks and candidate boot with descendants, and kills actual children into safe mode. It also promotes source that fails only on a later service restart, verifies durable boot counts and safe pairing, and checks bounded failure when both active and safe releases are broken. Process tests cover independent hard deadlines, owner SIGKILL, fast success status and non-zero exit status. The safety suite exercises a policy-overwrite attempt across sandbox launches, read-only source, nested secret exclusion, never-listened server disposal and split Unicode SSE. Browser reconnection, visible UI, live OAuth refresh and real Sol-authored UI edits still require the parent's live review.
+The process integration suite uses temporary data directories and ephemeral ports. It imports and boots the actual app under the OS sandbox, promotes actual server source, checks observable HTTP behaviour, reverts new files and byte-exact source, forces failed checks and runtime probes, checks message retention and the separate credential database, kills the supervisor during probation, kills it during real hanging sandbox checks and candidate boot with descendants, and kills actual children into safe mode. It also promotes source that fails only on a later service restart, verifies durable boot counts and safe pairing, and checks bounded failure when both active and safe releases are broken. Process tests cover independent hard deadlines, owner SIGKILL, fast success status and non-zero exit status. The safety suite exercises a policy-overwrite attempt across sandbox launches, read-only source, nested secret exclusion, never-listened server disposal and split Unicode SSE. These process tests use deterministic providers. Live subscription requests, OAuth browser routing and rendered native interactions require separate verification.

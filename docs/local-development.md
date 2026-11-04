@@ -1,6 +1,6 @@
-# Local chat seed
+# Develop the local chat
 
-This is a partial M0/M1 slice. It runs one local conversation through Pi Durable and Sol 6.1. It does not implement the supervisor, pairing, self-modification, tools, onboarding or production hosting.
+This guide describes the source development server. For checked self-modification, use the [managed server](managed-local.md). Both use Pi Durable and a ChatGPT subscription. The development server has no supervisor or self-change tool.
 
 ## Run
 
@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:4317. The headless API listens at http://127.0.0.1:4318. Both expose `/healthz` through the Vite proxy. `npm start` runs the API alone. `npm run build` checks TypeScript and builds the web client into `dist/web`; the API does not serve that directory yet.
+Open http://127.0.0.1:4317. The headless API listens at http://127.0.0.1:4318. Both expose `/healthz` through the Vite proxy. `npm start` runs the API alone. `npm run build` checks TypeScript and builds the web client into `dist/web`; the development API does not serve that directory. The managed server serves checked builds.
 
 Configuration:
 
@@ -27,11 +27,11 @@ Ports 8096, 8264 and 8090 are rejected for the API. Keep this seed on loopback. 
 
 ## ChatGPT connection
 
-The server registers only Pi's `openai-codex` provider and `gpt-6.1-sol`. All model calls use Pi Durable. There are no tools or shell extensions registered.
+The server registers Pi's `openai-codex` provider. Sol 6.1 is the initial model. The composer lists the registered ChatGPT models and stores the selected model through Pi Durable. The development server registers no shell or self-change tool. See [model selection and compaction](backend-chat-controls.md).
 
 An existing canonical OAuth credential for `openai-codex` in `~/.pi/agent/auth.json` is copied once into app-local storage. Other provider credentials and API keys are ignored. Global credential files are never changed. The separate Codex credential format is not read or translated.
 
-Otherwise click **Connect ChatGPT**, then **Open sign-in**. Pi's built-in browser OAuth flow listens temporarily on localhost:1455. Complete it in the browser, or use the sign-in reply field if Pi requests a manual callback. Keep the Gaia page open. A failed sign-in returns to the connect state. **Reconnect ChatGPT** remains available when configured credentials expire or become invalid. Connected means credentials are configured, not that a live request has succeeded.
+Otherwise click **Continue with ChatGPT**. The desktop window opens sign-in in your default browser and its existing profile. Pi's built-in browser OAuth flow listens temporarily on localhost:1455. Complete it in the browser, or use the sign-in reply field if Pi requests a manual callback. Keep the Gaia page open. A failed sign-in returns to the connect state. **Reconnect ChatGPT** remains available when configured credentials expire or become invalid. Connected means credentials are configured, not that a live request has succeeded.
 
 Credentials live in `data/gaia.sqlite`, alongside the UI conversation. Pi's durable transcript lives in `data/pi.sqlite`. SQLite may create companion WAL files in that directory. The executable sets a private umask, directory permissions 0700 and database permissions 0600. Do not publish or commit the data directory. Back up the whole directory while the server is stopped. Only one Gaia process may own a data directory.
 
@@ -67,6 +67,6 @@ npm run build
 npm ls --all
 ```
 
-The tests use real HTTP sockets and SQLite. The Pi adapter tests run the real durable harness with Pi's clearly labelled deterministic test provider, including streaming, cancellation and context recovery. The executable cannot select that provider. CI requires no subscription credentials. These tests do not prove a live Sol response or a usable browser layout. The parent owns browser and sign-in verification.
+The tests use real HTTP sockets and SQLite. The Pi adapter tests run the real durable harness with Pi's clearly labelled deterministic test provider, including streaming, cancellation and context recovery. The executable cannot select that provider. CI requires no subscription credentials. These tests do not establish live account access or the rendered layout. Verify those through the running app.
 
 `npm audit` currently reports moderate development-tool findings through ESLint's minimatch dependencies. The production dependency audit is separate. Do not apply npm's suggested forced downgrade to ESLint 4.
