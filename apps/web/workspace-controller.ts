@@ -140,12 +140,16 @@ export function createWorkspaceController(
       return (
         Boolean(state) &&
         !error &&
-        areaList().every((area) => areas.get(area.areaId)?.status === "ready")
+        areaList().every((area) => {
+          const status = areas.get(area.areaId)?.status;
+          return status !== undefined && status !== "loading";
+        })
       );
     },
     busy() {
       return areaList().find(
         (area) =>
+          areas.get(area.areaId)?.status === "ready" &&
           areas.get(area.areaId)?.snapshot?.thread.run.kind === "running",
       )?.areaId;
     },
@@ -167,6 +171,9 @@ export function createWorkspaceController(
       if (value) {
         void refresh();
         if (selected) void refreshArea(selected);
+        for (const [id, view] of areas)
+          if (id !== selected && view.snapshot?.thread.run.kind === "running")
+            void refreshArea(id);
       } else {
         workspaceRead?.abort();
         workspaceRead = undefined;

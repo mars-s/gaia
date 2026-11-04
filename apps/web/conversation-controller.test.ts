@@ -133,6 +133,60 @@ test("safe-mode startup admits Home without fetching unavailable area conversati
   assert.equal(h.calls.length, before);
 });
 
+test("an unreadable area disables only its own writes and does not strand Home behind cached work", async (t) => {
+  const h = await harness(t);
+  const c = h.controller;
+  const running = areaSnapshot();
+  running.thread.run = { kind: "running", id: "old-run" };
+  h.areaStates.set(firstArea, running);
+  await c.workspace.refreshArea(firstArea);
+  assert(c.busyScope());
+  h.respond(async ({ path }) =>
+    path === `/api/v1/areas/${firstArea}/state`
+      ? Response.json(
+          { error: "Area temporarily unavailable." },
+          { status: 503 },
+        )
+      : undefined,
+  );
+  await c.workspace.refreshArea(firstArea);
+  assert.equal(c.busyScope(), undefined);
+  assert(c.canSend(homeScope));
+  c.select(areaA);
+  await settle();
+  c.session(areaA).draft.update((value) => ({
+    ...value,
+    text: "Keep this area draft",
+  }));
+  assert(!c.canSend(areaA));
+  c.select(areaB);
+  await settle();
+  c.session(areaB).draft.update((value) => ({
+    ...value,
+    text: "Other area remains usable",
+  }));
+  assert(c.canSend(areaB));
+  assert(await c.send(homeScope));
+  assert(h.calls.some((call) => call.path === "/api/v1/messages"));
+  assert.equal(draft(c, areaA).text, "Keep this area draft");
+});
+
+test("a queued model choice blocked by a new disconnect reports why it did not apply", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const h = await harness(t);
+  const c = h.controller;
+  c.session(homeScope).queue.select({
+    modelId: "home-model",
+    thinkingLevel: "low",
+  });
+  c.setOffline();
+  t.mock.timers.tick(150);
+  await settle();
+  assert.equal(c.session(homeScope).selection, undefined);
+  assert.match(c.session(homeScope).error, /model choice/i);
+  assert(!h.calls.some((call) => call.path === "/api/v1/model"));
+});
+
 test("entering safe mode preserves area drafts and bypasses stale area work until normal mode returns", async (t) => {
   const h = await harness(t);
   const c = h.controller;

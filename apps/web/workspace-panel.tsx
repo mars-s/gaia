@@ -65,7 +65,8 @@ export function WorkspaceProposalPanel({
         )}
       </div>
       <p className="text-caption-1-regular text-text-secondary">
-        Review this setup. It takes effect only when you select Confirm setup.
+        Review this setup before confirming. Editing an existing setup is not
+        available yet.
       </p>
       {error && (
         <p role="alert" className="text-text-error-primary">

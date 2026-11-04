@@ -128,7 +128,7 @@ test("a direct running area keeps polling while Home is selected without polling
   source.setConnected(false);
 });
 
-test("failed and mismatched area reads retain history, prevent writes and recover on refresh", async (t) => {
+test("failed and mismatched area reads retain history without blocking other conversations", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   let broken = false;
   const source = createWorkspaceController(() => {}, {
@@ -144,12 +144,40 @@ test("failed and mismatched area reads retain history, prevent writes and recove
   assert(source.ready());
   broken = true;
   await source.refreshArea(firstArea);
-  assert(!source.ready());
+  assert(source.ready());
   assert.equal(source.areas.get(firstArea)?.status, "reconnecting");
   assert.equal(source.areas.get(firstArea)?.snapshot?.areaId, firstArea);
   broken = false;
   await source.refresh();
   await settle();
   assert(source.ready());
+  source.setConnected(false);
+});
+
+test("reconnecting refreshes an unselected cached-running area that finished while offline", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let active = true;
+  const source = createWorkspaceController(() => {}, {
+    async readWorkspace() {
+      return multiWorkspace();
+    },
+    async readArea(id) {
+      const snapshot = areaSnapshot(id);
+      if (id === firstArea && active)
+        snapshot.thread.run = { kind: "running", id: "interrupted-stream" };
+      return snapshot;
+    },
+  });
+  source.setConnected(true);
+  await settle();
+  assert.equal(source.busy(), firstArea);
+  source.setConnected(false);
+  active = false;
+  source.setConnected(true);
+  await settle();
+  t.mock.timers.tick(1000);
+  await settle();
+  assert.equal(source.busy(), undefined);
+  assert.equal(source.areas.get(firstArea)?.snapshot?.thread.run.kind, "idle");
   source.setConnected(false);
 });

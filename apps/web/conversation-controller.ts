@@ -137,7 +137,15 @@ export function createConversationController({
         scope.kind === "home" ? legacy : "",
       ),
       queue: createModelSelectionQueue(
-        (value) => act(scope, "model", value),
+        async (value) => {
+          const applied = await act(scope, "model", value);
+          if (!applied && !entry.error) {
+            entry.error =
+              "That model choice could not be applied. Try again when Gaia is ready.";
+            changed();
+          }
+          return applied;
+        },
         (value) => {
           entry.selection = value;
           changed();

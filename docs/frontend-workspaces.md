@@ -67,7 +67,7 @@ All reads use the existing schema-validating SDK. Home retains `/api/v1/events`,
 
 Only the explicit Confirm setup button calls confirmation. A typed yes is an ordinary Home message. A rejected or replaced proposal refreshes workspace state and leaves chat and drafts intact. Single confirmation stays in Home. Only confirmed multi shows the compact Home and area navigation, with horizontal overflow at narrow widths.
 
-One controller admits local mutations across all scopes. Known Home or area work also blocks new sends and settings. Initial confirmed-area discovery must finish before chat writes are available. An external client can still race the last read, so a backend 409 retains the draft and request identity.
+One controller admits local mutations across all scopes. Known Home or area work also blocks new sends and settings. Initial confirmed-area discovery attempts finish before chat writes are available. An unreadable area disables its own writes while Home and healthy areas remain usable. A cached running status from an unreadable area does not hold the other conversations indefinitely. The server remains authoritative and can return 409 if that area is actually still working; the client retains the draft and request identity. Reconnection refreshes cached running areas even while Home is selected.
 
 Home SSE can remain idle during direct area work. Known active areas therefore continue polling while Home is selected. If Home is running, Stop uses Home's endpoint to join routed work. A directly running area otherwise uses that area's endpoint. Busy work in another scope offers navigation, without a Stop button for the wrong conversation.
 

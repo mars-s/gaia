@@ -305,9 +305,10 @@ export function Composer({
             maxLength={32000}
             value={draft}
             isDisabled={state.kind !== "ready"}
-            onChange={(text) =>
-              entry.draft.update((value) => ({ ...value, text }))
-            }
+            onChange={(text) => {
+              entry.error = "";
+              entry.draft.update((value) => ({ ...value, text }));
+            }}
             onCompositionStart={() => controller.compose(scope, true)}
             onCompositionEnd={() => controller.compose(scope, false)}
             onKeyDown={(event) => {
