@@ -16,6 +16,7 @@ import type { Snapshot } from "../../packages/protocol/index.ts";
 import { command, subscribe } from "../../packages/sdk/index.ts";
 import {
   createProfileReader,
+  interviewQuestionVisible,
   type OwnerState,
 } from "../../packages/sdk/onboarding.ts";
 import { ProfilePanel } from "./profile-panel";
@@ -170,6 +171,11 @@ export function App() {
       disabled={pending || running || offline || profileError}
       onAction={(action) => void profileAction(action)}
       onRetry={() => void profileReader.refresh()}
+      showQuestion={
+        profile?.kind === "interview" &&
+        interviewQuestionVisible(profile, state?.thread.messages ?? [])
+      }
+      skipDisabled={pending || offline || profileError}
     />
   );
 

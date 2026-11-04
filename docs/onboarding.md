@@ -2,7 +2,7 @@
 
 Setup is an optional conversation. A new empty chat offers Start setup and Skip. Existing conversations keep their history and can start setup from Account.
 
-Gaia asks for the owner's name, purpose, life areas and preferred level of initiative. The model can propose these details for review. It cannot save them. Save confirms the exact proposal shown in the app. Continue editing returns to the interview. Skip leaves ordinary chat available.
+Gaia asks one missing question at a time about name, purpose, life areas, initiative and approval preferences. `record_owner_answers` retains explicit answers and corrections as an unconfirmed draft. Several answers in one message are accepted. Collected fields are supplied to Pi on every setup turn, so name and initiative are not repeatedly requested. The model can propose these details for review. It cannot confirm them. Save confirms the exact proposal shown in the app. Continue editing retains collected details. Skip stops an active reply, joins its cancellation and leaves ordinary chat available.
 
 Account shows the confirmed profile. Reset or forget profile asks for confirmation before clearing it. This retains conversation history. Details already present in the conversation and Pi history are not erased. Replacing a saved profile currently requires resetting it and starting setup again.
 
@@ -16,11 +16,13 @@ Writes use a temporary file, a file flush and an atomic rename. Invalid or overs
 
 The profile uses no new SQLite tables or schema changes. The existing protocol and protected core remain unchanged.
 
-The server supplies a per-turn owner capability to the Pi adapter. A dynamic Pi prompt section includes confirmed profile details before each model request. It reads the file again after process restart and is independent of conversation compaction. `propose_owner_profile` is a narrow tool that creates a reviewable proposal only during an interview. Cancelled or completed turns cannot write another proposal.
+The server supplies a per-turn owner capability to the Pi adapter. A dynamic Pi prompt section includes confirmed profile details before each model request. It reads the file again after process restart and is independent of conversation compaction. `record_owner_answers` and `propose_owner_profile` are narrow tools available only during an active interview. Cancelled or completed turns cannot record answers or write another proposal.
+
+Interview JSON adds optional `answers` and `startedAt`. Older `{kind: "interview"}` files remain valid. Confirmed profiles add optional `approvalPreferences`, so old ready and proposed profiles remain valid. New and skipped profiles are never automatically restarted or inferred from conversation text. No existing messages are rewritten. An initial inline question hides as soon as the owner answers. Later questions belong to the model's conversation, with only a quiet Skip setup control below it.
 
 ## Local API
 
-All routes use the existing Host, Origin, authentication and write guards. Profile actions require an idle conversation. Changing releases can temporarily return `503`, as for other writes.
+All routes use the existing Host, Origin, authentication and write guards. Profile actions require an idle conversation, except Skip, which cancels and joins active work first. Changing releases can temporarily return `503`, as for other writes.
 
 | Method and path                | Body or result                                                      |
 | ------------------------------ | ------------------------------------------------------------------- |

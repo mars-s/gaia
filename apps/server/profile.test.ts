@@ -14,6 +14,7 @@ import { openOwnerProfile } from "./profile.ts";
 import {
   OwnerProfile,
   type OwnerCapability,
+  nextOwnerQuestion,
 } from "../../packages/sdk/onboarding.ts";
 const value: OwnerProfile = {
   name: "Avi",
@@ -152,7 +153,7 @@ test("HTTP profile guards, explicit confirmation, retained history and expired c
     assert.equal((await req("profile/start", {})).status, 202);
     assert.equal((await req("profile/unknown", {})).status, 409);
     await req("messages", { text: "My setup", requestId: randomUUID() });
-    assert.equal((await req("profile/skip", {})).status, 409);
+    assert.equal((await req("profile/skip", {})).status, 202);
     await req("stop", {});
     for (
       let i = 0;
@@ -163,6 +164,8 @@ test("HTTP profile guards, explicit confirmation, retained history and expired c
     assert(capability);
     assert.throws(() => capability?.propose(value));
     const store = openOwnerProfile(db);
+    assert.equal(store.read().kind, "skipped");
+    assert(store.action("start"));
     store.propose(value);
     const oldProposal = proposal(store);
     assert(store.action("edit"));
@@ -235,7 +238,7 @@ test("real Pi tool round proposes only, and confirmed context survives reopen wi
       (context) => {
         assert.match(
           JSON.stringify(context.messages),
-          /Owner has started setup/,
+          /Owner has explicitly started optional setup/,
         );
         return fauxAssistantMessage(
           [
@@ -290,6 +293,146 @@ test("real Pi tool round proposes only, and confirmed context survives reopen wi
     assert.equal(p.read().kind, "ready");
   } finally {
     observer.close();
+    await pi.close();
+    await auth.close();
+    db.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("sequential Pi setup retains explicit answers across reopen and asks only the next missing question", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-profile-progress-"));
+  const db = await openDatabase(dir);
+  const auth = createAuth(db);
+  const faux = fauxProvider({
+    provider: "openai-codex",
+    models: [{ id: "gpt-6.1-sol" }],
+    tokensPerSecond: 100000,
+  });
+  auth.models.setProvider(faux.provider);
+  const profile = openOwnerProfile(db);
+  profile.action("start");
+  let pi = await createPi(join(dir, "pi.sqlite"), auth);
+  const run = (text: string) =>
+    pi.run({
+      text,
+      requestId: randomUUID(),
+      owner: profile,
+      signal: new AbortController().signal,
+      onText() {},
+    });
+  try {
+    faux.setResponses([
+      fauxAssistantMessage(
+        [
+          {
+            type: "toolCall",
+            id: "answers-1",
+            name: "record_owner_answers",
+            arguments: {
+              name: "Avi",
+              workingStyle: "agentic",
+              approvalPreferences:
+                "Ask before contacting other people or acting on my behalf.",
+            },
+          },
+        ],
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const prompt =
+          context.messages
+            .filter((m) => m.role === "system")
+            .map((m) => m.sections?.["gaia-owner"] ?? "")
+            .at(-1) ?? "";
+        assert.match(
+          prompt,
+          /Next missing question: What would you most like Gaia to help you with/,
+        );
+        return fauxAssistantMessage(
+          "What would you most like Gaia to help you with?",
+        );
+      },
+    ]);
+    await run(
+      "Call me Avi, take initiative. Ask before contacting others or acting on my behalf.",
+    );
+    const first = profile.read();
+    assert.equal(first.kind, "interview");
+    if (first.kind !== "interview") throw new Error("Interview expected");
+    assert.equal(first.answers?.name, "Avi");
+    assert.match(nextOwnerQuestion(first.answers) ?? "", /most like/);
+    await pi.close();
+    pi = await createPi(join(dir, "pi.sqlite"), auth);
+    faux.setResponses([
+      fauxAssistantMessage(
+        [
+          {
+            type: "toolCall",
+            id: "answers-2",
+            name: "record_owner_answers",
+            arguments: {
+              purpose: "Study and personal projects",
+              lifeAreas: ["University", "Personal projects"],
+            },
+          },
+        ],
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const prompt =
+          context.messages
+            .filter((m) => m.role === "system")
+            .map((m) => m.sections?.["gaia-owner"] ?? "")
+            .at(-1) ?? "";
+        assert.match(prompt, /All questions answered/);
+        return fauxAssistantMessage(
+          [
+            {
+              type: "toolCall",
+              id: "proposal-2",
+              name: "propose_owner_profile",
+              arguments: {
+                ...value,
+                purpose: "Study and personal projects",
+                lifeAreas: ["University", "Personal projects"],
+                workingStyle: "agentic",
+                approvalPreferences:
+                  "Ask before contacting other people or acting on my behalf.",
+              },
+            },
+          ],
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage("Review these details and Save when ready."),
+    ]);
+    await run(
+      "Help with study and personal projects, across university and personal projects.",
+    );
+    const proposed = proposal(profile);
+    assert.equal(proposed.profile.name, "Avi");
+    assert.match(proposed.profile.approvalPreferences ?? "", /contacting/);
+    assert(profile.action("edit"));
+    const edited = profile.read();
+    assert.equal(edited.kind, "interview");
+    if (edited.kind === "interview")
+      assert.equal(nextOwnerQuestion(edited.answers), undefined);
+    assert(profile.action("skip"));
+    assert.throws(() => profile.record({ name: "Inferred" }));
+    faux.setResponses([
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        assert.match(
+          messages,
+          /Answer the current request normally outside explicit setup/,
+        );
+        return fauxAssistantMessage("An ordinary chat reply.");
+      },
+    ]);
+    await run("Just chat now.");
+    assert.deepEqual(profile.read(), { kind: "skipped" });
+  } finally {
     await pi.close();
     await auth.close();
     db.close();

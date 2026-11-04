@@ -13,7 +13,12 @@ import { basename, dirname, isAbsolute, join } from "node:path";
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
-import { OwnerProfile, OwnerState } from "../../packages/sdk/onboarding.ts";
+import {
+  OwnerProfile,
+  OwnerState,
+  OwnerAnswerUpdate,
+  type OwnerAnswers,
+} from "../../packages/sdk/onboarding.ts";
 
 export function openOwnerProfile(db: DatabaseSync) {
   const main = z.object({ name: z.literal("main"), file: z.string() }).parse(
@@ -59,6 +64,14 @@ export function openOwnerProfile(db: DatabaseSync) {
   }
   return {
     read,
+    record(answers: OwnerAnswers) {
+      const state = read();
+      if (state.kind !== "interview") throw new Error("Setup is not active.");
+      write({
+        ...state,
+        answers: { ...state.answers, ...OwnerAnswerUpdate.parse(answers) },
+      });
+    },
     propose(profile: OwnerProfile) {
       if (read().kind !== "interview") throw new Error("Setup is not active.");
       write({
@@ -72,11 +85,19 @@ export function openOwnerProfile(db: DatabaseSync) {
       switch (action) {
         case "start":
           if (state.kind !== "new" && state.kind !== "skipped") return false;
-          write({ kind: "interview" });
+          write({
+            kind: "interview",
+            answers: {},
+            startedAt: new Date().toISOString(),
+          });
           break;
         case "edit":
           if (state.kind !== "proposed") return false;
-          write({ kind: "interview" });
+          write({
+            kind: "interview",
+            answers: state.profile,
+            startedAt: new Date().toISOString(),
+          });
           break;
         case "confirm":
           if (state.kind !== "proposed" || state.proposalId !== proposalId)

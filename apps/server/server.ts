@@ -213,6 +213,11 @@ export function createChatServer({
           throw new Error("Setup turn expired.");
         profile.propose(value);
       },
+      record(answers) {
+        if (!capabilityActive || controller.signal.aborted)
+          throw new Error("Setup turn expired.");
+        profile.record(answers);
+      },
     };
     const done = Promise.resolve()
       .then(async () => {
@@ -367,9 +372,13 @@ export function createChatServer({
               ? "Confirm the proposal shown in the app."
               : "Expected an empty object.",
           );
-        requireIdle();
         if (auth.status().kind !== "connected")
           throw new HttpError(409, "Connect ChatGPT first.");
+        if (action === "skip" && active) {
+          active.controller.abort();
+          await active.done.catch(() => {});
+        }
+        requireIdle();
         if (
           !profile.action(
             action,

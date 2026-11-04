@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/base/buttons/button";
-import type { OwnerState } from "../../packages/sdk/onboarding.ts";
+import {
+  nextOwnerQuestion,
+  type OwnerState,
+} from "../../packages/sdk/onboarding.ts";
 
 export function ProfilePanel({
   state,
@@ -9,6 +12,8 @@ export function ProfilePanel({
   disabled,
   onAction,
   onRetry,
+  showQuestion = false,
+  skipDisabled = disabled,
 }: {
   state?: OwnerState;
   failed: boolean;
@@ -16,6 +21,8 @@ export function ProfilePanel({
   disabled: boolean;
   onAction: (action: string) => void;
   onRetry: () => void;
+  showQuestion?: boolean;
+  skipDisabled?: boolean;
 }) {
   const [resetting, setResetting] = useState(false);
   if (failed)
@@ -63,6 +70,12 @@ export function ProfilePanel({
               <dt>Working style</dt>
               <dd>{details.workingStyle}</dd>
             </div>
+            {details.approvalPreferences && (
+              <div>
+                <dt>Ask for approval</dt>
+                <dd>{details.approvalPreferences}</dd>
+              </div>
+            )}
           </dl>
           {state.kind === "proposed" && (
             <>
@@ -86,11 +99,9 @@ export function ProfilePanel({
           )}
         </>
       ) : state.kind === "interview" ? (
-        <p>
-          What should I call you, and what would you like help with? Tell me
-          whether you prefer to chat or want me to take more initiative. You’ll
-          review the details before saving.
-        </p>
+        showQuestion ? (
+          <p>{nextOwnerQuestion(state.answers)}</p>
+        ) : null
       ) : account || state.kind === "new" ? (
         <>
           <p>Want to tell Gaia a little about yourself? Setup is optional.</p>
@@ -105,11 +116,15 @@ export function ProfilePanel({
       ) : null}
       {state.kind !== "ready" && state.kind !== "skipped" && (
         <Button
+          className="text-text-secondary"
           variant="ghost"
-          disabled={disabled}
+          size="small"
+          disabled={skipDisabled}
           onClick={() => onAction("skip")}
         >
-          Skip
+          {state.kind === "interview" || state.kind === "proposed"
+            ? "Skip setup"
+            : "Skip"}
         </Button>
       )}
       {account && state.kind !== "new" && (
