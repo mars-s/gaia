@@ -75,7 +75,7 @@ Selected idle areas poll every five seconds. Running areas poll every second unt
 
 ## Draft storage and release reload
 
-Each visited conversation owns one draft session and model queue outside the mounted Composer. Home keeps the existing metadata key `local`. Areas use `area:{areaId}`. New image records use `{scopeKey}:{imageId}`. Metadata version 3 stores references, so text edits do not rewrite bytes. Existing version 2 Home references and the older inline draft format remain readable. Migration retains request UUIDs and bytes, and does not delete original image records. Legacy session-storage Home text clears only after a durable save.
+Each visited conversation owns one draft session and model queue outside the mounted Composer. Home keeps the existing metadata key `local`. Areas use `area:{areaId}`. New image records use `{scopeKey}:{imageId}`. Metadata version 3 stores references, so text edits do not rewrite bytes. Saving a draft removes unused image rows from that scope in the same transaction. Another scope's bytes are preserved, including reused image UUIDs. Existing version 2 Home references and the older inline draft format remain readable. Migration retains request UUIDs and bytes, and does not delete original legacy image records. Legacy session-storage Home text clears only after a durable save.
 
 Send and upload completion capture the originating scope and draft request ID. A successful older send cannot clear a newer edit or another conversation. Failed uploads and failed or ambiguous sends retain the original request and images. Accepted user IDs in subsequent snapshots can reconcile an ambiguous send.
 

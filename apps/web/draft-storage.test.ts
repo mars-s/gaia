@@ -1,18 +1,29 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
+import { IDBFactory, IDBObjectStore, IDBKeyRange } from "fake-indexeddb";
 import { browserDraftPersistence, ChatDraft } from "./chat-draft.ts";
 
 test("IndexedDB migrates local Home references, isolates area bytes and saves text without rewriting image data", async (t) => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, "indexedDB");
+  const previousRange = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "IDBKeyRange",
+  );
   const factory = new IDBFactory();
   Object.defineProperty(globalThis, "indexedDB", {
     configurable: true,
     value: factory,
   });
+  Object.defineProperty(globalThis, "IDBKeyRange", {
+    configurable: true,
+    value: IDBKeyRange,
+  });
   t.after(() => {
     if (previous) Object.defineProperty(globalThis, "indexedDB", previous);
     else Reflect.deleteProperty(globalThis, "indexedDB");
+    if (previousRange)
+      Object.defineProperty(globalThis, "IDBKeyRange", previousRange);
+    else Reflect.deleteProperty(globalThis, "IDBKeyRange");
   });
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
     const request = factory.open("gaia-chat-drafts", 2);
@@ -91,17 +102,58 @@ test("IndexedDB migrates local Home references, isolates area bytes and saves te
     text: "Newest",
   });
   assert.equal(await browserDraftPersistence("area:empty").load(), undefined);
-  const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
-    const tx = db.transaction(["drafts", "images"], "readonly");
-    const request = tx.objectStore("images").getAllKeys();
-    tx.oncomplete = () => resolve(request.result);
-    tx.onerror = () => reject(tx.error);
-  });
+  const imageKeys = () =>
+    new Promise<IDBValidKey[]>((resolve, reject) => {
+      const tx = db.transaction(["drafts", "images"], "readonly");
+      const request = tx.objectStore("images").getAllKeys();
+      tx.oncomplete = () => resolve(request.result);
+      tx.onerror = () => reject(tx.error);
+    });
+  const keys = await imageKeys();
   assert(
     keys.includes(old.images[0].id),
     "Migration retains the original image record.",
   );
   assert(keys.includes(`local:${old.images[0].id}`));
   assert(keys.includes(`area:synthetic:${old.images[0].id}`));
+  await area.save({ ...areaDraft, images: [] });
+  assert.deepEqual(await area.load(), { ...areaDraft, images: [] });
+  assert.deepEqual(
+    await home.load(),
+    old,
+    "Removing an area image keeps Home's identical UUID and bytes.",
+  );
+  const removed = await imageKeys();
+  assert(!removed.includes(`area:synthetic:${old.images[0].id}`));
+  assert(removed.includes(`local:${old.images[0].id}`));
+  assert(
+    removed.includes(old.images[0].id),
+    "Legacy migration rows remain available for older readers.",
+  );
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const quota = t.mock.method(
+    IDBObjectStore.prototype,
+    "put",
+    function (this: IDBObjectStore, value: unknown, key?: IDBValidKey) {
+      if (this.name === "drafts")
+        throw new DOMException("Synthetic storage quota", "QuotaExceededError");
+      return put.call(this, value, key);
+    },
+  );
+  await assert.rejects(
+    home.save({ ...old, images: [] }),
+    /Synthetic storage quota/,
+  );
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.deepEqual(
+    await home.load(),
+    old,
+    "A rejected metadata write must retain its referenced image bytes.",
+  );
+  assert.doesNotThrow(
+    () => t.mock.timers.tick(30000),
+    "A synchronous write failure must retire its transaction timer.",
+  );
+  quota.mock.restore();
   db.close();
 });

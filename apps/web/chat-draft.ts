@@ -148,7 +148,15 @@ function draftTransaction<T>(
   return new Promise<T>((resolve, reject) => {
     const transaction = db.transaction(["drafts", "images"], mode);
     const timer = setTimeout(() => transaction.abort(), 30000);
-    const result = operation(transaction);
+    let result: () => T;
+    try {
+      result = operation(transaction);
+    } catch (cause) {
+      clearTimeout(timer);
+      transaction.abort();
+      reject(cause);
+      return;
+    }
     transaction.oncomplete = () => {
       clearTimeout(timer);
       resolve(result());
@@ -253,6 +261,20 @@ export function browserDraftPersistence(key = "local"): DraftPersistence {
           },
           key,
         );
+        const prefix = `${key}:`;
+        const retained = new Set(
+          draft.images.map((image) => `${prefix}${image.id}`),
+        );
+        const cursor = images.openKeyCursor(
+          IDBKeyRange.bound(prefix, `${prefix}\uffff`),
+        );
+        cursor.onsuccess = () => {
+          const row = cursor.result;
+          if (!row) return;
+          if (typeof row.key === "string" && !retained.has(row.key))
+            images.delete(row.key);
+          row.continue();
+        };
         return () => undefined;
       });
     },
