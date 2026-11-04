@@ -1,9 +1,24 @@
 import { z } from "zod";
+export const ThinkingLevel = z.enum([
+  "off",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+]);
+export type ThinkingLevel = z.infer<typeof ThinkingLevel>;
+export const ChatSelection = z.object({
+  modelId: z.string().min(1).max(256),
+  thinkingLevel: ThinkingLevel.optional(),
+});
 export const Message = z.object({
   id: z.string(),
   role: z.enum(["user", "assistant"]),
   text: z.string(),
   createdAt: z.string(),
+  selection: ChatSelection.optional(),
 });
 export type Message = z.infer<typeof Message>;
 export const Run = z.discriminatedUnion("kind", [
@@ -40,9 +55,16 @@ export const Chat = z.object({
       id: z.string(),
       name: z.string(),
       contextWindow: z.number(),
+      capabilities: z
+        .object({
+          images: z.boolean(),
+          thinkingLevels: z.array(ThinkingLevel),
+        })
+        .optional(),
     }),
   ),
   modelId: z.string(),
+  thinkingLevel: ThinkingLevel.optional(),
   compaction: z.object({
     kind: z.enum(["idle", "running", "done", "noop", "error"]),
     message: z.string().optional(),
@@ -50,7 +72,10 @@ export const Chat = z.object({
 });
 export type Chat = z.infer<typeof Chat>;
 export const ModelSelection = z
-  .object({ modelId: z.string().min(1).max(256) })
+  .object({
+    modelId: z.string().min(1).max(256),
+    thinkingLevel: ThinkingLevel.optional(),
+  })
   .strict();
 export const Snapshot = z.object({
   thread: Thread,

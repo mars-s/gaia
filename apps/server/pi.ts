@@ -11,15 +11,19 @@ import {
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { z } from "zod";
+import {
+  getSupportedThinkingLevels,
+  clampThinkingLevel,
+} from "@earendil-works/pi-ai";
 import type { createAuth } from "./auth.ts";
-import type { Chat } from "../../packages/protocol/index.ts";
+import type { Chat, ThinkingLevel } from "../../packages/protocol/index.ts";
 import {
   OwnerProfile,
   type OwnerCapability,
 } from "../../packages/sdk/onboarding.ts";
 export interface ChatAdapter {
   controls?(): Omit<Chat, "compaction">;
-  configure?(modelId: string): Promise<void>;
+  configure?(modelId: string, thinkingLevel?: ThinkingLevel): Promise<void>;
   compact?(signal: AbortSignal): Promise<"done" | "noop">;
   run(input: {
     owner?: OwnerCapability;
@@ -127,21 +131,45 @@ export async function createPi(
   });
   // A restarted local slice marks its pending UI run interrupted rather than silently charging another turn.
   await root.abort(ctx);
-  let modelId = (await root.agent(ctx)).model?.modelId ?? "gpt-6.1-sol";
+  const agent = await root.agent(ctx);
+  let modelId = agent.model?.modelId ?? "gpt-6.1-sol";
+  let thinkingLevel = agent.thinkingLevel;
+  const selected = auth.models.getModel("openai-codex", modelId);
+  if (selected) {
+    thinkingLevel = clampThinkingLevel(selected, thinkingLevel);
+    if (thinkingLevel !== agent.thinkingLevel)
+      await root.configure({ thinkingLevel }, ctx);
+  }
   const models = () =>
-    auth.models
-      .getModels("openai-codex")
-      .map(({ id, name, contextWindow }) => ({ id, name, contextWindow }));
+    auth.models.getModels("openai-codex").map((model) => ({
+      id: model.id,
+      name: model.name,
+      contextWindow: model.contextWindow,
+      capabilities: {
+        images: model.input.includes("image"),
+        thinkingLevels: getSupportedThinkingLevels(model),
+      },
+    }));
   return {
-    controls: () => ({ models: models(), modelId }),
-    async configure(id) {
-      if (!models().some((model) => model.id === id))
-        throw new Error("Unknown OpenAI model.");
+    controls: () => ({ models: models(), modelId, thinkingLevel }),
+    async configure(id, effort) {
+      const model = auth.models.getModel("openai-codex", id);
+      if (!model) throw new Error("Unknown OpenAI model.");
+      if (
+        effort !== undefined &&
+        !getSupportedThinkingLevels(model).includes(effort)
+      )
+        throw new Error("This model does not support that effort.");
       await root.configure(
-        { model: { provider: "openai-codex", modelId: id } },
+        {
+          model: { provider: "openai-codex", modelId: id },
+          thinkingLevel: effort ?? clampThinkingLevel(model, thinkingLevel),
+        },
         ctx,
       );
-      modelId = (await root.agent(ctx)).model?.modelId ?? modelId;
+      const updated = await root.agent(ctx);
+      modelId = updated.model?.modelId ?? modelId;
+      thinkingLevel = updated.thinkingLevel;
     },
     async compact(signal) {
       signal.throwIfAborted();

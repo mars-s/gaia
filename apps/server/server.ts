@@ -131,7 +131,12 @@ export function createChatServer({
     publish();
     return done;
   }
-  function run(text: string, requestId: string, addUser: boolean) {
+  function run(
+    text: string,
+    requestId: string,
+    addUser: boolean,
+    selection?: Thread["messages"][number]["selection"],
+  ) {
     requireIdle();
     if (auth.status().kind !== "connected")
       throw new HttpError(409, "Connect ChatGPT before sending.");
@@ -143,6 +148,14 @@ export function createChatServer({
         role: "user",
         text,
         createdAt: now,
+        ...(adapter.controls
+          ? {
+              selection: {
+                modelId: adapter.controls().modelId,
+                thinkingLevel: adapter.controls().thinkingLevel,
+              },
+            }
+          : {}),
       });
     const answer: Thread["messages"][number] = {
       id,
@@ -170,6 +183,12 @@ export function createChatServer({
       },
     };
     const done = Promise.resolve()
+      .then(async () => {
+        if (selection && adapter.configure) {
+          await adapter.configure(selection.modelId, selection.thinkingLevel);
+          controller.signal.throwIfAborted();
+        }
+      })
       .then(() =>
         adapter.run({
           owner,
@@ -312,14 +331,24 @@ export function createChatServer({
           requireIdle();
           if (!adapter.controls || !adapter.configure || !adapter.compact)
             throw new HttpError(409, "Chat controls are unavailable.");
+          const model = adapter
+            .controls()
+            .models.find((model) => model.id === parsed.data.modelId);
+          if (!model) throw new HttpError(400, "Unknown OpenAI model.");
           if (
-            !adapter
-              .controls()
-              .models.some((model) => model.id === parsed.data.modelId)
+            parsed.data.thinkingLevel !== undefined &&
+            !model.capabilities?.thinkingLevels.includes(
+              parsed.data.thinkingLevel,
+            )
           )
-            throw new HttpError(400, "Unknown OpenAI model.");
+            throw new HttpError(
+              400,
+              "This model does not support that effort.",
+            );
           const configure = adapter.configure.bind(adapter);
-          await controlOperation(async () => configure(parsed.data.modelId));
+          await controlOperation(async () =>
+            configure(parsed.data.modelId, parsed.data.thinkingLevel),
+          );
           break;
         }
         case "/api/v1/compact": {
@@ -384,7 +413,7 @@ export function createChatServer({
           const last = thread.messages.findLast((m) => m.role === "user");
           if (!last) throw new HttpError(409, "No message to retry.");
           // Retry asks for another answer to the same retained user message.
-          run(last.text, randomUUID(), false);
+          run(last.text, randomUUID(), false, last.selection);
           break;
         }
         case "/api/v1/auth/connect":

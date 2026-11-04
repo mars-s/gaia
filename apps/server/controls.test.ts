@@ -27,7 +27,7 @@ async function fixture(small = false) {
   const faux = fauxProvider({
     provider: "openai-codex",
     models: [
-      { id: "gpt-6.1-sol" },
+      { id: "gpt-6.1-sol", reasoning: true, input: ["text", "image"] },
       { id: "test-second", name: "Second test model" },
     ],
     tokensPerSecond: 100000,
@@ -121,6 +121,52 @@ test("registered OpenAI selection reaches the actual provider and persists with 
       },
     ]);
     await f.run("Recall it.", pi);
+  } finally {
+    await f.close(pi);
+  }
+});
+
+test("effort capabilities come from Pi metadata, reach provider options and persist after reopen", async () => {
+  const f = await fixture();
+  let pi = f.pi;
+  try {
+    assert.deepEqual(pi.controls?.().models[0]?.capabilities, {
+      images: true,
+      thinkingLevels: ["off", "minimal", "low", "medium", "high"],
+    });
+    await pi.configure?.("gpt-6.1-sol", "high");
+    const response = (
+      _context: unknown,
+      options: { reasoning?: string } | undefined,
+    ) => {
+      assert.equal(options?.reasoning, "high");
+      return fauxAssistantMessage("High effort reached provider.");
+    };
+    f.faux.setResponses([response]);
+    await f.run("Use the selected effort.");
+    await pi.close();
+    pi = await f.open();
+    assert.equal(pi.controls?.().thinkingLevel, "high");
+    f.faux.setResponses([response]);
+    await f.run("Again after restart.", pi);
+    await assert.rejects(
+      pi.configure?.("gpt-6.1-sol", "max") ?? Promise.resolve(),
+      /support/,
+    );
+    await assert.rejects(
+      pi.configure?.("test-second", "high") ?? Promise.resolve(),
+      /support/,
+    );
+    assert.equal(pi.controls?.().thinkingLevel, "high");
+    await pi.configure?.("test-second");
+    assert.equal(pi.controls?.().thinkingLevel, "off");
+    f.faux.setResponses([
+      (_context, options) => {
+        assert.equal(options?.reasoning, undefined);
+        return fauxAssistantMessage("Plain model.");
+      },
+    ]);
+    await f.run("No reasoning supported.", pi);
   } finally {
     await f.close(pi);
   }
@@ -366,6 +412,58 @@ test("HTTP controls validate safely, stream status, preserve visible history and
     assert.equal(failed.chat?.compaction.kind, "error");
     assert(!JSON.stringify(failed).includes("private detail"));
     assert.deepEqual(failed.thread.messages, expandedHistory);
+  } finally {
+    await live.app.close();
+    await f.auth.close();
+    await rm(f.dir, { recursive: true, force: true });
+  }
+});
+
+test("HTTP retry restores the message effort after selection changes and refuses unsupported levels", async () => {
+  const f = await fixture();
+  const live = await serve(f);
+  try {
+    assert.equal(
+      (
+        await live.request("model", {
+          modelId: "test-second",
+          thinkingLevel: "high",
+        })
+      ).status,
+      400,
+    );
+    assert.equal(
+      (
+        await live.request("model", {
+          modelId: "gpt-6.1-sol",
+          thinkingLevel: "high",
+        })
+      ).status,
+      202,
+    );
+    f.faux.setResponses([fauxAssistantMessage("", { stopReason: "error" })]);
+    await live.request("messages", {
+      text: "Keep this selection",
+      requestId: randomUUID(),
+    });
+    const failed = await live.settled();
+    assert.equal(failed.thread.run.kind, "error");
+    assert.equal(failed.thread.messages[0]?.selection?.thinkingLevel, "high");
+    await live.request("model", { modelId: "test-second" });
+    f.faux.setResponses([
+      (_context, options, _state, model) => {
+        assert.equal(model.id, "gpt-6.1-sol");
+        assert.equal(options?.reasoning, "high");
+        return fauxAssistantMessage("Retry used retained selection.");
+      },
+    ]);
+    assert.equal((await live.request("retry", {})).status, 202);
+    const retried = await live.settled();
+    assert.equal(retried.thread.run.kind, "idle");
+    assert.equal(
+      retried.thread.messages.filter((m) => m.role === "user").length,
+      1,
+    );
   } finally {
     await live.app.close();
     await f.auth.close();
