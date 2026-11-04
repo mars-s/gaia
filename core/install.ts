@@ -94,13 +94,25 @@ export async function importBaseline(
 ) {
   const repo = join(data, "repo");
   await mkdir(repo, { recursive: true });
+  const git = await lstat(join(repo, ".git")).catch((error: unknown) => {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT")
+      return undefined;
+    throw error;
+  });
+  if (git && (!git.isDirectory() || git.isSymbolicLink()))
+    throw new Error("The managed repository must own its .git directory.");
   let imported = false;
-  try {
-    await command("git", ["rev-parse", "--verify", "HEAD"], repo);
-    imported = true;
-  } catch {
-    /* A first or interrupted import has no baseline commit yet. */
-  }
+  if (git)
+    try {
+      await command(
+        "git",
+        ["--git-dir", join(repo, ".git"), "rev-parse", "--verify", "HEAD"],
+        repo,
+      );
+      imported = true;
+    } catch {
+      /* An interrupted import has no baseline commit yet. */
+    }
   if (!imported) {
     for (const name of [
       "apps/server",
