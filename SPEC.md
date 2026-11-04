@@ -1,6 +1,6 @@
 # Gaia: product spec and architecture
 
-Status: locked v1.3, 5 Nov 2026. Decisions from Avi, 1 to 5 Nov 2026.
+Status: locked v1.4, 5 Nov 2026. Decisions from Avi, 1 to 5 Nov 2026.
 
 Changelog:
 - v0.2 (4 Nov 2026): sign-in and model traffic through Pi's built-in OAuth; Electron gets full terminal and file access; generative UI is real code changes through the self-mod pipeline.
@@ -8,6 +8,7 @@ Changelog:
 - v1.1 (4 Nov 2026): Avi removed the fixed 1 GB RAM requirement. RAM allocation can grow as homelab capacity is freed up.
 - v1.2 (4 Nov 2026): Avi chose Board UI instead of assistant-ui. Use free MIT-licensed components with a plain default theme and editable theme tokens.
 - v1.3 (5 Nov 2026): Avi authorised UI library and stack decisions for the overnight work. Base UI is preferred for new primitives. Radix is permitted where needed; assistant-ui, shadcn and existing React Aria or Board UI components may be used when they fit. Libraries must be free and openly licensed. Add genuine Pi effort controls and image attachments, and make onboarding progress after answers.
+- v1.4 (5 Nov 2026): Avi authorised four isolated experience profiles as parallel acceptance cases: Dots-style central chat, Grokbot-style area Bots, Duet-style shared-memory channels and Hermes-style sessions. Add concurrent background work, subordinate agents, actual local Mac CLI and Agent Desktop tools, hosted web search through the existing Pi ChatGPT/Codex subscription, and task-specific plain-language activity using the supplied visual reference. Profile setup stays explicit and owner-confirmed. Existing owner data is preserved.
 
 ## One-line pitch
 
@@ -149,3 +150,22 @@ Hosting (detail in `docs/hosting.md`):
 6. M5: UI code serving and hot-swap for gen UI; demo Grok Bot clone and solar system.
 7. M6: public launch: docs, conformance suite, Compose image.
 8. M7: iOS, LXC and Nix, generated Android and Next.js clients.
+
+## Four-profile acceptance increment
+
+This increment tests Gaia's ability to adapt to four working styles. The product references define interaction patterns, not provider changes or permission to reuse proprietary assets. All model traffic stays in Pi. Each isolated profile defaults to GPT-6.1 Sol with High effort for the test run. No profile may silently replace the owner's current chat.
+
+| Experience | Navigation and context | Acceptance |
+| --- | --- | --- |
+| Central assistant | One minimal iMessage-like chat, with relevant context selected for each task. | A second request is accepted while the first continues. Genuine independent results return to the same conversation. |
+| Area Bots | Home and named Bots in a sidebar, with researched openly licensed SVG avatars. Each Bot owns its role, memory and conversation. | Two Bots keep separate context and drafts. Home can coordinate actual subordinate work. |
+| Shared channels | One assistant identity and shared memory, with topic channels and separate conversation histories. | A remembered fact is available across channels while private thread content is included only when explicitly selected. |
+| Sessions | A left session list, New session, durable history and scoped controls. | New sessions retain older sessions. Model, effort and compaction target the selected session. |
+
+Progress is a small avatar followed by quiet, task-specific language. The agent supplies wording describing the actual action, such as Verifying RE in Jellyfin. Real execution drives its start, updates and settlement. Raw tool names, command arguments and a fixed list of status phrases do not satisfy this requirement.
+
+Background tasks have stable identities, bounded concurrency, scoped cancellation and truthful results. A disconnected client does not cancel them. Restarted work must remain visible and must not silently repeat an uncertain external effect. Chat, uploads and configuration must not be globally blocked by unrelated work.
+
+The local Mac capability follows the existing full-owner-access decision. Shell and Agent Desktop are actual tools with process lifetime control and safe environment handling. Candidate checks, probes and safe mode receive no machine tools. The protected self-change allowlist and auth remain protected. Same-user shell access is not a malicious-agent isolation boundary.
+
+The acceptance loop uses isolated profile data, owned local form and webhook fixtures, deterministic runtime tests, real subscription requests and native UI checks. Missing capabilities are implemented and the failed scenario is rerun. Sourced bot assets include licence and provenance. One checked commit concerns one behaviour.
