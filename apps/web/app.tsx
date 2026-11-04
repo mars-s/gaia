@@ -131,7 +131,10 @@ export function App() {
       action === "confirm" && profile?.kind === "proposed"
         ? { proposalId: profile.proposalId }
         : {};
-    if (await act(`profile/${action}`, input)) setAccountOpen(false);
+    if (await act(`profile/${action}`, input)) {
+      controller.select(homeScope);
+      setAccountOpen(false);
+    }
     await profileReader.refresh();
   }
   const profilePanel = (account = false) => (
