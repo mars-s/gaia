@@ -122,6 +122,8 @@ export function App() {
   const chatError =
     error ||
     (state?.thread.run.kind === "error" ? state.thread.run.message : "");
+  const canRetry =
+    state?.thread.run.kind === "error" || state?.thread.run.kind === "stopped";
 
   return (
     <div className="app-shell flex h-dvh flex-col bg-background-full text-body-regular text-text-primary">
@@ -355,12 +357,17 @@ export function App() {
                 Connection lost. Reconnecting… Your draft is here.
               </p>
             )}
-            {chatError && (
-              <div className="flex flex-wrap items-center gap-2" role="alert">
-                <p className="min-w-0 flex-1 wrap-anywhere text-text-error-primary">
-                  {chatError}
-                </p>
-                {state.thread.run.kind === "error" && (
+            {(chatError || canRetry) && (
+              <div
+                className="flex flex-wrap items-center gap-2"
+                role={chatError ? "alert" : undefined}
+              >
+                {chatError && (
+                  <p className="min-w-0 flex-1 wrap-anywhere text-text-error-primary">
+                    {chatError}
+                  </p>
+                )}
+                {canRetry && (
                   <Button
                     variant="ghost"
                     size="small"
