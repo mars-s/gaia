@@ -14,7 +14,7 @@
     "build": "tsc --noEmit && vite build && npm run build:desktop",
     "typecheck:desktop": "tsc --project apps/desktop/tsconfig.json --noEmit",
     "build:desktop": "tsc --project apps/desktop/tsconfig.json",
-    "desktop": "npm run build:desktop && electron dist/desktop/main.js"
+    "desktop": "npm run build:desktop && node apps/desktop/launch.mjs"
   },
   "dependencies": {
     "@earendil-works/chord": "^1.5.0",

@@ -94,7 +94,6 @@ async function createWindow() {
   await window.loadURL(target.href);
 }
 
-await app.whenReady();
 ipcMain.handle("gaia:open-auth", async (event, value: unknown) => {
   const owner = BrowserWindow.fromWebContents(event.sender);
   if (
@@ -119,9 +118,9 @@ async function launch() {
   }
 }
 
-await launch();
+void app.whenReady().then(launch);
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) void launch();
+  if (app.isReady() && BrowserWindow.getAllWindows().length === 0) void launch();
 });
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
