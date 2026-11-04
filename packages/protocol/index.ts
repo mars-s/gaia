@@ -83,6 +83,7 @@ export const ModelSelection = z
     thinkingLevel: ThinkingLevel.optional(),
   })
   .strict();
+export type ModelSelection = z.infer<typeof ModelSelection>;
 export const Snapshot = z.object({
   thread: Thread,
   connection: Connection,

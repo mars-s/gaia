@@ -20,18 +20,26 @@ function deferred() {
   return { promise, resolve };
 }
 
-async function fixture(small = false) {
+async function fixture(small = false, realEffort = false) {
   const dir = await mkdtemp(join(tmpdir(), "gaia-controls-"));
   const db = await openDatabase(dir);
   const auth = createAuth(db);
+  const thinkingLevelMap = realEffort
+    ? auth.models.getModel("openai-codex", "gpt-6.1-sol")?.thinkingLevelMap
+    : undefined;
   const faux = fauxProvider({
     provider: "openai-codex",
     models: [
-      { id: "gpt-6.1-sol", reasoning: true, input: ["text", "image"] },
+      {
+        id: "gpt-6.1-sol",
+        reasoning: true,
+        input: ["text", "image"],
+      },
       { id: "test-second", name: "Second test model" },
     ],
     tokensPerSecond: 100000,
   });
+  if (realEffort) faux.models[0].thinkingLevelMap = thinkingLevelMap;
   auth.models.setProvider(faux.provider);
   const open = () =>
     createPi(
@@ -167,6 +175,39 @@ test("effort capabilities come from Pi metadata, reach provider options and pers
       },
     ]);
     await f.run("No reasoning supported.", pi);
+  } finally {
+    await f.close(pi);
+  }
+});
+
+test("the installed Sol catalogue defaults to medium and exposes one stop per provider effort", async () => {
+  const f = await fixture(false, true);
+  let pi = f.pi;
+  try {
+    assert.equal(pi.controls?.().thinkingLevel, "medium");
+    assert.deepEqual(pi.controls?.().models[0]?.capabilities?.thinkingLevels, [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max",
+    ]);
+    await assert.rejects(
+      pi.configure?.("gpt-6.1-sol", "minimal") ?? Promise.resolve(),
+      /support/,
+    );
+    assert.equal(pi.controls?.().thinkingLevel, "medium");
+    await pi.configure?.("gpt-6.1-sol", "low");
+    f.faux.setResponses([
+      (_context, options) => {
+        assert.equal(options?.reasoning, "low");
+        return fauxAssistantMessage("One real low effort.");
+      },
+    ]);
+    await f.run("Use low effort.");
+    await pi.close();
+    pi = await f.open();
+    assert.equal(pi.controls?.().thinkingLevel, "low");
   } finally {
     await f.close(pi);
   }

@@ -97,6 +97,7 @@ export function App() {
   }
   const [authReply, setAuthReply] = useState("");
   const [pending, setPending] = useState(false);
+  const [modelPending, setModelPending] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const composer = useRef<HTMLTextAreaElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
@@ -107,6 +108,11 @@ export function App() {
   const connected = connection?.kind === "connected";
   const running = state?.thread.run.kind === "running";
   const compacting = state?.chat?.compaction.kind === "running";
+  const changingModel =
+    modelPending ||
+    (state?.thread.run.kind === "running" &&
+      state.thread.run.operation === "model");
+  const stoppable = running && !changingModel;
   const supportsImages = Boolean(
     state?.chat?.models.find((model) => model.id === state.chat?.modelId)
       ?.capabilities?.images,
@@ -590,7 +596,9 @@ export function App() {
                   : state.thread.run.kind === "running" &&
                       state.thread.run.operation === "upload"
                     ? "Preparing images"
-                    : "Gaia is replying"
+                    : changingModel
+                      ? "Updating model and effort"
+                      : "Gaia is replying"
                 : state.thread.run.kind === "stopped"
                   ? "Reply stopped"
                   : ""}
@@ -834,47 +842,54 @@ export function App() {
                 {state.chat ? (
                   <ComposerControls
                     chat={state.chat}
-                    disabled={pending || offline || running}
-                    onModel={(modelId, thinkingLevel) =>
-                      void act("model", {
-                        modelId,
-                        ...(thinkingLevel ? { thinkingLevel } : {}),
-                      })
+                    disabled={
+                      offline || ((pending || running) && !changingModel)
                     }
+                    onModel={async (modelId, thinkingLevel) => {
+                      setModelPending(true);
+                      try {
+                        return await act("model", {
+                          modelId,
+                          ...(thinkingLevel ? { thinkingLevel } : {}),
+                        });
+                      } finally {
+                        setModelPending(false);
+                      }
+                    }}
                   />
                 ) : null}
                 <IconButton
                   className="col-start-3 row-start-1 shrink-0 self-end rounded-full border-transparent bg-accent-500 text-text-white shadow-none hover:border-transparent hover:bg-accent-600 active:border-transparent active:bg-accent-700 disabled:border-transparent disabled:bg-accent-500 disabled:text-text-white disabled:opacity-40 sm:col-start-4"
                   icon={
-                    running || sendProgress.kind === "uploading"
+                    stoppable || sendProgress.kind === "uploading"
                       ? RiStopFill
                       : RiArrowUpLine
                   }
                   aria-label={
                     sendProgress.kind === "uploading"
                       ? "Cancel image upload"
-                      : running
+                      : stoppable
                         ? compacting
                           ? "Stop compaction"
                           : "Stop reply"
                         : "Send message"
                   }
                   type={
-                    running || sendProgress.kind === "uploading"
+                    stoppable || sendProgress.kind === "uploading"
                       ? "button"
                       : "submit"
                   }
                   disabled={
                     sendProgress.kind === "uploading"
                       ? false
-                      : running
+                      : stoppable
                         ? pending || offline
                         : !canSend
                   }
                   onClick={
                     sendProgress.kind === "uploading"
                       ? () => uploadController.current?.abort()
-                      : running
+                      : stoppable
                         ? () => void act("stop")
                         : undefined
                   }

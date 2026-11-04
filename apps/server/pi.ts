@@ -11,11 +11,8 @@ import {
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { z } from "zod";
-import {
-  getSupportedThinkingLevels,
-  clampThinkingLevel,
-  type ImageContent,
-} from "@earendil-works/pi-ai";
+import { type ImageContent } from "@earendil-works/pi-ai";
+import { effortLevels, supportedEffort } from "./model-effort.ts";
 import type { createAuth } from "./auth.ts";
 import {
   DEFAULT_IMAGE_LIMITS,
@@ -182,7 +179,7 @@ export async function createPi(
   let thinkingLevel = agent.thinkingLevel;
   const selected = auth.models.getModel("openai-codex", modelId);
   if (selected) {
-    thinkingLevel = clampThinkingLevel(selected, thinkingLevel);
+    thinkingLevel = supportedEffort(selected, thinkingLevel);
     if (thinkingLevel !== agent.thinkingLevel)
       await root.configure({ thinkingLevel }, ctx);
   }
@@ -193,7 +190,7 @@ export async function createPi(
       contextWindow: model.contextWindow,
       capabilities: {
         images: model.input.includes("image"),
-        thinkingLevels: getSupportedThinkingLevels(model),
+        thinkingLevels: effortLevels(model),
       },
     }));
   return {
@@ -210,15 +207,12 @@ export async function createPi(
     async configure(id, effort) {
       const model = auth.models.getModel("openai-codex", id);
       if (!model) throw new Error("Unknown OpenAI model.");
-      if (
-        effort !== undefined &&
-        !getSupportedThinkingLevels(model).includes(effort)
-      )
+      if (effort !== undefined && !effortLevels(model).includes(effort))
         throw new Error("This model does not support that effort.");
       await root.configure(
         {
           model: { provider: "openai-codex", modelId: id },
-          thinkingLevel: effort ?? clampThinkingLevel(model, thinkingLevel),
+          thinkingLevel: effort ?? supportedEffort(model, thinkingLevel),
         },
         ctx,
       );

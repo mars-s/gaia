@@ -1,4 +1,5 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createModelSelectionQueue } from "./model-selection";
 import {
   RiAddLine,
   RiContractLeftRightLine,
@@ -20,7 +21,11 @@ import {
   DropdownPopover,
   DropdownItem,
 } from "@/components/base/dropdown/dropdown";
-import type { Snapshot, ThinkingLevel } from "../../packages/protocol/index.ts";
+import type {
+  ModelSelection,
+  Snapshot,
+  ThinkingLevel,
+} from "../../packages/protocol/index.ts";
 
 const effortLabels: Record<ThinkingLevel, string> = {
   off: "Off",
@@ -39,21 +44,34 @@ export function ComposerControls({
 }: {
   chat: NonNullable<Snapshot["chat"]>;
   disabled: boolean;
-  onModel: (modelId: string, thinkingLevel?: ThinkingLevel) => void;
+  onModel: (modelId: string, thinkingLevel?: ThinkingLevel) => Promise<boolean>;
 }) {
   const effortId = useId();
-  const model = chat.models.find((model) => model.id === chat.modelId);
+  const onModelRef = useRef(onModel);
+  onModelRef.current = onModel;
+  const [selection, setSelection] = useState<ModelSelection>();
+  const [queue] = useState(() =>
+    createModelSelectionQueue(
+      (value) => onModelRef.current(value.modelId, value.thinkingLevel),
+      setSelection,
+    ),
+  );
+  useEffect(() => () => queue.dispose(), [queue]);
+  const modelId = selection?.modelId ?? chat.modelId;
+  const model = chat.models.find((model) => model.id === modelId);
   const levels = model?.capabilities?.thinkingLevels ?? [];
-  const selectedLevel = chat.thinkingLevel;
+  const selectedLevel = selection
+    ? selection.thinkingLevel
+    : chat.thinkingLevel;
   return (
     <DialogTrigger>
       <AriaButton
         type="button"
-        aria-label={`Model and reasoning effort, ${model?.name ?? chat.modelId}${selectedLevel ? `, ${effortLabels[selectedLevel]}` : ""}`}
+        aria-label={`Model and reasoning effort, ${model?.name ?? modelId}${selectedLevel ? `, ${effortLabels[selectedLevel]}` : ""}`}
         isDisabled={disabled}
         className="model-trigger col-start-2 row-start-2 flex h-9 min-w-0 max-w-44 items-center justify-self-end gap-1 rounded-full px-2 text-caption-1-medium text-text-secondary outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring disabled:opacity-40 sm:col-start-3 sm:row-start-1"
       >
-        <span className="truncate">{model?.name ?? chat.modelId}</span>
+        <span className="truncate">{model?.name ?? modelId}</span>
         <RiArrowDownSLine className="size-4 shrink-0" aria-hidden />
       </AriaButton>
       <Popover placement="top end" offset={12} className="model-popover">
@@ -66,8 +84,21 @@ export function ComposerControls({
           </p>
           <RadioGroup
             aria-label="Model"
-            value={chat.modelId}
-            onChange={(id) => onModel(id)}
+            value={modelId}
+            onChange={(id) => {
+              const supported =
+                chat.models.find((item) => item.id === id)?.capabilities
+                  ?.thinkingLevels ?? [];
+              queue.select({
+                modelId: id,
+                thinkingLevel:
+                  selectedLevel && supported.includes(selectedLevel)
+                    ? selectedLevel
+                    : supported.includes("medium")
+                      ? "medium"
+                      : supported[0],
+              });
+            }}
             isDisabled={disabled}
             className="model-options"
           >
@@ -101,10 +132,11 @@ export function ComposerControls({
                 value={Math.max(0, levels.indexOf(selectedLevel))}
                 aria-label="Reasoning effort"
                 aria-valuetext={effortLabels[selectedLevel]}
-                aria-disabled={disabled}
+                disabled={disabled}
                 onChange={(event) => {
                   const level = levels[Number(event.target.value)];
-                  if (level && !disabled) onModel(chat.modelId, level);
+                  if (level && !disabled)
+                    queue.select({ modelId, thinkingLevel: level });
                 }}
               />
               <div aria-hidden className="effort-ticks">
