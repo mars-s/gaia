@@ -1,14 +1,11 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./app";
+import { initialiseAppearance } from "./appearance";
 import "./styles/globals.css";
 import "./style.css";
 
-const theme = window.matchMedia("(prefers-color-scheme: dark)");
-const applyTheme = () =>
-  document.documentElement.classList.toggle("dark", theme.matches);
-applyTheme();
-theme.addEventListener("change", applyTheme);
+initialiseAppearance();
 if (window.gaiaDesktop)
   document.documentElement.dataset.desktop = window.gaiaDesktop.platform;
 

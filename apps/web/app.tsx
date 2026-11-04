@@ -28,6 +28,7 @@ import {
   type OwnerState,
 } from "../../packages/sdk/onboarding.ts";
 import { ProfilePanel } from "./profile-panel";
+import { AppearancePicker } from "./appearance";
 import { ManagedSettings } from "./managed-settings";
 import { ComposerActions, ComposerControls } from "./composer-controls";
 import {
@@ -402,6 +403,7 @@ export function App() {
             >
               Reconnect ChatGPT
             </Button>
+            <AppearancePicker />
             {profilePanel(true)}
             <ManagedSettings runtime={state?.runtime} />
             {error && (
