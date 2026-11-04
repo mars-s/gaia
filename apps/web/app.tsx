@@ -14,6 +14,8 @@ import { Textarea } from "@/components/base/textarea/textarea";
 import { cx } from "@/utils/cx";
 import type { Snapshot } from "../../packages/protocol/index.ts";
 import { command, subscribe } from "../../packages/sdk/index.ts";
+import { ManagedSettings } from "./managed-settings";
+import { createDraftStore, createReleaseObserver } from "./renderer-release";
 import { createAuthBrowserFlow, openAuthInBrowser } from "./browser-auth";
 
 export function App() {
@@ -21,7 +23,22 @@ export function App() {
   const [error, setError] = useState("");
   const [browserError, setBrowserError] = useState("");
   const [offline, setOffline] = useState(false);
-  const [draft, setDraft] = useState("");
+  const [draftStore] = useState(() => createDraftStore(() => sessionStorage));
+  const [draft, updateDraft] = useState(() => draftStore.read());
+  const [updateWaiting, setUpdateWaiting] = useState(false);
+  const [observeRelease] = useState(() =>
+    createReleaseObserver(draftStore.prepareReload, () =>
+      window.location.reload(),
+    ),
+  );
+  function setDraft(value: string) {
+    draftStore.save(value);
+    updateDraft(value);
+  }
+  function receive(value: Snapshot) {
+    setState(value);
+    setUpdateWaiting(observeRelease(value.runtime?.release));
+  }
   const [authReply, setAuthReply] = useState("");
   const [pending, setPending] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -42,11 +59,12 @@ export function App() {
       subscribe(
         (value) => {
           setState(value);
+          setUpdateWaiting(observeRelease(value.runtime?.release));
           setOffline(false);
         },
         () => setOffline(true),
       ),
-    [],
+    [observeRelease],
   );
 
   useEffect(() => {
@@ -65,6 +83,10 @@ export function App() {
     if (connected && !accountOpen) composer.current?.focus();
   }, [connected, accountOpen]);
 
+  useEffect(() => {
+    setUpdateWaiting(observeRelease(state?.runtime?.release));
+  }, [draft, observeRelease, state?.runtime?.release]);
+
   const lastMessage = state?.thread.messages.at(-1);
   useEffect(() => {
     if (followReply.current) bottom.current?.scrollIntoView({ block: "end" });
@@ -76,7 +98,7 @@ export function App() {
     setPending(true);
     setError("");
     try {
-      setState(await command(path, input));
+      receive(await command(path, input));
       return true;
     } catch (cause) {
       setError(
@@ -101,7 +123,7 @@ export function App() {
         requestId: crypto.randomUUID(),
       })
     ) {
-      setDraft((current) => (current === sentDraft ? "" : current));
+      updateDraft(draftStore.completeSend(sentDraft));
     }
   }
 
@@ -169,6 +191,7 @@ export function App() {
             >
               Reconnect ChatGPT
             </Button>
+            <ManagedSettings runtime={state?.runtime} />
             {error && (
               <p role="alert" className="text-text-error-primary">
                 {error}
@@ -352,6 +375,23 @@ export function App() {
                   ? "Reply stopped"
                   : ""}
             </span>
+            {state.runtime?.mode === "safe" && (
+              <p
+                role="status"
+                className="text-caption-1-regular text-text-secondary"
+              >
+                Safe mode. Changes are disabled. You can still chat.
+              </p>
+            )}
+            {updateWaiting && (
+              <p
+                role="status"
+                className="text-caption-1-regular text-text-secondary"
+              >
+                An update is ready. Send or clear your draft to load it, or
+                enable session storage.
+              </p>
+            )}
             {offline && (
               <p role="alert" className="text-text-error-primary">
                 Connection lost. Reconnecting… Your draft is here.
