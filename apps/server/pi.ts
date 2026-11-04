@@ -3,12 +3,17 @@ import {
   createRegistry,
   type ConversationView,
   type Extension,
+  type HarnessSettings,
 } from "@earendil-works/pi-durable";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { z } from "zod";
 import type { createAuth } from "./auth.ts";
+import type { Chat } from "../../packages/protocol/index.ts";
 export interface ChatAdapter {
+  controls?(): Omit<Chat, "compaction">;
+  configure?(modelId: string): Promise<void>;
+  compact?(signal: AbortSignal): Promise<"done" | "noop">;
   run(input: {
     text: string;
     requestId: string;
@@ -43,6 +48,7 @@ export async function createPi(
   path: string,
   auth: ReturnType<typeof createAuth>,
   extensions: Extension[] = [],
+  settings: Pick<HarnessSettings, "compaction"> = {},
 ): Promise<ChatAdapter> {
   const ctx = BACKGROUND_CONTEXT;
   const registry = createRegistry();
@@ -52,7 +58,7 @@ export async function createPi(
     {
       models: auth.models,
       registry,
-      settings: { retry: { maxRetries: 0 } },
+      settings: { ...settings, retry: { maxRetries: 0 } },
     },
     ctx,
   );
@@ -61,7 +67,50 @@ export async function createPi(
   });
   // A restarted local slice marks its pending UI run interrupted rather than silently charging another turn.
   await root.abort(ctx);
+  let modelId = (await root.agent(ctx)).model?.modelId ?? "gpt-6.1-sol";
+  const models = () =>
+    auth.models
+      .getModels("openai-codex")
+      .map(({ id, name, contextWindow }) => ({ id, name, contextWindow }));
   return {
+    controls: () => ({ models: models(), modelId }),
+    async configure(id) {
+      if (!models().some((model) => model.id === id))
+        throw new Error("Unknown OpenAI model.");
+      await root.configure(
+        { model: { provider: "openai-codex", modelId: id } },
+        ctx,
+      );
+      modelId = (await root.agent(ctx)).model?.modelId ?? modelId;
+    },
+    async compact(signal) {
+      signal.throwIfAborted();
+      const taskId = await root.compact(undefined, ctx);
+      let stopping: Promise<unknown> | undefined;
+      const abort = () => {
+        stopping = harness.abortTask(taskId, ctx);
+      };
+      signal.addEventListener("abort", abort, { once: true });
+      if (signal.aborted) abort();
+      try {
+        const task = await harness.waitForTask(taskId, ctx);
+        signal.throwIfAborted();
+        if (task.state.outcome.status !== "completed")
+          throw new Error("Compaction failed.");
+        const result = task.state.outcome.result;
+        if (result.submissionId !== undefined) {
+          const submission = await harness.submission(result.submissionId, ctx);
+          if (!submission || (await submission.wait(ctx)).status !== "done")
+            throw new Error("Compaction summary could not be placed.");
+          signal.throwIfAborted();
+          return "done";
+        }
+        return result.entryId !== undefined ? "done" : "noop";
+      } finally {
+        signal.removeEventListener("abort", abort);
+        await stopping;
+      }
+    },
     async run({ text, requestId, onText, signal }) {
       const submission = await root.submit(
         { type: "input", content: text, requestId },

@@ -6,6 +6,8 @@ import type { Socket } from "node:net";
 import { randomUUID } from "node:crypto";
 import {
   Send,
+  ModelSelection,
+  type Chat,
   AuthReply,
   Empty,
   Thread,
@@ -79,7 +81,7 @@ export function createChatServer({
       ...thread,
       run: {
         kind: "error",
-        message: "The server restarted during this reply. Retry when ready.",
+        message: "The server restarted during this work. Try again when ready.",
       },
     };
   const persist = () =>
@@ -87,7 +89,11 @@ export function createChatServer({
       .prepare("INSERT OR REPLACE INTO chat VALUES (1,?)")
       .run(JSON.stringify(thread));
   persist();
+  let compaction: Chat["compaction"] = { kind: "idle" };
   const snapshot = (): Snapshot => ({
+    ...(adapter.controls && adapter.configure && adapter.compact
+      ? { chat: { ...adapter.controls(), compaction } }
+      : {}),
     thread,
     connection: auth.status(),
     ...(runtime ? { runtime: runtime() } : {}),
@@ -98,9 +104,29 @@ export function createChatServer({
     for (const listener of listeners) listener(snapshot());
   };
   let active: { controller: AbortController; done: Promise<void> } | undefined;
+  let closing = false;
+  function requireIdle() {
+    if (closing) throw new HttpError(503, "Gaia is shutting down.");
+    if (active || thread.run.kind === "running")
+      throw new HttpError(409, "Work is already running.");
+  }
+  function controlOperation(work: (signal: AbortSignal) => Promise<void>) {
+    requireIdle();
+    const controller = new AbortController();
+    thread.run = { kind: "running", id: randomUUID() };
+    const done = Promise.resolve()
+      .then(() => work(controller.signal))
+      .finally(() => {
+        thread.run = { kind: "idle" };
+        active = undefined;
+        publish();
+      });
+    active = { controller, done };
+    publish();
+    return done;
+  }
   function run(text: string, requestId: string, addUser: boolean) {
-    if (thread.run.kind === "running")
-      throw new HttpError(409, "A reply is already running.");
+    requireIdle();
     if (auth.status().kind !== "connected")
       throw new HttpError(409, "Connect ChatGPT before sending.");
     const id = randomUUID();
@@ -209,18 +235,73 @@ export function createChatServer({
       }
       if (req.method !== "POST") throw new HttpError(404, "Not found.");
       const input = await body(req);
+      if (closing) throw new HttpError(503, "Gaia is shutting down.");
       if (allowWrite && !(await allowWrite())) {
         res.setHeader("Retry-After", "2");
         throw new HttpError(503, "Gaia is checking a release. Retry shortly.");
       }
       if (
-        ["/api/v1/stop", "/api/v1/retry", "/api/v1/auth/connect"].includes(
-          url.pathname,
-        ) &&
+        [
+          "/api/v1/stop",
+          "/api/v1/retry",
+          "/api/v1/auth/connect",
+          "/api/v1/compact",
+        ].includes(url.pathname) &&
         !Empty.safeParse(input).success
       )
         throw new HttpError(400, "Expected an empty object.");
       switch (url.pathname) {
+        case "/api/v1/model": {
+          const parsed = ModelSelection.safeParse(input);
+          if (!parsed.success)
+            throw new HttpError(400, "Expected a modelId string only.");
+          requireIdle();
+          if (!adapter.controls || !adapter.configure || !adapter.compact)
+            throw new HttpError(409, "Chat controls are unavailable.");
+          if (
+            !adapter
+              .controls()
+              .models.some((model) => model.id === parsed.data.modelId)
+          )
+            throw new HttpError(400, "Unknown OpenAI model.");
+          const configure = adapter.configure.bind(adapter);
+          await controlOperation(async () => configure(parsed.data.modelId));
+          break;
+        }
+        case "/api/v1/compact": {
+          requireIdle();
+          if (!adapter.controls || !adapter.configure || !adapter.compact)
+            throw new HttpError(409, "Chat controls are unavailable.");
+          if (auth.status().kind !== "connected")
+            throw new HttpError(409, "Connect ChatGPT before compacting.");
+          const compact = adapter.compact.bind(adapter);
+          compaction = {
+            kind: "running",
+            message: "Compacting conversation context.",
+          };
+          void controlOperation(async (signal) => {
+            try {
+              const kind = await compact(signal);
+              compaction = signal.aborted
+                ? { kind: "error", message: "Compaction stopped." }
+                : {
+                    kind,
+                    message:
+                      kind === "done"
+                        ? "Conversation context compacted."
+                        : "No older context to compact.",
+                  };
+            } catch {
+              compaction = {
+                kind: "error",
+                message: signal.aborted
+                  ? "Compaction stopped."
+                  : "Compaction failed. Try again when ready.",
+              };
+            }
+          });
+          break;
+        }
         case "/api/v1/messages": {
           const parsed = Send.safeParse(input);
           if (!parsed.success)
@@ -228,6 +309,7 @@ export function createChatServer({
               400,
               "Enter a message of 1 to 32000 characters and a UUID requestId.",
             );
+          requireIdle();
           if (
             db
               .prepare("SELECT id FROM requests WHERE id=?")
@@ -244,6 +326,7 @@ export function createChatServer({
           active?.controller.abort();
           break;
         case "/api/v1/retry": {
+          requireIdle();
           const last = thread.messages.findLast((m) => m.role === "user");
           if (!last) throw new HttpError(409, "No message to retry.");
           // Retry asks for another answer to the same retained user message.
@@ -279,8 +362,9 @@ export function createChatServer({
     server,
     snapshot,
     async close() {
+      closing = true;
       active?.controller.abort();
-      await active?.done;
+      await active?.done.catch(() => {});
       for (const socket of serverSockets) socket.destroy();
       await new Promise<void>((resolve, reject) =>
         server.close((error) =>

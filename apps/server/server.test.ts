@@ -68,6 +68,13 @@ test("HTTP chat persists through restart, validates inputs, rejects cross-origin
   let live = await boot(dir);
   try {
     assert.equal((await live.request("/healthz")).status, 200);
+    assert.equal((await settled(live.request)).chat, undefined);
+    assert.equal(
+      (await live.request("/api/v1/model", "POST", { modelId: "gpt-6.1-sol" }))
+        .status,
+      409,
+    );
+    assert.equal((await live.request("/api/v1/compact", "POST")).status, 409);
     assert.equal(
       (await live.request("/api/v1/messages", "POST", { text: "" })).status,
       400,

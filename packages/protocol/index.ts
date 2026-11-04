@@ -34,10 +34,29 @@ export const Runtime = z.object({
   mode: z.string(),
   selfModification: z.boolean(),
 });
+export const Chat = z.object({
+  models: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      contextWindow: z.number(),
+    }),
+  ),
+  modelId: z.string(),
+  compaction: z.object({
+    kind: z.enum(["idle", "running", "done", "noop", "error"]),
+    message: z.string().optional(),
+  }),
+});
+export type Chat = z.infer<typeof Chat>;
+export const ModelSelection = z
+  .object({ modelId: z.string().min(1).max(256) })
+  .strict();
 export const Snapshot = z.object({
   thread: Thread,
   connection: Connection,
   runtime: Runtime.optional(),
+  chat: Chat.optional(),
 });
 export type Snapshot = z.infer<typeof Snapshot>;
 export const Event = z.object({ type: z.literal("snapshot"), data: Snapshot });
