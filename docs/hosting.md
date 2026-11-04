@@ -6,8 +6,8 @@ Requirements for running Gaia on `mars` (Proxmox). These are v0.1 musts in `SPEC
 
 - Separate unprivileged LXC on mars.
 - Node runs natively under systemd. Docker-in-LXC works but is not preferred.
-- Resources: 2 vCPU, 1 GB RAM, 512 MB swap, 16 GB disk on `local-lvm`.
-- Keep the footprint small: mars has about 1.9 GB RAM headroom.
+- Resources: 2 vCPU, 512 MB swap, 16 GB disk on `local-lvm`. No fixed RAM limit.
+- Size RAM for the runtime, builds and checks. Avi will free homelab capacity as needed; the earlier 1 GB allocation and 1.9 GB headroom are not constraints.
 
 ## Data
 

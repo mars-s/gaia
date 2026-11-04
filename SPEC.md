@@ -1,10 +1,12 @@
 # Gaia: product spec and architecture
 
-Status: locked v1.0, 4 Nov 2026. Decisions from Avi, 1 to 4 Nov 2026.
+Status: locked v1.2, 4 Nov 2026. Decisions from Avi, 1 to 4 Nov 2026.
 
 Changelog:
 - v0.2 (4 Nov 2026): sign-in and model traffic through Pi's built-in OAuth; Electron gets full terminal and file access; generative UI is real code changes through the self-mod pipeline.
 - v1.0 (4 Nov 2026): locked. Homelab hosting requirements added as v0.1 musts (see `docs/hosting.md`).
+- v1.1 (4 Nov 2026): Avi removed the fixed 1 GB RAM requirement. RAM allocation can grow as homelab capacity is freed up.
+- v1.2 (4 Nov 2026): Avi chose Board UI instead of assistant-ui. Use free MIT-licensed components with a plain default theme and editable theme tokens.
 
 ## One-line pitch
 
@@ -19,7 +21,7 @@ Gaia is an open-source agent you run on your own machine. It starts as a single 
 - Local and owned: data, credentials and memory stay on the owner's machine.
 - Plan sign-in, no API keys: Claude and ChatGPT plans through Pi's built-in OAuth; all model traffic routed through Pi.
 - The owner holds the power: full machine access by default, and the responsibility that comes with it.
-- Plain by default: unstyled assistant-ui, plain theme, restyled by asking. No Radix; Base UI where a component library is needed.
+- Plain by default: free MIT-licensed Board UI components, plain theme, restyled by asking through editable theme tokens. No Radix. Board UI's React Aria components replace the earlier assistant-ui and Base UI choices.
 - Open from day one: Apache 2.0, commercial use allowed.
 
 ## User journeys
@@ -101,7 +103,7 @@ Ships with a TypeScript SDK and a client conformance suite. Breaking changes bum
 Hosting (detail in `docs/hosting.md`):
 
 - Runs natively as a Node service under systemd; ships a systemd unit or a single start command. Docker Compose also supported.
-- Small footprint: fits 2 vCPU, 1 GB RAM, 512 MB swap, 16 GB disk.
+- Small footprint: target 2 vCPU, 512 MB swap, 16 GB disk. No fixed RAM limit; size RAM for the runtime, builds and checks.
 - One configurable data dir (default `/var/lib/gaia`) holds all data and the self-modifying git repo, for easy backups.
 - Configurable bind address and port; trusted reverse proxy support; plain HTTP behind the proxy.
 - Default port must avoid 8096, 8264 and 8090.
@@ -123,7 +125,7 @@ Hosting (detail in `docs/hosting.md`):
 
 ## Borrow from Aegis and Mars
 
-- Mars (github.com/mars-s/mars): Pi Durable host (`packages/pi-host`), owner sign-in URL from setup, ChatGPT and Claude connection, staged host changes with health check and rollback watchdog, plugin cards, on-demand tool discovery, assistant-ui chat.
+- Mars (github.com/mars-s/mars): Pi Durable host (`packages/pi-host`), owner sign-in URL from setup, ChatGPT and Claude connection, staged host changes with health check and rollback watchdog, plugin cards and on-demand tool discovery. Gaia uses Board UI for chat.
 - Aegis (github.com/mars-s/Aegis): first-run greeting and local profile, patched UI that yields to newer built-ins after update, Tauri signed updater with backup and restore, DESIGN.md discipline.
 - Leave behind: Aegis's canvas and Tauri shell, Mars's Next.js-coupled UI.
 
