@@ -15,6 +15,7 @@ import { cx } from "@/utils/cx";
 import type { Snapshot } from "../../packages/protocol/index.ts";
 import { command, subscribe } from "../../packages/sdk/index.ts";
 import { ManagedSettings } from "./managed-settings";
+import { ComposerControls } from "./composer-controls";
 import { createDraftStore, createReleaseObserver } from "./renderer-release";
 import { createAuthBrowserFlow, openAuthInBrowser } from "./browser-auth";
 
@@ -51,6 +52,7 @@ export function App() {
   const connection = state?.connection;
   const connected = connection?.kind === "connected";
   const running = state?.thread.run.kind === "running";
+  const compacting = state?.chat?.compaction.kind === "running";
   const canSend =
     connected && !offline && !running && !pending && Boolean(draft.trim());
 
@@ -370,7 +372,9 @@ export function App() {
           <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-3 px-4 pt-3 pb-5 sm:px-8 sm:pb-8">
             <span className="sr-only" role="status">
               {running
-                ? "Gaia is replying"
+                ? compacting
+                  ? "Compacting context"
+                  : "Gaia is replying"
                 : state.thread.run.kind === "stopped"
                   ? "Reply stopped"
                   : ""}
@@ -420,7 +424,7 @@ export function App() {
               </div>
             )}
             <form
-              className="composer flex items-end gap-2 rounded-3xl border border-border-button-default bg-background-secondary-default p-2"
+              className="composer flex flex-col gap-2 rounded-3xl border border-border-button-default bg-background-secondary-default p-2"
               aria-label="Message Gaia"
               onSubmit={(event) => {
                 event.preventDefault();
@@ -429,11 +433,11 @@ export function App() {
             >
               <Textarea
                 ref={composer}
-                className="min-w-0 flex-1"
+                className="w-full min-w-0"
                 fieldClassName="rounded-2xl bg-transparent ring-0 hover:ring-0 focus-within:ring-0"
                 inputClassName="placeholder:text-text-secondary focus:placeholder:text-text-secondary"
                 aria-label="Message Gaia"
-                rows={1}
+                rows={2}
                 autoResize
                 maxRows={8}
                 maxLength={32000}
@@ -452,15 +456,43 @@ export function App() {
                 }}
                 placeholder="Message Gaia…"
               />
-              <IconButton
-                className="shrink-0 rounded-full shadow-none"
-                icon={running ? RiStopFill : RiArrowUpLine}
-                aria-label={running ? "Stop reply" : "Send message"}
-                type={running ? "button" : "submit"}
-                disabled={running ? pending || offline : !canSend}
-                onClick={running ? () => void act("stop") : undefined}
-              />
+              <div className="flex w-full items-center justify-between gap-2">
+                {state.chat ? (
+                  <ComposerControls
+                    chat={state.chat}
+                    disabled={pending || offline || running}
+                    onModel={(modelId) => void act("model", { modelId })}
+                    onCompact={() => void act("compact")}
+                  />
+                ) : (
+                  <span />
+                )}
+                <IconButton
+                  className="shrink-0 rounded-full shadow-none"
+                  icon={running ? RiStopFill : RiArrowUpLine}
+                  aria-label={
+                    running
+                      ? compacting
+                        ? "Stop compaction"
+                        : "Stop reply"
+                      : "Send message"
+                  }
+                  type={running ? "button" : "submit"}
+                  disabled={running ? pending || offline : !canSend}
+                  onClick={running ? () => void act("stop") : undefined}
+                />
+              </div>
             </form>
+            {state.chat && state.chat.compaction.kind !== "idle" && (
+              <p
+                role={
+                  state.chat.compaction.kind === "error" ? "alert" : "status"
+                }
+                className="px-2 text-caption-1-regular text-text-secondary"
+              >
+                {state.chat.compaction.message}
+              </p>
+            )}
           </div>
         </main>
       )}

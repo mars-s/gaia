@@ -32,7 +32,7 @@ Auth opens through Electron's `shell.openExternal`. The OS selects the default b
 
 New windows are denied and HTTPS links open externally. Off-origin renderer navigation is intercepted. Non-web schemes, embedded webviews and renderer permission requests are denied. HTTP is accepted for the configured renderer only on loopback addresses.
 
-This is a desktop shell, not an installer or the full machine-tools milestone. Pairing, server lifecycle, terminal and file access remain outside this slice. Default-browser routing has unit and source verification only until the parent completes a real sign-in click.
+This is a desktop shell, not an installer or the full machine-tools milestone. Pairing, server lifecycle, terminal and file access remain outside this slice.
 
 ## Managed renderer updates and history
 
@@ -45,3 +45,7 @@ Account settings fetch managed status and change history on opening. A plain dev
 History polls every two seconds while changes are pending, including after a revert. It stops at a terminal result or after 150 reads and offers Refresh. Closing settings aborts its requests and cancels timers. Late responses cannot update a closed or superseded view. The SDK validates a partial browser-only view of managed records with Zod. It does not import the filesystem-backed core schema.
 
 The parent integration task owns native visual review and actual promotion and rollback clicks. Unit checks exercise release transitions, draft recovery, unavailable storage, malformed management responses, queued results and polling cleanup. These checks alone do not establish the complete safe self-modification journey.
+
+## Composer controls
+
+The composer has a model picker and a Compact action. Model selection changes the next turn and survives a server restart. Compact summarises older model context while retaining the visible chat history. Short conversations report that no older context needs compaction. While compaction runs, Stop cancels it.
