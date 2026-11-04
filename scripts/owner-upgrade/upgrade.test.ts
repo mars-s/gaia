@@ -16,7 +16,7 @@ import { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
 import { hashes } from "../../core/install.ts";
 import { schemas } from "../../core/schema.ts";
-import { readState } from "../../core/state.ts";
+import { atomic, readState } from "../../core/state.ts";
 import {
   type ActivationStep,
   activate,
@@ -60,6 +60,102 @@ const prepareFixture = (
   });
 const controlBytes = async (data: string) =>
   Promise.all(controls.map((name) => readFile(join(data, "control", name))));
+
+test("explicit failed-start restore accepts only watchdog changes on the same upgraded pair", async () => {
+  for (const mode of ["stable", "safe"] as const) {
+    const f = await fixture();
+    try {
+      const before = await controlBytes(f.data);
+      const original = await identity(
+        join(f.data, "dependencies/node_modules"),
+      );
+      await changeSource(f.source);
+      const prepared = await prepareFixture(f);
+      const activated = await activate(prepared.preparedFile);
+      const state = await readState(f.data);
+      const failed =
+        mode === "safe"
+          ? {
+              ...state,
+              kind: "safe",
+              failures: 3,
+              reason: "Three synthetic startup failures.",
+            }
+          : { ...state, kind: "stable", failures: 1 };
+      await atomic(join(f.data, "control/manifest.json"), failed);
+      await assert.rejects(
+        restore(activated.journalFile),
+        /Foreign control replacement or later release/,
+      );
+      await restore(activated.journalFile, { failedStart: true });
+      await restore(activated.journalFile, { failedStart: true });
+      assert.deepEqual(await controlBytes(f.data), before);
+      assert.deepEqual(
+        await identity(join(f.data, "dependencies/node_modules")),
+        original,
+      );
+      assert.deepEqual(
+        await readFile(join(f.data, "credentials/oauth.sqlite")),
+        f.beforeCredential,
+      );
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  }
+});
+
+test("failed-start restore still refuses foreign pairs, receipts and pending self-change", async () => {
+  const f = await fixture();
+  try {
+    await changeSource(f.source);
+    const prepared = await prepareFixture(f);
+    const activated = await activate(prepared.preparedFile);
+    const state = await readState(f.data);
+    const manifest = join(f.data, "control/manifest.json");
+    for (const foreign of [
+      {
+        ...state,
+        failures: 1,
+        active: { ...state.active, release: "e".repeat(40) },
+      },
+      {
+        ...state,
+        failures: 1,
+        good: {
+          ...state.good,
+          generation: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        },
+      },
+      {
+        ...state,
+        failures: 1,
+        receipt: {
+          id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          outcome: "accepted",
+          detail: "Different change",
+          commit: null,
+        },
+      },
+      {
+        ...state,
+        failures: 1,
+        kind: "checking",
+        change: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      },
+      { ...state, failures: 1, unexpected: "foreign control field" },
+    ]) {
+      await atomic(manifest, foreign);
+      await assert.rejects(
+        restore(activated.journalFile, { failedStart: true }),
+        /Foreign control replacement or later release/,
+      );
+    }
+    await atomic(manifest, state);
+    await restore(activated.journalFile);
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
 
 test("archive exports committed runtime bytes only, owns Git, rejects source symlinks", async () => {
   const f = await fixture();

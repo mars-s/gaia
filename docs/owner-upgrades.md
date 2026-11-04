@@ -50,7 +50,7 @@ npm run owner-upgrade -- activate \
 
 Activation refuses a live bootstrap lock, supervisor lock, or managed child. It takes both existing managed-owner locks plus a separate operator lock, rechecks the prepared source identity, source and build hashes, core changes, dependencies, and all four original control records. A stale preparation requires a fresh prepare.
 
-Activation copies the offline conversation generation once and compares all copied file hashes and SQLite `user_version` and definitions. It leaves the old generation and independent credentials untouched. It installs a separate code release and protected core, then saves byte-exact backups of `core.json`, `protected.json`, `manifest.json`, and `history.json`.
+Activation copies the offline conversation generation once and compares all copied file hashes and SQLite `user_version` and definitions. It preserves the old generation's database records and independent credentials. SQLite schema inspection can update a crash-left shared-memory sidecar, even though database and WAL contents remain unchanged. It installs a separate code release and protected core, then saves byte-exact backups of `core.json`, `protected.json`, `manifest.json`, and `history.json`.
 
 Before the first live pointer changes, it durably writes `activation.json`. A dependency switch preserves the original actual directory by rename into the journal directory, or preserves the original symlink and its exact target by rename. It then atomically renames a new symlink into the canonical dependency location. New release and core `node_modules` links use that canonical location. The active and safe baseline pairs both name the new code and copied generation.
 
@@ -66,6 +66,8 @@ npm run owner-upgrade -- restore \
 ```
 
 Restore checks every current control file against the recorded old or new bytes before changing anything. It checks the original and replacement dependency filesystem identities and exact symlink targets. A foreign replacement or later release is refused. Restore returns the original directory or symlink and all four control records exactly. Repeating restore is safe. Do not restore after allowing writes to the new generation without first deciding how to retain those new messages. Restore returns to the old generation.
+
+If the upgraded release fails during manual startup, stop Gaia and add `--failed-start` to restore. This explicitly permits only an increased watchdog failure count and a transition into safe mode on the exact upgraded active and known-good code/data pair. Safe mode's diagnostic reason may differ. Every other manifest field, all other controls, and dependency identities must still match. A later release, changed data generation, receipt or pending self-change remains refused. Without this flag, restore retains its byte-exact control guard.
 
 Dependency replacement and four control writes are an **offline multi-file transaction**. Each rename or control write is atomic, but the whole operation is not. A killed process can leave dependencies temporarily absent between renames, or leave mixed old and new control records. Do not start Gaia in that state. The durable journal supports recovery from either dependency rename gap, a partially written control sequence, or an interrupted restore. Dead process locks are reclaimed on the next command. Invalid or live locks fail closed.
 

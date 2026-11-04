@@ -26,6 +26,7 @@ import {
   writeJson,
 } from "./files.ts";
 import { assertStopped, withOwnerLock } from "./ownership.ts";
+import { State } from "../../core/state.ts";
 
 export async function identity(path: string): Promise<Identity | null> {
   const info = await stat(path);
@@ -74,7 +75,34 @@ export async function switchDependencies(journal: Journal) {
   await syncDirectory(dirname(paths.dependencies));
 }
 
-async function validateRestore(journal: Journal) {
+function watchdogChangesOnly(bytes: Buffer, journal: Journal) {
+  let value: unknown;
+  try {
+    value = JSON.parse(bytes.toString("utf8"));
+  } catch {
+    return false;
+  }
+  const parsed = State.safeParse(value);
+  if (!parsed.success || !equal(parsed.data, value)) return false;
+  const current = parsed.data;
+  if (
+    journal.next.kind !== "stable" ||
+    (current.kind !== "stable" && current.kind !== "safe") ||
+    current.failures <= journal.next.failures
+  )
+    return false;
+  if (current.kind === "safe") {
+    return equal(current, {
+      ...journal.next,
+      kind: "safe",
+      failures: current.failures,
+      reason: current.reason,
+    });
+  }
+  return equal(current, { ...journal.next, failures: current.failures });
+}
+
+async function validateRestore(journal: Journal, failedStart: boolean) {
   const paths = locations(journal.data, journal.id);
   for (const name of controls) {
     const backup = join(paths.backup, name);
@@ -83,8 +111,17 @@ async function validateRestore(journal: Journal) {
       throw new Error(`Control backup changed: ${name}`);
     const current = join(journal.data, "control", name);
     await noLinks(current);
-    const hash = digest(await readFile(current));
-    if (hash !== journal.before[name] && hash !== journal.after[name])
+    const bytes = await readFile(current);
+    const hash = digest(bytes);
+    if (
+      hash !== journal.before[name] &&
+      hash !== journal.after[name] &&
+      !(
+        failedStart &&
+        name === "manifest.json" &&
+        watchdogChangesOnly(bytes, journal)
+      )
+    )
       throw new Error(
         `Foreign control replacement or later release; refuse restore: ${name}`,
       );
@@ -112,9 +149,9 @@ async function validateRestore(journal: Journal) {
     throw new Error("Ambiguous original dependency locations; refuse restore.");
 }
 
-export async function restoreJournal(journal: Journal) {
+export async function restoreJournal(journal: Journal, failedStart = false) {
   await assertStopped(journal.data, true);
-  await validateRestore(journal);
+  await validateRestore(journal, failedStart);
   const paths = locations(journal.data, journal.id);
   const plan = journal.dependency;
   if (plan.kind === "switch") {
@@ -176,10 +213,13 @@ export async function readJournal(file: string) {
   return journal;
 }
 
-export async function restore(file: string) {
+export async function restore(
+  file: string,
+  { failedStart = false }: { failedStart?: boolean } = {},
+) {
   const journal = await readJournal(file);
   return withOwnerLock(journal.data, true, async () => {
-    await restoreJournal(journal);
+    await restoreJournal(journal, failedStart);
     return {
       restored: true,
       active: journal.previous.active,

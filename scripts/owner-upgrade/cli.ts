@@ -7,7 +7,7 @@ process.umask(0o077);
 const usage = `Owner-only offline upgrade. Run as the filesystem owner of DATA.
   npm run owner-upgrade -- prepare --data DATA [--source CHECKOUT] [--core core/exact-file.ts ...]
   npm run owner-upgrade -- activate --prepared DATA/operator-upgrades/ID/prepared.json
-  npm run owner-upgrade -- restore --journal DATA/operator-upgrades/ID/activation.json
+  npm run owner-upgrade -- restore --journal DATA/operator-upgrades/ID/activation.json [--failed-start]
 Preparation exports committed HEAD only. Activation and restore require Gaia STOPPED.
 No restart or runtime verification is performed. See docs/owner-upgrades.md.\n`;
 
@@ -20,6 +20,7 @@ try {
       prepared: { type: "string" },
       journal: { type: "string" },
       help: { type: "boolean" },
+      "failed-start": { type: "boolean" },
     },
     allowPositionals: true,
   });
@@ -34,7 +35,8 @@ try {
     let result: unknown;
     switch (mode) {
       case "prepare":
-        if (values.prepared || values.journal) throw new Error(usage);
+        if (values.prepared || values.journal || values["failed-start"])
+          throw new Error(usage);
         result = await prepare({
           source: resolve(values.source ?? "."),
           data: required(values.data, "--data"),
@@ -45,14 +47,22 @@ try {
         });
         break;
       case "activate":
-        if (values.data || values.source || values.core || values.journal)
+        if (
+          values.data ||
+          values.source ||
+          values.core ||
+          values.journal ||
+          values["failed-start"]
+        )
           throw new Error(usage);
         result = await activate(required(values.prepared, "--prepared"));
         break;
       case "restore":
         if (values.data || values.source || values.core || values.prepared)
           throw new Error(usage);
-        result = await restore(required(values.journal, "--journal"));
+        result = await restore(required(values.journal, "--journal"), {
+          failedStart: values["failed-start"],
+        });
         break;
       default:
         throw new Error(usage);
