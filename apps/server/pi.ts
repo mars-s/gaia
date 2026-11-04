@@ -1,5 +1,4 @@
 import {
-  Harness,
   defineExtension,
   defineTool,
   section,
@@ -14,6 +13,7 @@ import { z } from "zod";
 import { type ImageContent } from "@earendil-works/pi-ai";
 import { effortLevels, supportedEffort } from "./model-effort.ts";
 import type { createAuth } from "./auth.ts";
+import { openRecoveredHarness } from "./workspace-recovery.ts";
 import {
   DEFAULT_IMAGE_LIMITS,
   type ImageLimits,
@@ -160,7 +160,7 @@ export async function createPi(
     }),
   );
   for (const extension of extensions) registry.install(extension);
-  const harness = await Harness.open(
+  const { harness } = await openRecoveredHarness(
     await openNodeSqliteStorage(path),
     {
       models: auth.models,
@@ -172,8 +172,6 @@ export async function createPi(
   const root = await harness.root(ctx, {
     agent: { model: { provider: "openai-codex", modelId: "gpt-6.1-sol" } },
   });
-  // A restarted local slice marks its pending UI run interrupted rather than silently charging another turn.
-  await root.abort(ctx);
   const agent = await root.agent(ctx);
   let modelId = agent.model?.modelId ?? "gpt-6.1-sol";
   let thinkingLevel = agent.thinkingLevel;

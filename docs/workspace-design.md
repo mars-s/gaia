@@ -64,7 +64,7 @@ Keep the registry used at startup limited to trusted tasks whose abort handlers 
 
 ### Required baseline upgrade before enabling areas
 
-The existing adapter calls `root.abort` on startup. That resumes the entire Harness before cancelling only Home's ownership scope. It can restart ownerless area work and make provider requests.
+The adapter now calls `openRecoveredHarness` before obtaining Home or admitting any work. It no longer calls `root.abort` on startup. That older startup sequence resumes the entire Harness before cancelling only Home's ownership scope. It can restart ownerless area work and make provider requests.
 
 The integration owner must install generic recovery in both the active runtime and the GOOD rollback baseline before enabling area creation. Safe-mode startup must also use it, even when it has no workspace integration or sidebar. Recovery does not depend on workspace mappings and can cancel all Pi work in an older UI. Upgrading only the active adapter leaves rollback and safe mode unsafe for area data. Use the owner-controlled baseline upgrade path. These modules do not modify protected core, rollback, auth or safe mode.
 
