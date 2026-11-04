@@ -16,7 +16,11 @@ import type { Snapshot } from "../../packages/protocol/index.ts";
 import { command, subscribe } from "../../packages/sdk/index.ts";
 import { ManagedSettings } from "./managed-settings";
 import { ComposerControls } from "./composer-controls";
-import { createDraftStore, createReleaseObserver } from "./renderer-release";
+import {
+  createDraftStore,
+  createReleaseObserver,
+  loadedRelease,
+} from "./renderer-release";
 import { createAuthBrowserFlow, openAuthInBrowser } from "./browser-auth";
 
 export function App() {
@@ -28,8 +32,10 @@ export function App() {
   const [draft, updateDraft] = useState(() => draftStore.read());
   const [updateWaiting, setUpdateWaiting] = useState(false);
   const [observeRelease] = useState(() =>
-    createReleaseObserver(draftStore.prepareReload, () =>
-      window.location.reload(),
+    createReleaseObserver(
+      draftStore.prepareReload,
+      () => window.location.reload(),
+      loadedRelease(import.meta.url),
     ),
   );
   function setDraft(value: string) {

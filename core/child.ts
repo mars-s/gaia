@@ -1,12 +1,12 @@
 import { DatabaseSync } from "node:sqlite";
-import { readFile, stat } from "node:fs/promises";
-import { join, resolve, extname, sep } from "node:path";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { createAuth } from "./auth.ts";
 import { selfChangeTools } from "./tools.ts";
 import { readState } from "./state.ts";
 import { control } from "./control-client.ts";
+import { webResource } from "./web.ts";
 import type { createChatServer, AuthService } from "../apps/server/server.ts";
 import type { createPi, ChatAdapter } from "../apps/server/pi.ts";
 const env = z
@@ -165,25 +165,16 @@ app.server.on("request", async (req, res) => {
       return json(202, await control(env.GAIA_CONTROL_SOCKET, command));
     }
     if (req.method === "GET" && !url.pathname.startsWith("/api/")) {
-      const root = join(env.GAIA_RELEASE_DIR, "dist/web");
-      let path = resolve(root, "." + decodeURIComponent(url.pathname));
-      if (!path.startsWith(root + sep)) path = join(root, "index.html");
-      try {
-        if (!(await stat(path)).isFile()) path = join(root, "index.html");
-      } catch {
-        path = join(root, "index.html");
-      }
-      const mime: Record<string, string> = {
-        ".html": "text/html",
-        ".js": "text/javascript",
-        ".css": "text/css",
-        ".svg": "image/svg+xml",
-      };
-      res.writeHead(200, {
-        "Content-Type": mime[extname(path)] ?? "application/octet-stream",
+      const resource = await webResource(url.pathname, {
+        data: env.GAIA_DATA_DIR,
+        release: env.GAIA_RELEASE,
+        directory: env.GAIA_RELEASE_DIR,
+      });
+      res.writeHead(resource.status, {
+        "Content-Type": resource.type,
         "Cache-Control": "no-cache",
       });
-      res.end(await readFile(path));
+      res.end(resource.body);
       return;
     }
     for (const handler of handlers) handler.call(app.server, req, res);

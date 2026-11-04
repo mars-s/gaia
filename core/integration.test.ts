@@ -201,6 +201,10 @@ test(
       await t.test(
         "real source promotion and new file revert preserve exact original bytes and messages",
         async () => {
+          const oldHtml = await (await fetch(base + "/")).text();
+          const oldCssPath = /href="([^"]+\.css)"/.exec(oldHtml)?.[1];
+          assert(oldCssPath);
+          const oldCss = await (await fetch(base + oldCssPath)).text();
           const modified = original.replace(
             "return json(200, snapshot());",
             'return json(200, { ...snapshot(), marker: "source-promoted" });',
@@ -215,11 +219,34 @@ test(
                   path: "apps/server/new-module.ts",
                   text: 'export const marker = "🌱";\n\n',
                 },
+                {
+                  path: "apps/web/style.css",
+                  text:
+                    (await readFile(
+                      join(source, "apps/web/style.css"),
+                      "utf8",
+                    )) + "\n:root { --gaia-test-release: 1; }\n",
+                },
               ],
             }),
           );
           const promotion = await submit(entry);
           assert.equal(promotion.outcome, "accepted", promotion.detail);
+          const newHtml = await (await fetch(base + "/")).text();
+          const newCssPath = /href="([^"]+\.css)"/.exec(newHtml)?.[1];
+          assert(newCssPath);
+          assert.notEqual(newCssPath, oldCssPath);
+          assert.match(
+            newHtml,
+            new RegExp(`/_gaia/releases/${promotion.commit}/assets/`),
+          );
+          assert.match(
+            await (await fetch(base + newCssPath)).text(),
+            /--gaia-test-release:\s*1/,
+          );
+          const retained = await fetch(base + oldCssPath);
+          assert.equal(retained.headers.get("content-type"), "text/css");
+          assert.equal(await retained.text(), oldCss);
           assert.equal(
             (await (await fetch(base + "/api/v1/state")).json()).marker,
             "source-promoted",

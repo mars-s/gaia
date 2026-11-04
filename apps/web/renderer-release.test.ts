@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createDraftStore, createReleaseObserver } from "./renderer-release.ts";
+import {
+  createDraftStore,
+  createReleaseObserver,
+  loadedRelease,
+} from "./renderer-release.ts";
 
 function memoryStorage() {
   const entries = new Map<string, string>();
@@ -15,13 +19,57 @@ function memoryStorage() {
   };
 }
 
+test("HTML from A reloads when its first snapshot already belongs to B", () => {
+  let reloads = 0;
+  const observe = createReleaseObserver(
+    () => true,
+    () => {
+      reloads++;
+    },
+    "A",
+  );
+  observe("B");
+  observe("B");
+  assert.equal(reloads, 1);
+});
+
+test("release identity comes from the loaded module URL; an unversioned renderer refreshes on managed state", () => {
+  const release = "a".repeat(40);
+  assert.equal(
+    loadedRelease(
+      `http://127.0.0.1:4317/_gaia/releases/${release}/assets/app.js`,
+    ),
+    release,
+  );
+  assert.equal(
+    loadedRelease("http://127.0.0.1:4317/apps/web/app.tsx?t=123"),
+    undefined,
+  );
+  let reloads = 0;
+  const observe = createReleaseObserver(
+    () => true,
+    () => {
+      reloads++;
+    },
+  );
+  observe(undefined);
+  assert.equal(reloads, 0);
+  observe(release);
+  observe(release);
+  assert.equal(reloads, 1);
+});
+
 test("release A to B to A reloads each loaded renderer once and recovers its draft", () => {
   const storage = memoryStorage();
   let reloads = 0;
   const draft = createDraftStore(() => storage);
-  const observe = createReleaseObserver(draft.prepareReload, () => {
-    reloads++;
-  });
+  const observe = createReleaseObserver(
+    draft.prepareReload,
+    () => {
+      reloads++;
+    },
+    "A",
+  );
   observe(undefined);
   observe("A");
   observe("A");
@@ -33,9 +81,13 @@ test("release A to B to A reloads each loaded renderer once and recovers its dra
   assert.equal(reloads, 1);
   const nextDraft = createDraftStore(() => storage);
   assert.equal(nextDraft.read(), "my unsent question");
-  const next = createReleaseObserver(nextDraft.prepareReload, () => {
-    reloads++;
-  });
+  const next = createReleaseObserver(
+    nextDraft.prepareReload,
+    () => {
+      reloads++;
+    },
+    "B",
+  );
   next("B");
   next("B");
   assert.equal(reloads, 1);
@@ -47,6 +99,7 @@ test("release A to B to A reloads each loaded renderer once and recovers its dra
     () => {
       reloads++;
     },
+    "A",
   );
   rollback("A");
   rollback("A");
@@ -63,9 +116,13 @@ test("blocked storage keeps draft in memory and defers reload until safe", () =>
   const draft = createDraftStore(access);
   draft.save("keep this");
   let reloads = 0;
-  const observe = createReleaseObserver(draft.prepareReload, () => {
-    reloads++;
-  });
+  const observe = createReleaseObserver(
+    draft.prepareReload,
+    () => {
+      reloads++;
+    },
+    "A",
+  );
   observe("A");
   assert.equal(observe("B"), true);
   assert.equal(observe("B"), true);

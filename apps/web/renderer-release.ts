@@ -29,16 +29,21 @@ export function createDraftStore(storage: () => DraftStorage) {
   };
 }
 
+export function loadedRelease(moduleUrl: string) {
+  return /^\/_gaia\/releases\/([a-f0-9]{40})\/assets\//.exec(
+    new URL(moduleUrl).pathname,
+  )?.[1];
+}
+
 export function createReleaseObserver(
   prepare: () => boolean,
   reload: () => void,
+  loadedRelease?: string,
 ) {
-  let initial: string | undefined;
   let reloading = false;
   return (release: string | undefined) => {
     if (!release || reloading) return false;
-    if (initial === undefined) initial = release;
-    if (initial === release) return false;
+    if (loadedRelease === release) return false;
     if (!prepare()) return true;
     reloading = true;
     reload();
