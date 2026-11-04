@@ -12,5 +12,5 @@
     "types": ["node", "vite/client"],
     "paths": { "@/*": ["./apps/web/*"] }
   },
-  "include": ["apps", "packages", "core", "selfmod", "vite.config.ts"]
+  "include": ["apps", "packages", "core", "selfmod", "vite.config.ts", "scripts/owner-upgrade"]
 }
