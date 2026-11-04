@@ -68,6 +68,8 @@ const app = serverFactory({
         join(env.GAIA_GENERATION, "pi.sqlite"),
         auth,
         mode === "safe" ? [] : [selfChangeTools(env.GAIA_CONTROL_SOCKET)],
+        {},
+        { areasEnabled: mode !== "safe" },
       ),
   auth: service,
   origins,
