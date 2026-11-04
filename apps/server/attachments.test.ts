@@ -13,6 +13,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { once } from "node:events";
+import { createRequire } from "node:module";
+import { initSync, PhotonImage } from "@silvia-odwyer/photon/photon_rs.js";
 import { crc32, deflateSync } from "node:zlib";
 import { fauxProvider, fauxAssistantMessage } from "@earendil-works/pi-ai";
 import {
@@ -190,6 +192,78 @@ test("real image decoding refuses corrupt payloads and prepares dimensions and b
     assert.match(JSON.stringify(await refused.json()), /50 megapixels/);
     assert.equal(f.faux.state.callCount, 0);
   } finally {
+    await f.app.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("real JPEG EXIF orientation and WebP bytes prepare into readable stored images", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-image-formats-"));
+  const f = await fixture(dir);
+  initSync({
+    module: await readFile(
+      createRequire(import.meta.url).resolve(
+        "@silvia-odwyer/photon/photon_rs_bg.wasm",
+      ),
+    ),
+  });
+  const original = new PhotonImage(
+    new Uint8Array([255, 0, 0, 255, 0, 0, 255, 255]),
+    2,
+    1,
+  );
+  try {
+    const jpeg = Buffer.from(original.get_bytes_jpeg(90));
+    const exif = Buffer.from(
+      "45786966000049492a0008000000010012010300010000000600000000000000",
+      "hex",
+    );
+    const segment = Buffer.alloc(4);
+    segment[0] = 255;
+    segment[1] = 225;
+    segment.writeUInt16BE(exif.length + 2, 2);
+    const rotated = Buffer.concat([
+      jpeg.subarray(0, 2),
+      segment,
+      exif,
+      jpeg.subarray(2),
+    ]);
+    for (const fixture of [
+      { mimeType: "image/jpeg", bytes: rotated, width: 1, height: 2 },
+      {
+        mimeType: "image/webp",
+        bytes: Buffer.from(original.get_bytes_webp()),
+        width: 2,
+        height: 1,
+      },
+    ]) {
+      const response = await f.request("attachments", {
+        ...upload(),
+        mimeType: fixture.mimeType,
+        data: fixture.bytes.toString("base64"),
+      });
+      assert.equal(
+        response.status,
+        201,
+        JSON.stringify(await response.clone().json()),
+      );
+      const saved = Attachment.parse(await response.json());
+      const served = await f.request(`attachments/${saved.id}`);
+      assert.equal(served.status, 200);
+      assert.equal(served.headers.get("content-type"), saved.mimeType);
+      const decoded = PhotonImage.new_from_byteslice(
+        new Uint8Array(await served.arrayBuffer()),
+      );
+      try {
+        assert.equal(decoded.get_width(), fixture.width);
+        assert.equal(decoded.get_height(), fixture.height);
+      } finally {
+        decoded.free();
+      }
+    }
+    assert.equal(f.faux.state.callCount, 0);
+  } finally {
+    original.free();
     await f.app.close();
     await rm(dir, { recursive: true, force: true });
   }

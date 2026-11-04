@@ -127,11 +127,12 @@ export function openAttachments(db: DatabaseSync) {
       const existing = existingAttachment();
       if (existing) return existing;
       const upload = await prepareImage(original, signal, limits);
+      const bytes = imageBytes(upload);
       const attachment = Attachment.parse({
         id: upload.id,
         name: displayName(upload.name),
         mimeType: upload.mimeType,
-        size: Buffer.from(upload.data, "base64").length,
+        size: bytes.length,
       });
       const raced = existingAttachment();
       if (raced) return raced;
