@@ -25,13 +25,18 @@ Supporting text overrides the upstream faint neutral defaults for readability. T
 
 ## Composition
 
-Model, effort and attachment actions belong in the compact composer. Keep navigation optional and avoid decorative graphics, gradients and permanent auth panels. The installed Board UI `SocialButton`, `IconButton` and `Textarea` currently provide sign-in, actions and input. They may be retained or replaced under the spec's library policy. Paid templates are not used.
+Model, effort and attachment actions belong in the compact composer. Keep navigation optional and avoid decorative graphics, gradients and permanent auth panels. The installed Board UI SocialButton, IconButton and Textarea currently provide sign-in, actions and input. They may be retained or replaced under the spec's library policy. Paid templates are not used.
+
+The minimal pill keeps a left plus menu, inline model name and pink send control. The model name opens a restrained themed popover with model radio rows, a divider and a discrete effort range with Faster and Smarter cues. Every effort value comes from Pi's model metadata. Image-capable models offer Attach images in the plus menu. Image thumbnails sit above the input, with named removal buttons. At 320px the model control moves to a second input row, preserving room to type. There are no microphone, branch or usage placeholders. Compact context remains in the plus menu.
+
 
 Messages have 32px separation. User text has a quiet secondary fill and aligns right. Assistant text sits directly on the page. The composer remains available when the transcript scrolls. At 320px, content has 16px side insets. Hover, focus and disabled states use the installed component vocabulary. No authored animation is needed.
 
 ## Behaviour
 
 Sign-in opens once for each URL during a flow, including repeated SSE snapshots and StrictMode effect replay. Browser retry is explicit. Manual-code entry stays in a disclosure. Drafts survive failed sends and disconnects. Keyboard send uses the same guard as the button and respects IME composition. Retry appears only with a failed reply. The transcript follows new replies unless the owner scrolls up.
+
+Text and image drafts use IndexedDB and wait for a durable save before release reload. New edits survive earlier send completion. Image previews release object URLs. Images remain visible in failed messages and retry uses their stored references. Optional setup shows an initial question once, then the conversation carries one missing question at a time. Skip setup is quiet and can stop an active setup turn. Save still confirms only the displayed proposal.
 
 ## Verification boundary
 

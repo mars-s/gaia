@@ -13,6 +13,14 @@ import { SocialButton } from "@/components/base/social-button/social-button";
 import { Textarea } from "@/components/base/textarea/textarea";
 import { cx } from "@/utils/cx";
 import type { Snapshot } from "../../packages/protocol/index.ts";
+import { uploadImage } from "../../packages/sdk/images.ts";
+import { DraftImages, MessageImages } from "./image-previews";
+import { readImageFiles, appendImages } from "./image-input";
+import {
+  createChatDraft,
+  browserDraftPersistence,
+  type DraftState,
+} from "./chat-draft";
 import { command, subscribe } from "../../packages/sdk/index.ts";
 import {
   createProfileReader,
@@ -30,6 +38,7 @@ import {
 import { createAuthBrowserFlow, openAuthInBrowser } from "./browser-auth";
 
 export function App() {
+  const inFlight = useRef(false);
   const [profile, setProfile] = useState<OwnerState>();
   const [profileError, setProfileError] = useState(false);
   const [profileReader] = useState(() =>
@@ -46,18 +55,41 @@ export function App() {
   const [browserError, setBrowserError] = useState("");
   const [offline, setOffline] = useState(false);
   const [draftStore] = useState(() => createDraftStore(() => sessionStorage));
-  const [draft, updateDraft] = useState(() => draftStore.read());
+  const [draftState, setDraftState] = useState<DraftState>({ kind: "loading" });
+  const [draftSession] = useState(() =>
+    createChatDraft(
+      browserDraftPersistence(),
+      setDraftState,
+      draftStore.read(),
+    ),
+  );
+  const draft = draftState.kind === "ready" ? draftState.draft.text : "";
+  const images = draftState.kind === "ready" ? draftState.draft.images : [];
+  const [sendProgress, setSendProgress] = useState<
+    | { kind: "idle" }
+    | { kind: "uploading"; completed: number; total: number }
+    | { kind: "sending" }
+  >({ kind: "idle" });
+  const uploadController = useRef<AbortController | undefined>(undefined);
+  const [dragging, setDragging] = useState(false);
+  const [readingImages, setReadingImages] = useState(false);
+  const imageReads = useRef(0);
+  const composing = useRef(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [updateWaiting, setUpdateWaiting] = useState(false);
   const [observeRelease] = useState(() =>
     createReleaseObserver(
-      draftStore.prepareReload,
+      () =>
+        !inFlight.current &&
+        imageReads.current === 0 &&
+        !composing.current &&
+        draftSession.prepareReload(),
       () => window.location.reload(),
       loadedRelease(import.meta.url),
     ),
   );
   function setDraft(value: string) {
-    draftStore.save(value);
-    updateDraft(value);
+    draftSession.update((current) => ({ ...current, text: value }));
   }
   function receive(value: Snapshot) {
     setState(value);
@@ -66,7 +98,6 @@ export function App() {
   const [authReply, setAuthReply] = useState("");
   const [pending, setPending] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const inFlight = useRef(false);
   const composer = useRef<HTMLTextAreaElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const transcript = useRef<HTMLDivElement>(null);
@@ -76,8 +107,35 @@ export function App() {
   const connected = connection?.kind === "connected";
   const running = state?.thread.run.kind === "running";
   const compacting = state?.chat?.compaction.kind === "running";
+  const supportsImages = Boolean(
+    state?.chat?.models.find((model) => model.id === state.chat?.modelId)
+      ?.capabilities?.images,
+  );
   const canSend =
-    connected && !offline && !running && !pending && Boolean(draft.trim());
+    connected &&
+    !offline &&
+    !running &&
+    !pending &&
+    !readingImages &&
+    draftState.kind === "ready" &&
+    (Boolean(draft.trim()) || images.length > 0) &&
+    (!images.length || supportsImages);
+
+  useEffect(() => {
+    void draftSession.load();
+  }, [draftSession]);
+  useEffect(() => () => uploadController.current?.abort(), []);
+  useEffect(() => {
+    if (draftState.kind !== "ready") return;
+    if (draftState.durability === "saved") draftStore.save("");
+    if (
+      state?.thread.messages.some(
+        (message) =>
+          message.role === "user" && message.id === draftState.draft.requestId,
+      )
+    )
+      draftSession.completeSend(draftState.draft.requestId);
+  }, [draftState, state?.thread.messages, draftSession, draftStore]);
 
   useEffect(() => {
     if (connected && !running) void profileReader.refresh();
@@ -112,11 +170,17 @@ export function App() {
 
   useEffect(() => {
     if (connected && !accountOpen) composer.current?.focus();
-  }, [connected, accountOpen]);
+  }, [connected, accountOpen, draftState.kind]);
 
   useEffect(() => {
     setUpdateWaiting(observeRelease(state?.runtime?.release));
-  }, [draft, observeRelease, state?.runtime?.release]);
+  }, [
+    draftState,
+    pending,
+    readingImages,
+    observeRelease,
+    state?.runtime?.release,
+  ]);
 
   const lastMessage = state?.thread.messages.at(-1);
   const proposalId =
@@ -181,15 +245,86 @@ export function App() {
 
   async function send() {
     if (!canSend || inFlight.current) return;
-    const sentDraft = draft;
+    const current = draftSession.read();
+    if (current.kind !== "ready") return;
+    const sentDraft = current.draft;
+    inFlight.current = true;
+    setPending(true);
+    setError("");
+    const controller = new AbortController();
+    uploadController.current = controller;
     followReply.current = true;
-    if (
-      await act("messages", {
-        text: sentDraft.trim(),
-        requestId: crypto.randomUUID(),
-      })
-    ) {
-      updateDraft(draftStore.completeSend(sentDraft));
+    try {
+      for (let n = 0; n < sentDraft.images.length; n++) {
+        setSendProgress({
+          kind: "uploading",
+          completed: n,
+          total: sentDraft.images.length,
+        });
+        await uploadImage(sentDraft.images[n], controller.signal);
+      }
+      controller.signal.throwIfAborted();
+      setSendProgress({ kind: "sending" });
+      receive(
+        await command(
+          "messages",
+          {
+            text: sentDraft.text.trim(),
+            requestId: sentDraft.requestId,
+            ...(sentDraft.images.length
+              ? { attachments: sentDraft.images.map((image) => image.id) }
+              : {}),
+          },
+          controller.signal,
+        ),
+      );
+      draftSession.completeSend(sentDraft.requestId);
+    } catch (cause) {
+      setError(
+        controller.signal.aborted
+          ? "Upload cancelled. Your draft is here."
+          : cause instanceof Error
+            ? cause.message
+            : "Message could not be sent. Your draft is here.",
+      );
+    } finally {
+      inFlight.current = false;
+      uploadController.current = undefined;
+      setSendProgress({ kind: "idle" });
+      setPending(false);
+    }
+  }
+
+  async function addImages(files: File[]) {
+    if (!files.length) return;
+    if (draftSession.read().kind !== "ready") {
+      setError("Wait for your saved draft to load before attaching images.");
+      return;
+    }
+    if (!supportsImages) {
+      setError(
+        "This model does not accept images. Choose an image-capable model first.",
+      );
+      return;
+    }
+    imageReads.current++;
+    setReadingImages(true);
+    setError("");
+    try {
+      const added = await readImageFiles(files);
+      draftSession.update((current) => ({
+        ...current,
+        images: appendImages(current.images, added),
+      }));
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Images could not be read. Try choosing them again.",
+      );
+    } finally {
+      imageReads.current--;
+      setReadingImages(imageReads.current > 0);
     }
   }
 
@@ -415,8 +550,13 @@ export function App() {
                           : "w-full max-w-[72ch] self-start",
                       )}
                     >
+                      {message.attachments?.length ? (
+                        <MessageImages images={message.attachments} />
+                      ) : null}
                       {message.text ||
-                        (running && message.id === lastMessage?.id ? (
+                        (message.role === "user" &&
+                        message.attachments?.length ? null : running &&
+                          message.id === lastMessage?.id ? (
                           <span className="text-text-secondary" role="status">
                             Thinking…
                           </span>
@@ -465,8 +605,8 @@ export function App() {
                 role="status"
                 className="text-caption-1-regular text-text-secondary"
               >
-                An update is ready. Send or clear your draft to load it, or
-                enable session storage.
+                An update is ready. Your draft must finish saving before Gaia
+                reloads.
               </p>
             )}
             {offline && (
@@ -496,81 +636,248 @@ export function App() {
                 )}
               </div>
             )}
+            {draftState.kind === "error" ? (
+              <div
+                role="alert"
+                className="flex flex-wrap items-center gap-2 text-text-secondary"
+              >
+                <p>{draftState.message}</p>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={() => void draftSession.load()}
+                >
+                  Retry draft
+                </Button>
+              </div>
+            ) : draftState.kind === "ready" &&
+              draftState.durability === "memory" ? (
+              <div
+                role="alert"
+                className="flex flex-wrap items-center gap-2 text-text-secondary"
+              >
+                <p>
+                  Your draft is kept in this window. Storage is unavailable.
+                </p>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={() => draftSession.retrySave()}
+                >
+                  Retry saving
+                </Button>
+              </div>
+            ) : null}
+            {images.length > 0 && !supportsImages && (
+              <p
+                role="alert"
+                className="text-caption-1-regular text-text-secondary"
+              >
+                This model cannot use images. Choose another model or remove the
+                images to send.
+              </p>
+            )}
+            <span className="sr-only" role="status">
+              {draftState.kind === "loading"
+                ? "Loading saved draft"
+                : readingImages
+                  ? "Reading images"
+                  : sendProgress.kind === "uploading"
+                    ? `Uploading image ${sendProgress.completed + 1} of ${sendProgress.total}`
+                    : sendProgress.kind === "sending"
+                      ? "Sending message"
+                      : ""}
+            </span>
+            {(readingImages || sendProgress.kind !== "idle") && (
+              <p
+                role="status"
+                className="px-2 text-caption-1-regular text-text-secondary"
+              >
+                {sendProgress.kind === "uploading"
+                  ? `Uploading image ${sendProgress.completed + 1} of ${sendProgress.total}…`
+                  : sendProgress.kind === "sending"
+                    ? "Sending…"
+                    : "Preparing images…"}
+              </p>
+            )}
             <form
-              className="composer grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 rounded-[28px] border border-transparent bg-background-tertiary-default p-2 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]"
+              className={cx(
+                "composer flex flex-col gap-2 rounded-[28px] border border-transparent bg-background-tertiary-default p-2",
+                dragging && "composer-dragging",
+              )}
               aria-label="Message Gaia"
+              onDragOver={(event) => {
+                if (event.dataTransfer.types.includes("Files")) {
+                  event.preventDefault();
+                  setDragging(true);
+                }
+              }}
+              onDragLeave={(event) => {
+                if (
+                  !event.currentTarget.contains(
+                    event.relatedTarget instanceof Node
+                      ? event.relatedTarget
+                      : null,
+                  )
+                )
+                  setDragging(false);
+              }}
+              onDrop={(event) => {
+                if (!event.dataTransfer.files.length) return;
+                event.preventDefault();
+                setDragging(false);
+                void addImages(Array.from(event.dataTransfer.files));
+              }}
+              onPaste={(event) => {
+                const files = Array.from(event.clipboardData.files);
+                if (files.length) {
+                  event.preventDefault();
+                  void addImages(files);
+                  const text = event.clipboardData.getData("text/plain");
+                  const start =
+                    composer.current?.selectionStart ?? draft.length;
+                  const end = composer.current?.selectionEnd ?? start;
+                  if (text)
+                    draftSession.update((current) => ({
+                      ...current,
+                      text: (
+                        current.text.slice(0, start) +
+                        text +
+                        current.text.slice(end)
+                      ).slice(0, 32000),
+                    }));
+                }
+              }}
               onSubmit={(event) => {
                 event.preventDefault();
                 void send();
               }}
             >
-              <ComposerActions
-                disabled={pending || offline || running}
-                onCompact={() => void act("compact")}
-                onHistory={
-                  state.runtime ? () => setAccountOpen(true) : undefined
-                }
-              />
-              <Textarea
-                ref={composer}
-                className="col-start-2 row-start-1 w-full min-w-0"
-                fieldClassName="rounded-2xl bg-transparent ring-0 hover:ring-0 focus-within:ring-0"
-                inputClassName="placeholder:text-text-secondary focus:placeholder:text-text-secondary"
-                aria-label="Message Gaia"
-                rows={1}
-                autoResize
-                maxRows={8}
-                maxLength={32000}
-                value={draft}
-                onChange={setDraft}
-                onKeyDown={(event) => {
-                  if (
-                    event.key === "Enter" &&
-                    !event.shiftKey &&
-                    !event.nativeEvent.isComposing &&
-                    event.keyCode !== 229
-                  ) {
-                    event.preventDefault();
-                    void send();
+              {images.length > 0 && (
+                <DraftImages
+                  images={images}
+                  onRemove={(id) =>
+                    draftSession.update((current) => ({
+                      ...current,
+                      images: current.images.filter((image) => image.id !== id),
+                    }))
                   }
-                }}
-                placeholder="Ask me anything…"
-              />
-              {state.chat ? (
-                <ComposerControls
-                  chat={state.chat}
-                  disabled={pending || offline || running}
-                  onModel={(modelId) => void act("model", { modelId })}
                 />
-              ) : null}
-              <IconButton
-                className="col-start-3 row-start-1 shrink-0 self-end rounded-full border-transparent bg-accent-500 text-text-white shadow-none hover:border-transparent hover:bg-accent-600 active:border-transparent active:bg-accent-700 disabled:border-transparent disabled:bg-accent-500 disabled:text-text-white disabled:opacity-40 sm:col-start-4"
-                icon={running ? RiStopFill : RiArrowUpLine}
-                aria-label={
-                  running
-                    ? compacting
-                      ? "Stop compaction"
-                      : "Stop reply"
-                    : "Send message"
-                }
-                type={running ? "button" : "submit"}
-                disabled={running ? pending || offline : !canSend}
-                onClick={running ? () => void act("stop") : undefined}
+              )}
+              {dragging && (
+                <span className="col-span-full px-3 pt-1 text-caption-1-medium text-text-secondary">
+                  Drop images to attach
+                </span>
+              )}
+              <input
+                ref={fileInput}
+                className="hidden"
+                type="file"
+                tabIndex={-1}
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                aria-label="Choose images"
+                disabled={!supportsImages || draftState.kind !== "ready"}
+                onChange={(event) => {
+                  void addImages(Array.from(event.target.files ?? []));
+                  event.target.value = "";
+                }}
               />
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
+                <ComposerActions
+                  disabled={pending || offline || running}
+                  onAttach={
+                    supportsImages && draftState.kind === "ready"
+                      ? () => fileInput.current?.click()
+                      : undefined
+                  }
+                  onCompact={() => void act("compact")}
+                  onHistory={
+                    state.runtime ? () => setAccountOpen(true) : undefined
+                  }
+                />
+                <Textarea
+                  ref={composer}
+                  className="col-start-2 row-start-1 w-full min-w-0"
+                  fieldClassName="rounded-2xl bg-transparent ring-0 hover:ring-0 focus-within:ring-0"
+                  inputClassName="placeholder:text-text-secondary focus:placeholder:text-text-secondary"
+                  aria-label="Message Gaia"
+                  rows={1}
+                  autoResize
+                  maxRows={8}
+                  maxLength={32000}
+                  value={draft}
+                  isDisabled={draftState.kind !== "ready"}
+                  onChange={setDraft}
+                  onCompositionStart={() => {
+                    composing.current = true;
+                  }}
+                  onCompositionEnd={() => {
+                    composing.current = false;
+                  }}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "Enter" &&
+                      !event.shiftKey &&
+                      !event.nativeEvent.isComposing &&
+                      event.keyCode !== 229
+                    ) {
+                      event.preventDefault();
+                      void send();
+                    }
+                  }}
+                  placeholder="Ask me anything…"
+                />
+                {state.chat ? (
+                  <ComposerControls
+                    chat={state.chat}
+                    disabled={pending || offline || running}
+                    onModel={(modelId, thinkingLevel) =>
+                      void act("model", {
+                        modelId,
+                        ...(thinkingLevel ? { thinkingLevel } : {}),
+                      })
+                    }
+                  />
+                ) : null}
+                <IconButton
+                  className="col-start-3 row-start-1 shrink-0 self-end rounded-full border-transparent bg-accent-500 text-text-white shadow-none hover:border-transparent hover:bg-accent-600 active:border-transparent active:bg-accent-700 disabled:border-transparent disabled:bg-accent-500 disabled:text-text-white disabled:opacity-40 sm:col-start-4"
+                  icon={
+                    running || sendProgress.kind === "uploading"
+                      ? RiStopFill
+                      : RiArrowUpLine
+                  }
+                  aria-label={
+                    sendProgress.kind === "uploading"
+                      ? "Cancel image upload"
+                      : running
+                        ? compacting
+                          ? "Stop compaction"
+                          : "Stop reply"
+                        : "Send message"
+                  }
+                  type={
+                    running || sendProgress.kind === "uploading"
+                      ? "button"
+                      : "submit"
+                  }
+                  disabled={
+                    sendProgress.kind === "uploading"
+                      ? false
+                      : running
+                        ? pending || offline
+                        : !canSend
+                  }
+                  onClick={
+                    sendProgress.kind === "uploading"
+                      ? () => uploadController.current?.abort()
+                      : running
+                        ? () => void act("stop")
+                        : undefined
+                  }
+                />
+              </div>
             </form>
-            <div className="flex justify-end px-2">
-              <Button
-                className="bg-transparent text-text-secondary shadow-none hover:bg-background-secondary-hover"
-                type="button"
-                variant="ghost"
-                size="xs"
-                disabled={pending || offline || running}
-                title="Summarise older context and keep the chat history"
-                onClick={() => void act("compact")}
-              >
-                {compacting ? "Compacting…" : "Compact"}
-              </Button>
-            </div>
             {state.chat && state.chat.compaction.kind !== "idle" && (
               <p
                 role={

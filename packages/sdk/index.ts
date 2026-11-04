@@ -2,11 +2,15 @@ import { Snapshot, Event, ApiError } from "../protocol/index.ts";
 export async function command(
   path: string,
   input: unknown = {},
+  signal?: AbortSignal,
 ): Promise<Snapshot> {
   const response = await fetch(`/api/v1/${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
+    signal: signal
+      ? AbortSignal.any([signal, AbortSignal.timeout(15000)])
+      : AbortSignal.timeout(15000),
   });
   const value: unknown = await response.json();
   if (!response.ok) throw new Error(ApiError.parse(value).error);
