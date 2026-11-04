@@ -77,7 +77,7 @@ Store each profile under the active conversation generation at `experiences/<pro
 
 The legacy owner chat, skipped profile, workspace and attachments remain untouched. The runtime joins every job and store before shutdown. A whole-runtime admission barrier is required before a managed snapshot, because Home's idle flag says nothing about profile jobs. Parent integration owns the smallest checked protected launcher, schema and quiescence changes. The supervisor's auth, rollback and safe-mode policies remain unchanged.
 
-Nested profile databases need recursive compatibility coverage before managed activation. Active and GOOD baselines must understand the new profile data before enabling it. New profile execution is unavailable in safe mode, while legacy Home chat remains usable. No candidate check or probation probe may dispatch a Mac action.
+The protected schema guard covers each managed `experiences/<profile UUID>/pi.sqlite`. Existing profile databases cannot disappear or change schema. New profiles must match the baseline Pi schema, so safe mode can accept profiles created after its GOOD data baseline. This guard does not inspect arbitrary machine-produced database artefacts. Active and GOOD baselines must understand the new profile data before enabling it. New profile execution is unavailable in safe mode, while legacy Home chat remains usable. No candidate check or probation probe may dispatch a Mac action.
 
 ## Verification and reconciliation
 
