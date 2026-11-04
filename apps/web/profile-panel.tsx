@@ -116,7 +116,7 @@ export function ProfilePanel({
       ) : null}
       {state.kind !== "ready" && state.kind !== "skipped" && (
         <Button
-          className="text-text-secondary"
+          className="quiet-action text-text-secondary"
           variant="ghost"
           size="small"
           disabled={skipDisabled}

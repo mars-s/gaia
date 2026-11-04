@@ -14,7 +14,8 @@ import { Textarea } from "@/components/base/textarea/textarea";
 import { cx } from "@/utils/cx";
 import type { Snapshot } from "../../packages/protocol/index.ts";
 import { uploadImage } from "../../packages/sdk/images.ts";
-import { DraftImages, MessageImages } from "./image-previews";
+import { DraftImages } from "./image-previews";
+import { Transcript } from "./transcript";
 import { readImageFiles, appendImages } from "./image-input";
 import {
   createChatDraft,
@@ -550,38 +551,7 @@ export function App() {
                   </h1>
                 </div>
               ) : (
-                <div className="flex flex-col gap-8 py-8">
-                  {state.thread.messages.map((message) => (
-                    <article
-                      key={message.id}
-                      aria-label={message.role === "user" ? "You" : "Gaia"}
-                      className={cx(
-                        "message-text whitespace-pre-wrap wrap-anywhere",
-                        message.role === "user"
-                          ? "max-w-[88%] self-end rounded-3xl bg-background-secondary-default px-5 py-3"
-                          : "w-full max-w-[72ch] self-start",
-                      )}
-                    >
-                      {message.attachments?.length ? (
-                        <MessageImages images={message.attachments} />
-                      ) : null}
-                      {message.text ||
-                        (message.role === "user" &&
-                        message.attachments?.length ? null : running &&
-                          message.id === lastMessage?.id ? (
-                          <span className="text-text-secondary" role="status">
-                            Thinking…
-                          </span>
-                        ) : (
-                          <span className="text-text-secondary">
-                            {state.thread.run.kind === "stopped"
-                              ? "Reply stopped."
-                              : "No reply received."}
-                          </span>
-                        ))}
-                    </article>
-                  ))}
-                </div>
+                <Transcript thread={state.thread} />
               )}
               {(!profile ||
                 profileError ||
