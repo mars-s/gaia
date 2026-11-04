@@ -57,11 +57,15 @@ export function createChatServer({
   adapter,
   auth,
   origins,
+  runtime,
+  allowWrite,
 }: {
   db: DatabaseSync;
   adapter: ChatAdapter;
   auth: AuthService;
   origins: string[];
+  runtime?: () => Snapshot["runtime"];
+  allowWrite?: () => Promise<boolean>;
 }) {
   db.exec(
     "CREATE TABLE IF NOT EXISTS chat (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL); CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY)",
@@ -83,7 +87,11 @@ export function createChatServer({
       .prepare("INSERT OR REPLACE INTO chat VALUES (1,?)")
       .run(JSON.stringify(thread));
   persist();
-  const snapshot = (): Snapshot => ({ thread, connection: auth.status() });
+  const snapshot = (): Snapshot => ({
+    thread,
+    connection: auth.status(),
+    ...(runtime ? { runtime: runtime() } : {}),
+  });
   const listeners = new Set<(value: Snapshot) => void>();
   const publish = () => {
     persist();
@@ -174,6 +182,12 @@ export function createChatServer({
         throw new HttpError(403, "Cross-site requests are not allowed.");
       if (req.method === "GET" && url.pathname === "/healthz")
         return json(200, { ok: true });
+      if (req.method === "GET" && url.pathname === "/api/v1/onboarding")
+        return json(200, {
+          version: 1,
+          kind: auth.status().kind === "connected" ? "ready" : "connect",
+          connection: auth.status(),
+        });
       if (req.method === "GET" && url.pathname === "/api/v1/state")
         return json(200, snapshot());
       if (req.method === "GET" && url.pathname === "/api/v1/events") {
@@ -195,6 +209,10 @@ export function createChatServer({
       }
       if (req.method !== "POST") throw new HttpError(404, "Not found.");
       const input = await body(req);
+      if (allowWrite && !(await allowWrite())) {
+        res.setHeader("Retry-After", "2");
+        throw new HttpError(503, "Gaia is checking a release. Retry shortly.");
+      }
       if (
         ["/api/v1/stop", "/api/v1/retry", "/api/v1/auth/connect"].includes(
           url.pathname,
@@ -265,7 +283,12 @@ export function createChatServer({
       await active?.done;
       for (const socket of serverSockets) socket.destroy();
       await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
+        server.close((error) =>
+          error &&
+          (!("code" in error) || error.code !== "ERR_SERVER_NOT_RUNNING")
+            ? reject(error)
+            : resolve(),
+        ),
       );
       await adapter.close();
       await auth.close();

@@ -29,7 +29,16 @@ export const Connection = z.discriminatedUnion("kind", [
   }),
 ]);
 export type Connection = z.infer<typeof Connection>;
-export const Snapshot = z.object({ thread: Thread, connection: Connection });
+export const Runtime = z.object({
+  release: z.string(),
+  mode: z.string(),
+  selfModification: z.boolean(),
+});
+export const Snapshot = z.object({
+  thread: Thread,
+  connection: Connection,
+  runtime: Runtime.optional(),
+});
 export type Snapshot = z.infer<typeof Snapshot>;
 export const Event = z.object({ type: z.literal("snapshot"), data: Snapshot });
 export const Send = z

@@ -1,0 +1,8 @@
+ts	phase	decision	why	evidence	result
+2026-11-04T00:00:00Z	frame	Keep all desktop and web changes with parent	Parent assigned a separate UI owner	User scope correction	backend only
+2026-11-04T00:01:00Z	design	Pair code and data in one durable journal	Model the domain makes recovery choose one complete pair	core/state.ts	implementation underway
+2026-11-04T09:42:49.970244+00:00	audit	Initial rows used phase-order placeholder times	Subsequent rows use the execution clock	docs/selfmod-decisions.tsv	timestamp correction
+2026-11-04T09:42:49.970363+00:00	sandbox	Move policy outside candidate writes and restrict writes to scratch probe data and dist	Early review demonstrated that writable policy and source could escape verification	core/safety.test.ts	actual OS denial regression passed
+2026-11-04T09:42:49.970365+00:00	recovery	Persist paired manifest and completion receipt	Restore one code and data pair and repair interrupted history writes	core/integration.test.ts	all recovery cases passed
+2026-11-04T09:42:49.970366+00:00	verification	Run full acceptance commands and real managed startup	Prove the actual processes and public API before handback	docs/managed-local.md	typecheck lint 30 tests build and protocol passed; isolated live startup passed
+2026-11-04T09:42:49.970368+00:00	handover	Leave UI and live account acceptance with parent	User split backend and UI ownership and prohibited subagents	docs/managed-local.md	no web desktop PR push or external deployment changes

@@ -2,6 +2,7 @@ import {
   Harness,
   createRegistry,
   type ConversationView,
+  type Extension,
 } from "@earendil-works/pi-durable";
 import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
@@ -41,13 +42,16 @@ const Partial = z
 export async function createPi(
   path: string,
   auth: ReturnType<typeof createAuth>,
+  extensions: Extension[] = [],
 ): Promise<ChatAdapter> {
   const ctx = BACKGROUND_CONTEXT;
+  const registry = createRegistry();
+  for (const extension of extensions) registry.install(extension);
   const harness = await Harness.open(
     await openNodeSqliteStorage(path),
     {
       models: auth.models,
-      registry: createRegistry(),
+      registry,
       settings: { retry: { maxRetries: 0 } },
     },
     ctx,
