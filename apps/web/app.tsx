@@ -14,6 +14,11 @@ import { Textarea } from "@/components/base/textarea/textarea";
 import { cx } from "@/utils/cx";
 import type { Snapshot } from "../../packages/protocol/index.ts";
 import { command, subscribe } from "../../packages/sdk/index.ts";
+import {
+  createProfileReader,
+  type OwnerState,
+} from "../../packages/sdk/onboarding.ts";
+import { ProfilePanel } from "./profile-panel";
 import { ManagedSettings } from "./managed-settings";
 import { ComposerActions, ComposerControls } from "./composer-controls";
 import {
@@ -24,6 +29,17 @@ import {
 import { createAuthBrowserFlow, openAuthInBrowser } from "./browser-auth";
 
 export function App() {
+  const [profile, setProfile] = useState<OwnerState>();
+  const [profileError, setProfileError] = useState(false);
+  const [profileReader] = useState(() =>
+    createProfileReader(
+      (value) => {
+        setProfile(value);
+        setProfileError(false);
+      },
+      () => setProfileError(true),
+    ),
+  );
   const [state, setState] = useState<Snapshot>();
   const [error, setError] = useState("");
   const [browserError, setBrowserError] = useState("");
@@ -61,6 +77,12 @@ export function App() {
   const compacting = state?.chat?.compaction.kind === "running";
   const canSend =
     connected && !offline && !running && !pending && Boolean(draft.trim());
+
+  useEffect(() => {
+    if (connected && !running) void profileReader.refresh();
+    else profileReader.cancel();
+    return profileReader.cancel;
+  }, [connected, running, profileReader]);
 
   useEffect(
     () =>
@@ -120,6 +142,34 @@ export function App() {
       setPending(false);
     }
   }
+
+  async function profileAction(action: string) {
+    profileReader.cancel();
+    const input =
+      action === "confirm" && profile?.kind === "proposed"
+        ? { proposalId: profile.proposalId }
+        : {};
+    if (await act(`profile/${action}`, input)) {
+      await profileReader.refresh();
+      if (
+        action === "start" ||
+        action === "edit" ||
+        action === "skip" ||
+        action === "confirm"
+      )
+        setAccountOpen(false);
+    } else await profileReader.refresh();
+  }
+  const profilePanel = (account = false) => (
+    <ProfilePanel
+      state={profile}
+      failed={profileError}
+      account={account}
+      disabled={pending || running || offline || profileError}
+      onAction={(action) => void profileAction(action)}
+      onRetry={() => void profileReader.refresh()}
+    />
+  );
 
   async function send() {
     if (!canSend || inFlight.current) return;
@@ -199,6 +249,7 @@ export function App() {
             >
               Reconnect ChatGPT
             </Button>
+            {profilePanel(true)}
             <ManagedSettings runtime={state?.runtime} />
             {error && (
               <p role="alert" className="text-text-error-primary">
@@ -371,6 +422,14 @@ export function App() {
                     </article>
                   ))}
                 </div>
+              )}
+              {(!profile ||
+                profileError ||
+                profile.kind === "interview" ||
+                profile.kind === "proposed" ||
+                (profile.kind === "new" &&
+                  state.thread.messages.length === 0)) && (
+                <div className="py-4">{profilePanel()}</div>
               )}
               <div ref={bottom} />
             </section>

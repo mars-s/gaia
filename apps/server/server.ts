@@ -14,6 +14,11 @@ import {
   type Snapshot,
   type Connection,
 } from "../../packages/protocol/index.ts";
+import { openOwnerProfile } from "./profile.ts";
+import {
+  ProfileConfirmation,
+  type OwnerCapability,
+} from "../../packages/sdk/onboarding.ts";
 import type { ChatAdapter } from "./pi.ts";
 export interface AuthService {
   status(): Connection;
@@ -72,6 +77,7 @@ export function createChatServer({
   db.exec(
     "CREATE TABLE IF NOT EXISTS chat (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL); CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY)",
   );
+  const profile = openOwnerProfile(db);
   const saved = db.prepare("SELECT value FROM chat WHERE id=1").get();
   let thread: Thread = saved
     ? Thread.parse(JSON.parse(String(saved.value)))
@@ -148,9 +154,25 @@ export function createChatServer({
     thread.run = { kind: "running", id };
     publish();
     const controller = new AbortController();
+    let capabilityActive = true;
+    const owner: OwnerCapability = {
+      read() {
+        try {
+          return profile.read();
+        } catch {
+          return undefined;
+        }
+      },
+      propose(value) {
+        if (!capabilityActive || controller.signal.aborted)
+          throw new Error("Setup turn expired.");
+        profile.propose(value);
+      },
+    };
     const done = Promise.resolve()
       .then(() =>
         adapter.run({
+          owner,
           text,
           requestId,
           onText(value) {
@@ -175,6 +197,7 @@ export function createChatServer({
             };
       })
       .finally(() => {
+        capabilityActive = false;
         active = undefined;
         publish();
       });
@@ -214,6 +237,11 @@ export function createChatServer({
           kind: auth.status().kind === "connected" ? "ready" : "connect",
           connection: auth.status(),
         });
+      if (req.method === "GET" && url.pathname === "/api/v1/profile") {
+        if (auth.status().kind !== "connected")
+          throw new HttpError(409, "Connect ChatGPT first.");
+        return json(200, profile.read());
+      }
       if (req.method === "GET" && url.pathname === "/api/v1/state")
         return json(200, snapshot());
       if (req.method === "GET" && url.pathname === "/api/v1/events") {
@@ -250,6 +278,32 @@ export function createChatServer({
         !Empty.safeParse(input).success
       )
         throw new HttpError(400, "Expected an empty object.");
+      if (url.pathname.startsWith("/api/v1/profile/")) {
+        const action = url.pathname.slice("/api/v1/profile/".length);
+        const parsed =
+          action === "confirm"
+            ? ProfileConfirmation.safeParse(input)
+            : Empty.safeParse(input);
+        if (!parsed.success)
+          throw new HttpError(
+            400,
+            action === "confirm"
+              ? "Confirm the proposal shown in the app."
+              : "Expected an empty object.",
+          );
+        requireIdle();
+        if (auth.status().kind !== "connected")
+          throw new HttpError(409, "Connect ChatGPT first.");
+        if (
+          !profile.action(
+            action,
+            "proposalId" in parsed.data ? parsed.data.proposalId : undefined,
+          )
+        )
+          throw new HttpError(409, "Profile action is not available.");
+        publish();
+        return json(202, snapshot());
+      }
       switch (url.pathname) {
         case "/api/v1/model": {
           const parsed = ModelSelection.safeParse(input);
