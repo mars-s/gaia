@@ -15,7 +15,7 @@ import { cx } from "@/utils/cx";
 import type { Snapshot } from "../../packages/protocol/index.ts";
 import { command, subscribe } from "../../packages/sdk/index.ts";
 import { ManagedSettings } from "./managed-settings";
-import { ComposerControls } from "./composer-controls";
+import { ComposerActions, ComposerControls } from "./composer-controls";
 import {
   createDraftStore,
   createReleaseObserver,
@@ -430,20 +430,27 @@ export function App() {
               </div>
             )}
             <form
-              className="composer flex flex-col gap-2 rounded-3xl border border-border-button-default bg-background-secondary-default p-2"
+              className="composer grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 rounded-[28px] border border-transparent bg-background-tertiary-default p-2 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]"
               aria-label="Message Gaia"
               onSubmit={(event) => {
                 event.preventDefault();
                 void send();
               }}
             >
+              <ComposerActions
+                disabled={pending || offline || running}
+                onCompact={() => void act("compact")}
+                onHistory={
+                  state.runtime ? () => setAccountOpen(true) : undefined
+                }
+              />
               <Textarea
                 ref={composer}
-                className="w-full min-w-0"
+                className="col-start-2 row-start-1 w-full min-w-0"
                 fieldClassName="rounded-2xl bg-transparent ring-0 hover:ring-0 focus-within:ring-0"
                 inputClassName="placeholder:text-text-secondary focus:placeholder:text-text-secondary"
                 aria-label="Message Gaia"
-                rows={2}
+                rows={1}
                 autoResize
                 maxRows={8}
                 maxLength={32000}
@@ -460,35 +467,43 @@ export function App() {
                     void send();
                   }
                 }}
-                placeholder="Message Gaia…"
+                placeholder="Ask me anything…"
               />
-              <div className="flex w-full items-center justify-between gap-2">
-                {state.chat ? (
-                  <ComposerControls
-                    chat={state.chat}
-                    disabled={pending || offline || running}
-                    onModel={(modelId) => void act("model", { modelId })}
-                    onCompact={() => void act("compact")}
-                  />
-                ) : (
-                  <span />
-                )}
-                <IconButton
-                  className="shrink-0 rounded-full shadow-none"
-                  icon={running ? RiStopFill : RiArrowUpLine}
-                  aria-label={
-                    running
-                      ? compacting
-                        ? "Stop compaction"
-                        : "Stop reply"
-                      : "Send message"
-                  }
-                  type={running ? "button" : "submit"}
-                  disabled={running ? pending || offline : !canSend}
-                  onClick={running ? () => void act("stop") : undefined}
+              {state.chat ? (
+                <ComposerControls
+                  chat={state.chat}
+                  disabled={pending || offline || running}
+                  onModel={(modelId) => void act("model", { modelId })}
                 />
-              </div>
+              ) : null}
+              <IconButton
+                className="col-start-3 row-start-1 shrink-0 self-end rounded-full border-transparent bg-accent-500 text-text-white shadow-none hover:border-transparent hover:bg-accent-600 active:border-transparent active:bg-accent-700 disabled:border-transparent disabled:bg-accent-500 disabled:text-text-white disabled:opacity-40 sm:col-start-4"
+                icon={running ? RiStopFill : RiArrowUpLine}
+                aria-label={
+                  running
+                    ? compacting
+                      ? "Stop compaction"
+                      : "Stop reply"
+                    : "Send message"
+                }
+                type={running ? "button" : "submit"}
+                disabled={running ? pending || offline : !canSend}
+                onClick={running ? () => void act("stop") : undefined}
+              />
             </form>
+            <div className="flex justify-end px-2">
+              <Button
+                className="bg-transparent text-text-secondary shadow-none hover:bg-background-secondary-hover"
+                type="button"
+                variant="ghost"
+                size="xs"
+                disabled={pending || offline || running}
+                title="Summarise older context and keep the chat history"
+                onClick={() => void act("compact")}
+              >
+                {compacting ? "Compacting…" : "Compact"}
+              </Button>
+            </div>
             {state.chat && state.chat.compaction.kind !== "idle" && (
               <p
                 role={
