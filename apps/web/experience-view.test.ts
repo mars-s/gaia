@@ -8,7 +8,10 @@ import {
   ScopeId,
   type ExperienceLayout,
 } from "../../packages/protocol/experiences.ts";
-import { ExperienceConversation } from "./experiences/view";
+import {
+  ExperienceConversation,
+  createActivityAnnouncer,
+} from "./experiences/view";
 import { createExperienceController } from "./experiences/controller";
 const pid = "11111111-1111-4111-8111-111111111111";
 const sid = "22222222-2222-4222-8222-222222222222";
@@ -160,7 +163,7 @@ test("independent real activity descriptions disappear on completion", () => {
 });
 
 test("one assistant keeps the same activity avatar across channels and sessions", () => {
-  for (const layout of ["channels", "sessions"] as const) {
+  for (const layout of ["single", "channels", "sessions"] as const) {
     const { controller, parsed, html } = fixture(layout);
     assert(controller.profile);
     controller.profile.scopes.unshift({
@@ -196,8 +199,221 @@ test("one assistant keeps the same activity avatar across channels and sessions"
     assert(controller.selected);
     controller.receive(controller.selected, { ...parsed });
     const markup = html();
-    assert.match(markup, /src="\/bots\/bot-02.svg"/);
+    assert.match(markup, /class="gaia-mark"/);
+    assert.doesNotMatch(markup, /src="\/bots\/bot-02.svg"/);
     assert.doesNotMatch(markup, /src="\/bots\/bot-01.svg"/);
     controller.pause();
   }
+});
+
+function progressJob(
+  kind: "queued" | "running" = "running",
+  descriptions: string[] = [],
+) {
+  return ExperienceScopeState.shape.jobs.element.parse({
+    id: crypto.randomUUID(),
+    profileId: pid,
+    scopeId: sid,
+    requestId: crypto.randomUUID(),
+    messageId: "input",
+    answerId: "ack",
+    title: "PRIVATE OWNER PROMPT",
+    contextRevision: 0,
+    state:
+      kind === "queued"
+        ? { kind, acceptedAt: "now" }
+        : {
+            kind,
+            startedAt: "now",
+            activity: descriptions.map((description, index) => ({
+              id: `activity-${index}`,
+              callId: `call-${index}`,
+              kind: "other",
+              description,
+            })),
+          },
+  });
+}
+
+test("queued and running progress has only an avatar and exact-job Stop, without title leakage", () => {
+  for (const layout of ["single", "bots", "channels", "sessions"] as const) {
+    for (const kind of ["queued", "running"] as const) {
+      const { controller, parsed, html } = fixture(layout);
+      parsed.jobs = [progressJob(kind)];
+      parsed.revision++;
+      assert(controller.selected);
+      controller.receive(controller.selected, { ...parsed });
+      const markup = html();
+      const visible = markup.replace(/<[^>]*>/g, "");
+      assert.doesNotMatch(
+        visible,
+        /PRIVATE OWNER PROMPT|Queued|Running|Thinking/,
+      );
+      assert.match(markup, /aria-label="Stop PRIVATE OWNER PROMPT"/);
+      assert.match(markup, /job-avatar-pulse/);
+      assert.equal((markup.match(/aria-live="polite"/g) ?? []).length, 1);
+      assert.equal((markup.match(/role="status"/g) ?? []).length, 1);
+      assert.match(
+        markup,
+        layout === "bots" ? /src="\/bots\/bot-01.svg"/ : /class="gaia-mark"/,
+      );
+      assert.match(markup, /disabled:bg-accent-500.*disabled:opacity-40/);
+      controller.pause();
+    }
+  }
+});
+
+test("concurrent activity rows keep complete descriptions without duplicate live regions", () => {
+  const { controller, parsed, html } = fixture("single");
+  const description =
+    "Checking the actual target with a long model-supplied description that must remain available";
+  parsed.jobs = [
+    progressJob("running", [description, "Inspecting fixture"]),
+    progressJob("running", ["Reading fixture"]),
+  ];
+  parsed.revision++;
+  assert(controller.selected);
+  controller.receive(controller.selected, { ...parsed });
+  const markup = html();
+  assert.match(markup, new RegExp(`title="${description}"`));
+  assert.match(markup, /min-w-0 truncate/);
+  assert.equal((markup.match(/aria-live="polite"/g) ?? []).length, 1);
+  assert.equal((markup.match(/role="status"/g) ?? []).length, 1);
+  assert.doesNotMatch(
+    markup.replace(/<[^>]*>/g, ""),
+    /PRIVATE OWNER PROMPT|Running|Thinking/,
+  );
+  assert.doesNotMatch(markup, /job-avatar-pulse/);
+  parsed.jobs = parsed.jobs.map((job) => ({
+    ...job,
+    state: {
+      kind: "completed",
+      text: "Done",
+      finishedAt: "now",
+      citations: [],
+    },
+  }));
+  parsed.messages[1].text = "The actual streamed answer stays.";
+  parsed.revision++;
+  controller.receive(controller.selected, { ...parsed });
+  const settled = html();
+  assert.doesNotMatch(settled, /job-progress|gaia-mark|Stop PRIVATE/);
+  assert.match(settled, /The actual streamed answer stays/);
+  controller.pause();
+});
+
+test("conversation announcements debounce real changes, ignore repeats and cancel on settlement", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const spoken: string[] = [];
+  const announcer = createActivityAnnouncer((text) => spoken.push(text));
+  const first = progressJob();
+  announcer.update([first]);
+  t.mock.timers.tick(2000);
+  assert.deepEqual(spoken, []);
+  const active = progressJob("running", ["Checking fixture"]);
+  announcer.update([active]);
+  t.mock.timers.tick(600);
+  announcer.update([active]);
+  t.mock.timers.tick(399);
+  assert.deepEqual(spoken, []);
+  t.mock.timers.tick(1);
+  assert.deepEqual(spoken, ["Checking fixture"]);
+  announcer.update([active]);
+  t.mock.timers.tick(2000);
+  assert.deepEqual(spoken, ["Checking fixture"]);
+  const newer = progressJob("running", ["Reading fixture"]);
+  announcer.update([active, newer]);
+  t.mock.timers.tick(500);
+  const newest = progressJob("running", ["Verifying fixture"]);
+  announcer.update([active, newer, newest]);
+  t.mock.timers.tick(999);
+  assert.deepEqual(spoken, ["Checking fixture"]);
+  t.mock.timers.tick(1);
+  assert.deepEqual(spoken, ["Checking fixture", "Verifying fixture"]);
+  announcer.update([progressJob("running", ["Unfinished activity"])]);
+  announcer.update([]);
+  t.mock.timers.tick(2000);
+  assert.deepEqual(spoken, ["Checking fixture", "Verifying fixture", ""]);
+  announcer.dispose();
+});
+
+test("disposing a conversation cancels pending speech and a new scope starts independently", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const oldSpeech: string[] = [];
+  const oldScope = createActivityAnnouncer((text) => oldSpeech.push(text));
+  oldScope.update([progressJob("running", ["Old scope"])]);
+  t.mock.timers.tick(999);
+  oldScope.dispose();
+  const newSpeech: string[] = [];
+  const newScope = createActivityAnnouncer((text) => newSpeech.push(text));
+  newScope.update([progressJob("running", ["New scope"])]);
+  t.mock.timers.tick(1000);
+  assert.deepEqual(oldSpeech, []);
+  assert.deepEqual(newSpeech, ["New scope"]);
+  newScope.dispose();
+});
+
+test("failed, stopped, interrupted and uncertain jobs retain recovery controls", () => {
+  for (const state of [
+    {
+      kind: "failed",
+      partialText: "",
+      finishedAt: "now",
+      message: "Fixture failed",
+    },
+    { kind: "stopped", partialText: "", finishedAt: "now" },
+    { kind: "interrupted", partialText: "", interruptedAt: "now" },
+    {
+      kind: "uncertain",
+      partialText: "",
+      interruptedAt: "now",
+      invocationIds: ["call"],
+      message: "Fixture may have happened",
+    },
+  ]) {
+    const { controller, parsed, html } = fixture("single");
+    const job = progressJob();
+    parsed.jobs = ExperienceScopeState.shape.jobs.parse([{ ...job, state }]);
+    parsed.revision++;
+    assert(controller.selected);
+    controller.receive(controller.selected, { ...parsed });
+    const markup = html();
+    assert.match(markup, /Try again/);
+    assert.doesNotMatch(markup, /job-avatar-pulse|aria-label="Stop PRIVATE/);
+    assert.match(markup, /PRIVATE OWNER PROMPT/);
+    if (state.message) assert.match(markup, new RegExp(state.message));
+    controller.pause();
+  }
+});
+
+test("unchanged wording from a different activity is not announced twice", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const spoken: string[] = [];
+  const announcer = createActivityAnnouncer((text) => spoken.push(text));
+  announcer.update([progressJob("running", ["Checking fixture"])]);
+  t.mock.timers.tick(1000);
+  announcer.update([progressJob("running", ["Checking fixture"])]);
+  t.mock.timers.tick(2000);
+  assert.deepEqual(spoken, ["Checking fixture"]);
+  announcer.dispose();
+});
+
+test("pending Stop keeps its exact-job accessible name without exposing progress titles", () => {
+  const { controller, parsed, html } = fixture("single");
+  parsed.jobs = ExperienceScopeState.shape.jobs.parse([
+    {
+      ...progressJob(),
+      state: { kind: "stopping", requestedAt: "now", activity: [] },
+    },
+  ]);
+  parsed.revision++;
+  assert(controller.selected);
+  controller.receive(controller.selected, { ...parsed });
+  const markup = html();
+  assert.match(markup, /disabled="" aria-label="Stop PRIVATE OWNER PROMPT"/);
+  assert.doesNotMatch(
+    markup.replace(/<[^>]*>/g, ""),
+    /PRIVATE OWNER PROMPT|Stopping/,
+  );
+  controller.pause();
 });

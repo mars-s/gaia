@@ -353,3 +353,34 @@ body {
 .auth-help summary::marker {
   color: var(--color-text-secondary);
 }
+
+.gaia-mark {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background: var(--color-accent-500);
+  mask: url("/gaia-mark.svg") center / contain no-repeat luminance;
+}
+
+.job-avatar-pulse {
+  display: inline-flex;
+  flex-shrink: 0;
+  animation: job-avatar-pulse 2s ease-in-out infinite;
+}
+
+@keyframes job-avatar-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .job-avatar-pulse {
+    animation: none;
+  }
+}

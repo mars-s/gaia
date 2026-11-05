@@ -227,6 +227,21 @@ function ScopeConversation({
 }) {
   const entry = controller.entry(scope);
   const state = entry.state;
+  const [announcement, setAnnouncement] = useState("");
+  const announcer = useRef<ReturnType<typeof createActivityAnnouncer> | null>(
+    null,
+  );
+  useEffect(() => {
+    const current = createActivityAnnouncer(setAnnouncement);
+    announcer.current = current;
+    return () => {
+      current.dispose();
+      announcer.current = null;
+    };
+  }, []);
+  useEffect(() => {
+    announcer.current?.update(state?.jobs ?? []);
+  }, [state?.jobs]);
   const saved = entry.draft.read();
   const draft = saved.kind === "ready" ? saved.draft : undefined;
   const input = useRef<HTMLTextAreaElement>(null);
@@ -252,6 +267,14 @@ function ScopeConversation({
   return (
     <>
       <div
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {announcement}
+      </div>
+      <div
         className="min-h-0 flex-1 overflow-y-auto"
         onScroll={(event) => {
           const el = event.currentTarget;
@@ -262,6 +285,7 @@ function ScopeConversation({
         <div
           className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8 sm:px-8"
           role="log"
+          aria-live="off"
           aria-label="Conversation"
         >
           {!state ? (
@@ -497,7 +521,7 @@ function ScopeConversation({
               type="submit"
               icon={RiArrowUpLine}
               aria-label="Send message"
-              className="col-start-3 row-start-1 rounded-full bg-accent-500 text-text-white sm:col-start-4"
+              className="col-start-3 row-start-1 shrink-0 self-end rounded-full border-transparent bg-accent-500 text-text-white shadow-none hover:border-transparent hover:bg-accent-600 active:border-transparent active:bg-accent-700 disabled:border-transparent disabled:bg-accent-500 disabled:text-text-white disabled:opacity-40 sm:col-start-4"
               disabled={!controller.canSend(scope)}
             />
           </div>
@@ -516,6 +540,53 @@ function ScopeConversation({
   );
 }
 
+export function createActivityAnnouncer(
+  announce: (description: string) => void,
+) {
+  let descriptions = new Map<string, string>();
+  let latest = "";
+  let spoken = "";
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cancel = () => {
+    clearTimeout(timer);
+    timer = undefined;
+  };
+  return {
+    update(jobs: ExperienceJob[]) {
+      const next = new Map<string, string>();
+      let changed: string | undefined;
+      for (const job of jobs) {
+        if (job.state.kind !== "running" && job.state.kind !== "stopping")
+          continue;
+        for (const activity of job.state.activity) {
+          if (!activity.description.trim()) continue;
+          const key = `${job.id}/${activity.id}`;
+          next.set(key, activity.description);
+          if (descriptions.get(key) !== activity.description)
+            changed = activity.description;
+        }
+      }
+      descriptions = next;
+      const candidate =
+        changed ?? (Array.from(next.values()).includes(latest) ? latest : "");
+      if (candidate === latest) return;
+      latest = candidate;
+      cancel();
+      if (!latest) {
+        announce("");
+      } else if (latest !== spoken) {
+        const description = latest;
+        timer = setTimeout(() => {
+          spoken = description;
+          announce(description);
+          timer = undefined;
+        }, 1000);
+      }
+    },
+    dispose: cancel,
+  };
+}
+
 function JobRows({
   job,
   controller,
@@ -532,9 +603,17 @@ function JobRows({
   const avatar =
     profile?.profile.plan.layout === "bots"
       ? profile.scopes.find((item) => item.id === job.scopeId)?.avatar
-      : profile?.scopes[0]?.avatar;
+      : undefined;
   const activities =
-    state.kind === "running" || state.kind === "stopping" ? state.activity : [];
+    state.kind === "running" || state.kind === "stopping"
+      ? state.activity.filter((activity) => activity.description.trim())
+      : [];
+  const assistantAvatar =
+    profile?.profile.plan.layout === "bots" ? (
+      <BotAvatar avatar={avatar} />
+    ) : (
+      <span className="gaia-mark" aria-hidden="true" />
+    );
   if (state.kind === "completed")
     return state.citations.length ? (
       <ul
@@ -557,39 +636,39 @@ function JobRows({
       </ul>
     ) : null;
   return (
-    <div
-      className="flex flex-col gap-2 text-caption-1-regular text-text-secondary"
-      aria-label={job.title}
-    >
+    <div className="job-progress flex min-w-0 flex-col gap-2 text-caption-1-regular text-text-secondary">
       {activities.map((activity) => (
-        <div
-          key={activity.id}
-          className="flex items-center gap-2"
-          role="status"
-        >
-          <BotAvatar avatar={avatar} />
-          <span>{activity.description}</span>
+        <div key={activity.id} className="flex min-w-0 items-center gap-2">
+          {assistantAvatar}
+          <span className="min-w-0 truncate" title={activity.description}>
+            {activity.description}
+          </span>
         </div>
       ))}
-      <div className="flex flex-wrap items-center gap-2">
-        {(state.kind !== "running" || !activities.length) && (
-          <span role="status">
-            {job.title} ·{" "}
-            {state.kind === "queued"
-              ? "Queued"
-              : state.kind === "running"
-                ? "Running"
-                : state.kind === "stopping"
-                  ? "Stopping"
-                  : state.kind === "failed"
-                    ? state.message
-                    : state.kind === "uncertain"
-                      ? state.message
-                      : state.kind === "interrupted"
-                        ? "Interrupted. Not repeated automatically."
-                        : "Stopped"}
-          </span>
-        )}
+      <div className="flex min-w-0 items-center gap-2">
+        {!activities.length &&
+          (state.kind === "queued" ||
+            state.kind === "running" ||
+            state.kind === "stopping") && (
+            <span
+              className={cx(state.kind !== "stopping" && "job-avatar-pulse")}
+              aria-hidden="true"
+            >
+              {assistantAvatar}
+            </span>
+          )}
+        {state.kind !== "queued" &&
+          state.kind !== "running" &&
+          state.kind !== "stopping" && (
+            <span>
+              {job.title} ·{" "}
+              {state.kind === "failed" || state.kind === "uncertain"
+                ? state.message
+                : state.kind === "interrupted"
+                  ? "Interrupted. Not repeated automatically."
+                  : "Stopped"}
+            </span>
+          )}
         {jobActive(job) ? (
           <button
             className="quiet-link"
