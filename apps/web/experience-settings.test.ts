@@ -43,7 +43,7 @@ test("Settings rows separate names and layout text, identify exactly one main ch
     /Shared workspace One assistant with channels · Proposed/,
   );
   assert.match(text(rows()[3]), /My sessions Separate sessions · Hidden/);
-  assert.match(text(rows()[0]), /Earlier chat One conversation · Main chat/);
+  assert.match(text(rows()[0]), /Original chat One conversation · Main chat/);
   assert.equal((render().match(/Main chat/g) ?? []).length, 1);
   assert.match(rows()[1], /Open/);
   assert.match(rows()[1], /Make main/);

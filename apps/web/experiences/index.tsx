@@ -112,7 +112,7 @@ export function SetupSettings({
       <ul className="flex w-full min-w-0 flex-col divide-y divide-separator-border">
         <li className="setup-list-row">
           <div className="min-w-0 flex-1">
-            <p className="text-body-medium">Earlier chat</p>{" "}
+            <p className="text-body-medium">Original chat</p>{" "}
             <p className="text-caption-1-regular text-text-secondary">
               One conversation{controller.mainId === null ? " · Main chat" : ""}
             </p>

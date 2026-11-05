@@ -18,9 +18,10 @@ export function ChatSwitcher({
   error,
 }: Props) {
   const ready = profiles.filter((profile) => profile.kind === "ready");
-  if (!ready.length) return <span className="text-body-medium">Gaia</span>;
+  if (!ready.length)
+    return <span className="text-body-medium">Original chat</span>;
   const rows = [
-    { id: null, name: "Earlier chat" },
+    { id: null, name: "Original chat" },
     ...ready.map((profile) => ({ id: profile.id, name: profile.plan.title })),
   ];
   return (
@@ -30,7 +31,7 @@ export function ChatSwitcher({
         aria-label="Switch chat"
       >
         <span className="truncate">
-          {rows.find((row) => row.id === currentId)?.name ?? "Gaia"}
+          {rows.find((row) => row.id === currentId)?.name ?? "Original chat"}
         </span>
         <RiArrowDownSLine className="size-4 shrink-0" aria-hidden />
       </Menu.Trigger>

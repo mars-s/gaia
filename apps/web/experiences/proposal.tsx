@@ -93,7 +93,7 @@ export function ExperienceProposalNotice({
               </div>
               <p className="whitespace-pre-wrap text-text-secondary">
                 {setupLayouts[proposal.plan.layout].label}.{" "}
-                {proposal.plan.assistantName}. {proposal.plan.purpose}
+                {proposal.plan.purpose}
               </p>
               <ul className="flex min-w-0 flex-col gap-2">
                 {proposal.plan.scopes.map((scope, index) => (
@@ -125,7 +125,7 @@ export function ExperienceProposalNotice({
                 ))}
               </ul>
               <p className="text-caption-1-regular text-text-secondary">
-                Using it makes this your main chat. The earlier chat stays
+                Using it makes this your main chat. Your original chat stays
                 available.
               </p>
               {errors?.get(proposal.id) && (

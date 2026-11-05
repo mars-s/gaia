@@ -65,15 +65,15 @@ test("inline card shows the full exact plan and friendly states without internal
   const html = render();
   for (const text of [
     proposal.plan.title,
-    proposal.plan.assistantName,
     proposal.plan.purpose,
     ...proposal.plan.scopes.flatMap((s) => [s.label, s.purpose]),
     "Use this setup",
     "Not now",
     "Or tell me what to change.",
-    "The earlier chat stays available",
+    "Your original chat stays available",
   ])
     assert(html.includes(text), text);
+  assert(!html.includes("Separate Bots. Gaia."));
   assert(!html.includes(proposal.id));
   assert(!html.includes("revision"));
   assert.match(

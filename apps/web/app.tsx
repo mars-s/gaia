@@ -326,7 +326,9 @@ export function App() {
             }}
           />
         ) : (
-          <span className="select-none text-body-medium">Gaia</span>
+          <span className="select-none text-body-medium">
+            {connected ? "Original chat" : "Gaia"}
+          </span>
         )}
         {connected && (
           <IconButton

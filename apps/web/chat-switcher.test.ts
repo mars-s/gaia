@@ -18,7 +18,7 @@ const profile = Experience.parse({
   },
 });
 
-test("without ready setups the title is Gaia without a menu or chevron", () => {
+test("without ready setups the title is Original chat without a menu or chevron", () => {
   const html = renderToStaticMarkup(
     createElement(ChatSwitcher, {
       profiles: [],
@@ -27,7 +27,7 @@ test("without ready setups the title is Gaia without a menu or chevron", () => {
       onSelect: () => assert.fail("Must not navigate"),
     }),
   );
-  assert.match(html, />Gaia</);
+  assert.match(html, />Original chat</);
   assert.doesNotMatch(html, /button|svg|details|summary/);
 });
 
@@ -44,7 +44,7 @@ test("ready setups get a named Base UI menu trigger with the current chat title"
     assert.match(html, /aria-label="Switch chat"/);
     assert.match(html, /aria-haspopup="menu"/);
     assert.match(html, /aria-expanded="false"/);
-    assert.match(html, currentId ? />Everyday Bots</ : />Earlier chat</);
+    assert.match(html, currentId ? />Everyday Bots</ : />Original chat</);
     assert.doesNotMatch(html, /details|summary|Make main/);
   }
 });
