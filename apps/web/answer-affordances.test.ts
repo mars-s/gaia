@@ -138,7 +138,7 @@ test("copy actions have icons without Copy text and setup answers suppress their
   assert.equal((card.match(/aria-label="Copy answer"/g) ?? []).length, 1);
 });
 
-test("code copy floats above an observed overflow fade, with no empty header", async () => {
+test("code copy has a separate 28px header above the bounded scroll area", async () => {
   const { readFileSync } = await import("node:fs");
   const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
   const source = readFileSync(
@@ -147,9 +147,19 @@ test("code copy floats above an observed overflow fade, with no empty header", a
   );
   assert.match(source, /element.scrollWidth > element.clientWidth/);
   assert.match(source, /observer.observe\(element\)/);
-  assert.match(css, /code-block > .copy-action.*top: 8px; right: 8px/);
-  assert.match(css, /padding: 16px 44px 16px 16px/);
-  assert.match(css, /code-block\[data-overflow="true"\]::after/);
+  assert.match(css, /code-header \{ height: 28px/);
+  assert.match(css, /code-block \{[^}]*max-width: 100%; overflow: hidden/);
+  assert.match(css, /padding: 12px 16px; border-radius: 0; overflow-x: auto/);
+  assert.match(css, /code-block\[data-overflow="true"\] .code-scroll-area::after/);
   assert.match(css, /earlier-answer:focus-within > .copy-action/);
   assert.match(css, /@media \(pointer: coarse\)/);
+});
+
+test("code headers label known languages and keep copy outside the pre", () => {
+  for (const language of ["ts", ""]) {
+    const html = renderToStaticMarkup(createElement(MessageMarkdown, {text: "```" + language + "\nconst long = 'example';\n```"}));
+    assert.match(html, new RegExp('class="code-header"><span>' + language + '</span>'));
+    assert.match(html, /aria-label="Copy code"[\s\S]*<div class="code-scroll-area"><pre>/);
+    assert.doesNotMatch(html, /<pre>[\s\S]*<button/);
+  }
 });

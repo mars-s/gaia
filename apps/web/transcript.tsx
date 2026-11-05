@@ -1,7 +1,7 @@
 import { AssistantHead } from "./assistant-head";
 import { CopyButton, codeText } from "./copy-button";
 import { ReplyNotice, replyError } from "./progress-row";
-import { useEffect, useRef, useState, useMemo, type ReactNode } from "react";
+import { useEffect, useRef, useState, useMemo, type ReactNode, Children, isValidElement } from "react";
 import type { ThreadMessageLike } from "@assistant-ui/core";
 import {
   AssistantRuntimeProvider,
@@ -87,6 +87,10 @@ export function MessageMarkdown({ text }: { text: string }) {
 }
 
 export function CodeBlock({ children }: { children: ReactNode }) {
+  const code = Children.toArray(children).find(isValidElement);
+  const language = isValidElement<{ className?: string }>(code)
+    ? /(?:^|\s)language-([\w+-]+)/.exec(code.props.className ?? "")?.[1]
+    : undefined;
   const pre = useRef<HTMLPreElement>(null);
   const [overflow, setOverflow] = useState(false);
   useEffect(() => {
@@ -101,8 +105,13 @@ export function CodeBlock({ children }: { children: ReactNode }) {
   }, [children]);
   return (
     <div className="code-block" data-overflow={overflow}>
-      <CopyButton label="Copy code" text={codeText(children)} />
-      <pre ref={pre}>{children}</pre>
+      <div className="code-header">
+        <span>{language}</span>
+        <CopyButton label="Copy code" text={codeText(children)} />
+      </div>
+      <div className="code-scroll-area">
+        <pre ref={pre}>{children}</pre>
+      </div>
     </div>
   );
 }
