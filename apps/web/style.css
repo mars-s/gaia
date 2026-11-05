@@ -634,9 +634,6 @@ a:focus-visible {
   .owner-bubble {
     max-width: 88%;
   }
-  [data-desktop="darwin"] .app-bar {
-    padding-left: 16px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .chat-switcher-menu,
@@ -1189,3 +1186,27 @@ a:focus-visible {
  .app-bar-side { display: none; }
  [data-desktop="darwin"] .app-bar:not(.has-side) .app-bar-column { padding-left: 16px; }
 }
+.scope-head { display: flex; min-width: 0; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500; }
+.scope-head > svg { color: var(--color-ink-3); flex-shrink: 0; }
+.scope-head .avatar-tile { width: 24px; height: 24px; }
+.sidebar-switcher { margin-bottom: 8px; }
+.sidebar-switcher .chat-switcher-trigger { padding-inline: 10px; width: 100%; }
+.sidebar-new { margin-top: 12px; padding-inline: 10px; gap: 8px; }
+.sidebar-new:hover { text-decoration: none; color: var(--color-ink); }
+.sidebar-new:hover > span:last-child { text-decoration: underline; text-underline-offset: 3px; }
+.new-icon { width: 16px; display: flex; justify-content: center; }
+nav[aria-label="Bots"] .new-icon { width: 24px; }
+.switcher-separator { height: 1px; background: var(--color-line); margin-block: 8px; }
+.drawer-toggle { display: none; }
+.navigation-backdrop { position: fixed; inset: 0; background: var(--backdrop); z-index: 60; transition: opacity var(--motion-drawer); }
+.navigation-drawer { position: fixed; inset: 0 auto 0 0; width: 280px; background: var(--color-surface-page); box-shadow: var(--shadow-level-3); z-index: 61; transition: transform var(--motion-drawer); overflow-y: auto; }
+.navigation-drawer .experience-sidebar { width: 280px; height: 100%; }
+.navigation-drawer[data-starting-style], .navigation-drawer[data-ending-style] { transform: translateX(-100%); }
+.navigation-backdrop[data-starting-style], .navigation-backdrop[data-ending-style] { opacity: 0; }
+@media (max-width: 639px) {
+ .desktop-sidebar { display: none; }
+ .drawer-toggle { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; }
+ .app-bar .drawer-toggle.app-control { margin-right: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .navigation-drawer, .navigation-backdrop { transition: opacity 80ms; transform: none; } }
+@media (min-width: 640px) { .desktop-sidebar { display: flex; flex-shrink: 0; } }

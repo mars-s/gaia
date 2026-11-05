@@ -7,6 +7,7 @@ type Props = {
   error?: string;
   currentId: Experience["id"] | null;
   mainId: Experience["id"] | null;
+  onManage?(): void;
   onSelect(id: Experience["id"] | null): void;
 };
 
@@ -16,10 +17,9 @@ export function ChatSwitcher({
   mainId,
   onSelect,
   error,
+  onManage,
 }: Props) {
   const ready = profiles.filter((profile) => profile.kind === "ready");
-  if (!ready.length)
-    return <span className="text-body-medium">Original chat</span>;
   const rows = [
     { id: null, name: "Original chat" },
     ...ready.map((profile) => ({ id: profile.id, name: profile.plan.title })),
@@ -28,7 +28,7 @@ export function ChatSwitcher({
     <Menu.Root>
       <Menu.Trigger
         className="app-control chat-switcher-trigger text-body-medium"
-        aria-label="Switch chat"
+        aria-label="Switch setup"
       >
         <span className="truncate">
           {rows.find((row) => row.id === currentId)?.name ?? "Original chat"}
@@ -37,7 +37,7 @@ export function ChatSwitcher({
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Positioner sideOffset={8} align="start" className="z-50">
-          <Menu.Popup className="chat-switcher-menu" aria-label="Switch chat">
+          <Menu.Popup className="chat-switcher-menu" aria-label="Switch setup">
             <Menu.RadioGroup value={currentId ?? "original"}>
               {rows.map((row) => (
                 <Menu.RadioItem
@@ -60,6 +60,10 @@ export function ChatSwitcher({
                 </Menu.RadioItem>
               ))}
             </Menu.RadioGroup>
+            <Menu.Separator className="switcher-separator" />
+            <Menu.Item className="chat-switcher-row" onClick={onManage}>
+              Manage setups…
+            </Menu.Item>
             {error && <p role="alert">{error}</p>}
           </Menu.Popup>
         </Menu.Positioner>

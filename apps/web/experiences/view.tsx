@@ -1,8 +1,14 @@
+import { Dialog } from "@base-ui/react/dialog";
 import { CopyButton } from "../copy-button";
 import { ProgressRow, replyError, OfflineNotice } from "../progress-row";
 import { SharedComposer } from "../shared-composer";
-import { useEffect, useRef, useState } from "react";
-import { RiHashtag, RiMenuLine } from "@remixicon/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  RiHashtag,
+  RiMenuLine,
+  RiChat1Line,
+  RiAddLine,
+} from "@remixicon/react";
 import { Button } from "../components/base/buttons/button";
 import { MessageMarkdown } from "../transcript";
 import { cx } from "../utils/cx";
@@ -16,8 +22,12 @@ import {
 
 export function ExperienceConversation({
   controller,
+  switcher,
+  accountControl,
 }: {
   controller: ExperienceController;
+  switcher?: ReactNode;
+  accountControl?: ReactNode;
 }) {
   const profile = controller.profile;
   const scope = controller.selected;
@@ -47,175 +57,212 @@ export function ExperienceConversation({
     sessions: "New session",
   }[layout];
   const selected = profile.scopes.find((item) => item.id === scope.scopeId);
-  return (
-    <main className="flex min-h-0 min-w-0 flex-1 flex-col sm:flex-row">
-      {layout !== "single" && (
-        <>
-          <div className="px-4 sm:hidden">
-            <button
-              ref={toggle}
-              className="quiet-action"
-              onClick={() => setNavigation(!navigation)}
-              aria-expanded={navigation}
-              aria-controls="experience-navigation"
-            >
-              <RiMenuLine className="size-4" />
-              {collection}
-            </button>
-          </div>
-          <nav
-            id="experience-navigation"
-            aria-label={collection}
-            className={cx(
-              "experience-sidebar shrink-0 overflow-y-auto p-3 sm:block",
-              navigation ? "block" : "hidden",
-            )}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                setNavigation(false);
-                toggle.current?.focus();
-              }
+  const scopeHead = (
+    <span className="scope-head">
+      {layout === "bots" ? (
+        <BotAvatar avatar={selected?.avatar} />
+      ) : layout === "channels" ? (
+        <RiHashtag className="size-4" aria-hidden />
+      ) : (
+        <RiChat1Line className="size-4" aria-hidden />
+      )}
+      <span className="truncate">{selected?.label}</span>
+    </span>
+  );
+  const sidebar = (
+    <nav
+      id="experience-navigation"
+      aria-label={collection}
+      className="experience-sidebar shrink-0 overflow-y-auto p-3"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          setNavigation(false);
+          toggle.current?.focus();
+        }
+      }}
+    >
+      <div
+        className="sidebar-switcher"
+        onClick={(event) => {
+          if (
+            event.target instanceof Element &&
+            event.target.closest('[role^="menuitem"]')
+          )
+            setNavigation(false);
+        }}
+      >
+        {switcher}
+      </div>
+      <div className="flex flex-col gap-1">
+        {(layout === "sessions"
+          ? [...profile.scopes].reverse()
+          : profile.scopes
+        ).map((item) => (
+          <Button
+            key={item.id}
+            variant="secondary"
+            size="small"
+            className="experience-nav-row w-full justify-start"
+            aria-current={item.id === scope.scopeId ? "page" : undefined}
+            onClick={() => {
+              controller.select({
+                profileId: scope.profileId,
+                scopeId: item.id,
+              });
+              setNavigation(false);
             }}
           >
+            {layout === "bots" && (
+              <span className="sidebar-avatar">
+                <BotAvatar avatar={item.avatar} />
+                <span
+                  className="scope-work-dot"
+                  data-working={profile.jobs.some(
+                    (job) => job.scopeId === item.id && jobActive(job),
+                  )}
+                />
+              </span>
+            )}
             {layout === "channels" && (
-              <p className="px-3 py-2 text-headline-medium">
-                {profile.profile.plan.assistantName}
-              </p>
+              <RiHashtag className="size-4 shrink-0" aria-hidden />
             )}
-            <div className="flex flex-col gap-1">
-              {(layout === "sessions"
-                ? [...profile.scopes].reverse()
-                : profile.scopes
-              ).map((item) => (
-                <Button
-                  key={item.id}
-                  variant="secondary"
-                  size="small"
-                  className="experience-nav-row w-full justify-start"
-                  aria-current={item.id === scope.scopeId ? "page" : undefined}
-                  onClick={() => {
-                    controller.select({
-                      profileId: scope.profileId,
-                      scopeId: item.id,
-                    });
-                    setNavigation(false);
-                  }}
-                >
-                  {layout === "bots" && (
-                    <span className="sidebar-avatar">
-                      <BotAvatar avatar={item.avatar} />
-                      <span
-                        className="scope-work-dot"
-                        data-working={profile.jobs.some(
-                          (job) => job.scopeId === item.id && jobActive(job),
-                        )}
-                      />
-                    </span>
-                  )}
-                  {layout === "channels" && (
-                    <RiHashtag className="size-4 shrink-0" aria-hidden />
-                  )}
-                  <span className="truncate">{item.label}</span>
-                  {layout !== "bots" && (
-                    <span
-                      className="scope-work-dot"
-                      data-working={profile.jobs.some(
-                        (job) => job.scopeId === item.id && jobActive(job),
-                      )}
-                    />
-                  )}
-                </Button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="quiet-action mx-1 mt-4 disabled:cursor-not-allowed"
-              disabled={creating}
-              onClick={() => {
-                if (layout === "sessions") {
-                  setCreating(true);
-                  void controller
-                    .createScope("New session", profile.profile.plan.purpose)
-                    .finally(() => setCreating(false));
-                } else setAdding(!adding);
-              }}
-            >
-              {newLabel}
-            </button>
-            {adding && (
-              <form
-                className="mt-3 flex flex-col gap-3"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (creating) return;
-                  setCreating(true);
-                  void controller
-                    .createScope(label, purpose)
-                    .then((ok) => {
-                      if (!ok) return;
-                      setAdding(false);
-                      setLabel("");
-                      setPurpose("");
-                    })
-                    .finally(() => setCreating(false));
-                }}
-              >
-                <label className="text-caption-1-regular">
-                  Name
-                  <input
-                    className="w-full rounded-lg bg-background-tertiary-default p-2"
-                    maxLength={100}
-                    required
-                    value={label}
-                    onChange={(event) => setLabel(event.target.value)}
-                  />
-                </label>
-                <label className="text-caption-1-regular">
-                  Purpose
-                  <textarea
-                    className="w-full rounded-lg bg-background-tertiary-default p-2"
-                    required
-                    maxLength={4000}
-                    value={purpose}
-                    onChange={(event) => setPurpose(event.target.value)}
-                  />
-                </label>
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  size="small"
-                  disabled={creating}
-                >
-                  Create
-                </Button>
-              </form>
+            {layout === "sessions" && (
+              <RiChat1Line className="size-4 shrink-0" aria-hidden />
             )}
-          </nav>
-        </>
-      )}
-      <section
-        className="flex min-h-0 min-w-0 flex-1 flex-col"
-        aria-label={selected?.label ?? "Conversation"}
+            <span className="truncate">{item.label}</span>
+            {layout !== "bots" && (
+              <span
+                className="scope-work-dot"
+                data-working={profile.jobs.some(
+                  (job) => job.scopeId === item.id && jobActive(job),
+                )}
+              />
+            )}
+          </Button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="quiet-action sidebar-new disabled:cursor-not-allowed"
+        disabled={creating}
+        onClick={() => {
+          if (layout === "sessions") {
+            setCreating(true);
+            void controller
+              .createScope("New session", profile.profile.plan.purpose)
+              .then(() => setNavigation(false))
+              .finally(() => setCreating(false));
+          } else setAdding(!adding);
+        }}
       >
-        {layout !== "single" && (
-          <div className="reading-column scope-header text-body-medium">
-            {layout === "bots" ? (
-              <BotAvatar avatar={selected?.avatar} />
-            ) : (
-              <span className="gaia-mark" aria-hidden="true" />
-            )}
-            <span className="truncate">
-              {layout === "channels" ? `#${selected?.label}` : selected?.label}
-            </span>
-          </div>
+        <span className="new-icon">
+          <RiAddLine className="size-4" aria-hidden />
+        </span>
+        <span>{newLabel}</span>
+      </button>
+      {adding && (
+        <form
+          className="mt-3 flex flex-col gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (creating) return;
+            setCreating(true);
+            void controller
+              .createScope(label, purpose)
+              .then((ok) => {
+                if (!ok) return;
+                setAdding(false);
+                setLabel("");
+                setPurpose("");
+              })
+              .finally(() => setCreating(false));
+          }}
+        >
+          <label className="text-caption-1-regular">
+            Name
+            <input
+              className="w-full rounded-lg bg-background-tertiary-default p-2"
+              maxLength={100}
+              required
+              value={label}
+              onChange={(event) => setLabel(event.target.value)}
+            />
+          </label>
+          <label className="text-caption-1-regular">
+            Purpose
+            <textarea
+              className="w-full rounded-lg bg-background-tertiary-default p-2"
+              required
+              maxLength={4000}
+              value={purpose}
+              onChange={(event) => setPurpose(event.target.value)}
+            />
+          </label>
+          <Button
+            type="submit"
+            variant="secondary"
+            size="small"
+            disabled={creating}
+          >
+            Create
+          </Button>
+        </form>
+      )}
+    </nav>
+  );
+  return (
+    <>
+      <header
+        className={cx(
+          "app-bar flex shrink-0 items-center",
+          layout !== "single" && "has-side",
         )}
-        <ScopeConversation
-          key={experienceKey(scope)}
-          controller={controller}
-          scope={scope}
-        />
-      </section>
-    </main>
+      >
+        {layout !== "single" && <div className="app-bar-side" />}
+        <div className="app-bar-column reading-column">
+          <div className="flex min-w-0 items-center gap-2">
+            {layout !== "single" && (
+              <button
+                ref={toggle}
+                className="app-control drawer-toggle"
+                aria-label={`Open ${collection}`}
+                onClick={() => setNavigation(true)}
+              >
+                <RiMenuLine className="size-5" aria-hidden />
+              </button>
+            )}
+            {layout === "single" ? switcher : scopeHead}
+          </div>
+          {accountControl}
+        </div>
+      </header>
+      <main className="flex min-h-0 min-w-0 flex-1">
+        {layout !== "single" && (
+          <>
+            <div className="desktop-sidebar">{sidebar}</div>
+            <Dialog.Root open={navigation} onOpenChange={setNavigation}>
+              <Dialog.Portal>
+                <Dialog.Backdrop className="navigation-backdrop" />
+                <Dialog.Popup className="navigation-drawer" finalFocus={toggle}>
+                  <Dialog.Title className="sr-only">{collection}</Dialog.Title>
+                  {navigation && sidebar}
+                </Dialog.Popup>
+              </Dialog.Portal>
+            </Dialog.Root>
+          </>
+        )}
+        <section
+          className="flex min-h-0 min-w-0 flex-1 flex-col"
+          aria-label={selected?.label ?? "Conversation"}
+        >
+          <ScopeConversation
+            key={experienceKey(scope)}
+            controller={controller}
+            scope={scope}
+          />
+        </section>
+      </main>
+    </>
   );
 }
 

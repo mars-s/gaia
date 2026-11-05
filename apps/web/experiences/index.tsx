@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { Button } from "../components/base/buttons/button";
 import {
   ExperiencePlan,
@@ -39,15 +45,25 @@ const layouts: Record<
 };
 export function ProfileExperience({
   controller,
+  switcher,
+  accountControl,
 }: {
   controller: ExperienceController;
+  switcher?: ReactNode;
+  accountControl?: ReactNode;
 }) {
   useSyncExternalStore(
     controller.subscribe,
     controller.version,
     controller.version,
   );
-  return <ExperienceConversation controller={controller} />;
+  return (
+    <ExperienceConversation
+      controller={controller}
+      switcher={switcher}
+      accountControl={accountControl}
+    />
+  );
 }
 
 export function SetupSettings({

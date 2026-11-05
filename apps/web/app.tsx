@@ -306,54 +306,71 @@ export function App() {
       />
     );
   };
+  const setupSwitcher = (
+    <ChatSwitcher
+      onManage={() => {
+        setAccountOpen(true);
+        requestAnimationFrame(() =>
+          document.querySelector(".setup-settings")?.scrollIntoView(),
+        );
+      }}
+      profiles={experiences.profiles}
+      error={experiences.error}
+      currentId={
+        experienceView === "chat"
+          ? (experiences.profile?.profile.id ?? null)
+          : null
+      }
+      mainId={experiences.mainId}
+      onSelect={(id) => {
+        if (id === null) {
+          experiences.original();
+          setExperienceView("original");
+          return;
+        }
+        navigation.moved();
+        const canNavigate = navigation.capture();
+        void experiences
+          .selectProfile(id, undefined, canNavigate)
+          .then((opened) => {
+            if (opened && canNavigate()) setExperienceView("chat");
+          });
+      }}
+    />
+  );
+  const accountControl = (
+    <IconButton
+      className="app-control border-transparent bg-transparent shadow-none"
+      icon={accountOpen ? RiCloseLine : RiSettings3Line}
+      aria-label={accountOpen ? "Close settings" : "Account settings"}
+      aria-expanded={accountOpen}
+      aria-controls="account-settings"
+      onClick={() => setAccountOpen(!accountOpen)}
+    />
+  );
+  const setupShell =
+    connected &&
+    !accountOpen &&
+    experienceView === "chat" &&
+    !controller.safeMode;
   return (
     <div className="app-shell flex h-dvh flex-col bg-background-full text-body-regular text-text-primary">
-      <header className="app-bar flex shrink-0 items-center">
-        <div className="app-bar-column reading-column">
-        {accountOpen ? (
-          <span className="text-body-medium">Settings</span>
-        ) : connected && !controller.safeMode ? (
-          <ChatSwitcher
-            profiles={experiences.profiles}
-            error={experiences.error}
-            currentId={
-              experienceView === "chat"
-                ? (experiences.profile?.profile.id ?? null)
-                : null
-            }
-            mainId={experiences.mainId}
-            onSelect={(id) => {
-              if (id === null) {
-                experiences.original();
-                setExperienceView("original");
-                return;
-              }
-              navigation.moved();
-              const canNavigate = navigation.capture();
-              void experiences
-                .selectProfile(id, undefined, canNavigate)
-                .then((opened) => {
-                  if (opened && canNavigate()) setExperienceView("chat");
-                });
-            }}
-          />
-        ) : (
-          <span className="select-none text-body-medium">
-            {connected ? "Original chat" : "Gaia"}
-          </span>
-        )}
-        {connected && (
-          <IconButton
-            className="app-control border-transparent bg-transparent shadow-none"
-            icon={accountOpen ? RiCloseLine : RiSettings3Line}
-            aria-label={accountOpen ? "Close settings" : "Account settings"}
-            aria-expanded={accountOpen}
-            aria-controls="account-settings"
-            onClick={() => setAccountOpen(!accountOpen)}
-          />
-        )}
-        </div>
-      </header>
+      {!setupShell && (
+        <header className="app-bar flex shrink-0 items-center">
+          <div className="app-bar-column reading-column">
+            {accountOpen ? (
+              <span className="text-body-medium">Settings</span>
+            ) : connected && !controller.safeMode ? (
+              setupSwitcher
+            ) : (
+              <span className="select-none text-body-medium">
+                {connected ? "Original chat" : "Gaia"}
+              </span>
+            )}
+            {connected && accountControl}
+          </div>
+        </header>
+      )}
 
       {accountOpen && connected ? (
         <main
@@ -539,7 +556,11 @@ export function App() {
           </section>
         </main>
       ) : experienceView !== "original" && !controller.safeMode ? (
-        <ProfileExperience controller={experiences} />
+        <ProfileExperience
+          controller={experiences}
+          switcher={setupSwitcher}
+          accountControl={accountControl}
+        />
       ) : (
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {!controller.safeMode && (

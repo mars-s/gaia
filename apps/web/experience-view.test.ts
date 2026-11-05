@@ -122,7 +122,8 @@ test("four layouts share one chat with distinct navigation and memory semantics"
     }
     if (layout === "channels") {
       assert.doesNotMatch(markup, /Shared memory, separate threads/);
-      assert.match(markup, /scope-header/);
+      assert.match(markup, /scope-head/);
+      assert.doesNotMatch(markup, /scope-header/);
       assert.match(markup, /New channel/);
       assert.doesNotMatch(markup, /New Bot/);
     }
@@ -164,7 +165,7 @@ test("only the selected sidebar row carries the current state in every list layo
       assert.doesNotMatch(navigation, /bg-background-secondary-default/);
       assert.match(
         navigation,
-        /class="quiet-action [^"]*"[^>]*>New (?:Bot|channel|session)<\/button>/,
+        /class="quiet-action [^"]*"[^>]*><span class="new-icon">[\s\S]*?<\/svg><\/span><span>New (?:Bot|channel|session)<\/span><\/button>/,
       );
     }
     controller.pause();

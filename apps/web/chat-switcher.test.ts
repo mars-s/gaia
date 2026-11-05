@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
@@ -18,7 +19,7 @@ const profile = Experience.parse({
   },
 });
 
-test("without ready setups the title is Original chat without a menu or chevron", () => {
+test("without ready setups the closed menu still offers a chevron", () => {
   const html = renderToStaticMarkup(
     createElement(ChatSwitcher, {
       profiles: [],
@@ -28,7 +29,10 @@ test("without ready setups the title is Original chat without a menu or chevron"
     }),
   );
   assert.match(html, />Original chat</);
-  assert.doesNotMatch(html, /button|svg|details|summary/);
+  assert.match(html, /<button/);
+  assert.match(html, /<svg/);
+  assert.match(html, /aria-expanded="false"/);
+  assert.doesNotMatch(html, /role="menu"/);
 });
 
 test("ready setups get a named Base UI menu trigger with the current chat title", () => {
@@ -41,10 +45,16 @@ test("ready setups get a named Base UI menu trigger with the current chat title"
         onSelect: () => assert.fail("Rendering must not navigate"),
       }),
     );
-    assert.match(html, /aria-label="Switch chat"/);
+    assert.match(html, /aria-label="Switch setup"/);
     assert.match(html, /aria-haspopup="menu"/);
     assert.match(html, /aria-expanded="false"/);
     assert.match(html, currentId ? />Everyday Bots</ : />Original chat</);
     assert.doesNotMatch(html, /details|summary|Make main/);
   }
+});
+
+test("every setup menu includes management after the setup rows", () => {
+ const source = readFileSync(new URL("./chat-switcher.tsx", import.meta.url), "utf8");
+ assert.match(source, /Menu.Separator/);
+ assert.match(source, /onClick={onManage}>\s*Manage setups…/);
 });
