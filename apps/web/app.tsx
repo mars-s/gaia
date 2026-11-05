@@ -26,9 +26,11 @@ import { homeScope, scopeKey } from "./workspace-controller";
 import { WorkspaceNavigation, WorkspaceProposalPanel } from "./workspace-panel";
 import { ProfileExperience } from "./experiences";
 import { createExperienceController } from "./experiences/controller";
+import { ExperienceProposalNotice } from "./experiences/proposal";
 
 export function App() {
   const [experiences] = useState(() => createExperienceController());
+  useSyncExternalStore(experiences.subscribe, experiences.version);
   const [experienceView, setExperienceView] = useState<
     "original" | "profiles" | "chat"
   >("original");
@@ -115,6 +117,20 @@ export function App() {
     connected,
     state?.runtime?.mode,
     experienceView,
+    controller,
+    experiences,
+  ]);
+  useEffect(() => {
+    if (
+      connected &&
+      !controller.safeMode &&
+      state?.thread.run.kind !== "running"
+    )
+      void experiences.refresh();
+  }, [
+    connected,
+    state?.thread.run.kind,
+    state?.runtime?.mode,
     controller,
     experiences,
   ]);
@@ -382,8 +398,12 @@ export function App() {
           manage={experienceView === "profiles"}
           onOpen={() => setExperienceView("chat")}
           onManage={() => setExperienceView("profiles")}
-          onBack={() => setExperienceView("original")}
+          onBack={() => {
+            experiences.original();
+            setExperienceView("original");
+          }}
           onSetup={() => {
+            experiences.original();
             setExperienceView("original");
             controller.select(homeScope);
           }}
@@ -439,6 +459,16 @@ export function App() {
                     (profile.kind === "new" &&
                       state.thread.messages.length === 0)) && (
                     <div className="py-4">{profilePanel()}</div>
+                  )}
+                  {!controller.safeMode && (
+                    <ExperienceProposalNotice
+                      proposals={experiences.profiles}
+                      disabled={offline}
+                      onReview={(id) => {
+                        setExperienceView("profiles");
+                        void experiences.selectProfile(id);
+                      }}
+                    />
                   )}
                   {!controller.safeMode && (
                     <WorkspaceProposalPanel

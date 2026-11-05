@@ -61,7 +61,11 @@ All routes use the existing loopback Host and Origin checks, connection checks a
 
 The SDK owns all URLs, parsing, friendly errors and subscriptions. One headless controller owns selected profile, scope, drafts, admissions and subscriptions. The UI renders intent through that controller and does not implement another polling loop. Common transcript, composer, account and managed-history components remain shared.
 
+Scope streams send a named `heartbeat` event every two seconds without repeating conversation payloads. Clients close a stream after ten seconds of silence, request fresh scoped state with a five-second deadline and reconnect. Named heartbeats leave the full-snapshot message contract unchanged. Closing a subscription aborts recovery and retires old callbacks. An idle conversation therefore stays connected, while a stalled connection cannot leave a completed job displayed as running indefinitely.
+
 Model-assisted setup uses a real Pi tool to propose an `ExperiencePlan`. It may research product references with `search_web`. That tool proposes only. It cannot call the confirmation route or claim confirmation from typed agreement. The four named test cases supply setup prompts and acceptance assertions, not hardcoded execution branches.
+
+After Original chat finishes a reply, the client refreshes the real profile index. Unconfirmed proposals appear as a quiet Review setup notice. The review screen shows the exact proposed conversations and requires Use this setup. A confirmed proposal disappears from pending notices. Profile and session selection is stored as a validated UUID pair, separately from drafts. Explicit Original chat navigation clears that preference.
 
 ## Actual tools and progress
 
@@ -86,3 +90,5 @@ The baseline is commit `2ab6d06`, with 35 owner messages and skipped setup. The 
 Implementation work is split into shared runtime, actual tools and shared client, followed by four parallel scenario workers. Each worker receives bounded paths and the same schemas. Tests use temporary stores, real Pi with deterministic providers, owned local form and webhook fixtures, and real process cancellation. Real subscription search, native interactions and the protected owner upgrade are separate acceptance observations.
 
 The acceptance manifest and decision log are under `data/verification/four-profiles`. Pending or inconclusive checks stay pending. Each implementation change reconciles any contract deviation here before its callers are integrated.
+
+Run `npm run test:experiences` for the shared runtime, tools, four profile cases and their client tests as one batch. The complete `npm test` also includes the protected lifecycle and owner-upgrade checks. Neither command replaces real subscription, native or managed acceptance.

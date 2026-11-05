@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "tsx --test apps/server/*.test.ts apps/web/*.test.ts apps/desktop/*.test.ts core/*.test.ts scripts/owner-upgrade/*.test.ts",
+    "test:experiences": "tsx --test apps/server/experience-*.test.ts apps/web/experience-*.test.ts",
     "test:owner-upgrade": "tsx --test scripts/owner-upgrade/*.test.ts",
     "owner-upgrade": "tsx scripts/owner-upgrade/cli.ts",
     "build": "tsc --noEmit && vite build && npm run build:desktop",
