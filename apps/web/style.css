@@ -1212,9 +1212,9 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .empty-composition .gaia-mark, .empty-composition .avatar-tile { width: 32px; height: 32px; }
 .welcome-page { padding-bottom: 8vh; }
 .welcome-composition { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.welcome-intro { display: flex; flex-direction: column; align-items: center; }
+.welcome-intro { width: 100%; max-width: 320px; display: flex; flex-direction: column; align-items: center; }
 .welcome-intro .gaia-mark { width: 40px; height: 40px; margin-bottom: 16px; }
-.welcome-intro p { text-wrap: balance; max-width: 36ch; margin-top: 8px; font-size: 15px; line-height: 24px; color: var(--color-ink-2); }
+.welcome-intro p { text-wrap: balance; width: 100%; max-width: 320px; margin-top: 8px; font-size: 15px; line-height: 24px; color: var(--color-ink-2); }
 .welcome-composition .welcome-button { width: 100%; max-width: 320px; height: 44px; margin-top: 24px; background: var(--color-surface-raised); border: 1px solid var(--color-line); color: var(--color-ink); box-shadow: none; }
 .welcome-caption { margin-top: 12px; font-size: 12px; line-height: 16px; color: var(--color-ink-2); }
 .welcome-composition .auth-help { margin-top: 12px; }

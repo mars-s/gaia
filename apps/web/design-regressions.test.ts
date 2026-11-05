@@ -223,3 +223,10 @@ test("Settings has labelled appearance, contained secondary actions and aligned 
   assert.match(css, /settings-section > section > button.primary-action \{ align-self: flex-start/);
   assert.match(css, /settings-bar .app-control:not\(.chat-switcher-trigger\) \{ margin-right: 0/);
 });
+
+test("welcome paragraph and action share a measure and omit the repeated connection prompt", () => {
+  assert.match(css, /welcome-intro \{ width: 100%; max-width: 320px/);
+  assert.match(css, /welcome-intro p \{[^}]*width: 100%; max-width: 320px/);
+  assert.match(css, /welcome-composition .welcome-button \{ width: 100%; max-width: 320px/);
+  assert.match(read("./app.tsx"), /connection.message !== "Connect your plan to begin."/);
+});

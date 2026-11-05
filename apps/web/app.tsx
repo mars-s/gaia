@@ -579,11 +579,10 @@ export function App() {
                 >
                   {pending ? "Connecting…" : "Continue with ChatGPT"}
                 </SocialButton>
-                <p className="welcome-caption">
-                  {connection?.kind === "disconnected" && connection.message
-                    ? connection.message
-                    : "Sign in with your ChatGPT plan. No API key needed."}
-                </p>
+                {connection?.kind === "disconnected" && connection.message &&
+                  connection.message !== "Connect your plan to begin." && (
+                    <p className="welcome-caption">{connection.message}</p>
+                  )}
               </>
             )}
             {offline && state && (
