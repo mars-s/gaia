@@ -404,27 +404,6 @@ body {
   mask: url("/gaia-mark.svg") center / contain no-repeat luminance;
 }
 
-.job-avatar-pulse {
-  display: inline-flex;
-  flex-shrink: 0;
-  animation: job-avatar-pulse 2s ease-in-out infinite;
-}
-
-@keyframes job-avatar-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .job-avatar-pulse {
-    animation: none;
-  }
-}
 
 .app-shell {
   background: var(--color-surface-page);
@@ -1191,3 +1170,15 @@ a:focus-visible {
 .settings-section .react-aria-Select { max-width: 240px; }
 .setup-badges { display: flex; flex-wrap: wrap; gap: 4px; }
 .setup-badge { display: inline-flex; padding: 2px 8px; border: 1px solid var(--color-line-strong); border-radius: var(--radius-full); background: var(--color-surface-selected); color: var(--color-ink); font-size: 12px; line-height: 16px; }
+
+.working-indicator { display: inline-flex; gap: 4px; align-items: center; padding: 4px; }
+.working-indicator i { width: 4px; height: 4px; border-radius: var(--radius-full); background: var(--color-ink-2); animation: work-breathe 1800ms ease-in-out infinite; }
+.working-indicator i:nth-child(2) { animation-delay: 200ms; }
+.working-indicator i:nth-child(3) { animation-delay: 400ms; }
+@keyframes work-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .working-indicator i { animation: none; } }
+.reply-error { color: var(--color-danger); }
+.reply-error-icon { width: 20px; height: 20px; flex-shrink: 0; }
+.reply-error .truncate { white-space: normal; overflow: visible; }
+.offline-notice { display: flex; gap: 8px; align-items: center; }
+.offline-notice > span { width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--color-ink-3); flex-shrink: 0; }

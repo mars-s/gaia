@@ -136,7 +136,10 @@ test("failed reply notice belongs inside the transcript after its turn with reas
     createElement(Transcript, { thread, onRetry() {} }),
   );
   assert(html.indexOf("Check my plan") < html.indexOf('class="reply-notice"'));
-  assert.match(html, /No reply came back. Provider disconnected./);
+  assert.match(
+    html,
+    /Connection lost./,
+  );
   assert.match(
     html,
     /<button[^>]*border-border-button-default[^>]*>[\s\S]*?Try again[\s\S]*?<\/button>/,

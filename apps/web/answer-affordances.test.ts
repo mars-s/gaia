@@ -15,7 +15,7 @@ test("elapsed time appears from three seconds, alongside real activity, and disa
       createElement(ProgressRow, { active: true, startedAt: start }),
     );
     assert.doesNotMatch(html, /Thinking|Running|Working/);
-    assert.match(html, /job-avatar-pulse/);
+    assert.match(html, /working-indicator/);
     if (seconds < 3) assert.doesNotMatch(html, /seconds elapsed/);
     else assert.match(html, new RegExp(`${seconds} seconds elapsed`));
   }
@@ -31,7 +31,7 @@ test("elapsed time appears from three seconds, alongside real activity, and disa
   const settled = renderToStaticMarkup(
     createElement(ProgressRow, { active: false, startedAt: start }),
   );
-  assert.doesNotMatch(settled, /elapsed|job-avatar-pulse/);
+  assert.doesNotMatch(settled, /elapsed|working-indicator/);
 });
 
 test("Original chat starts its elapsed clock at observation rather than inventing a server start time", () => {
@@ -91,4 +91,18 @@ test("code blocks have their own copy action and preserve the exact plain code",
   );
   assert.match(action, /type="button"/);
   assert.match(action, /aria-live="polite">Copy/);
+});
+
+test("working motion is separate from Gaia identity, including with real activity", () => {
+  for (const description of [undefined, "Checking the calendar"]) {
+    const html = renderToStaticMarkup(
+      createElement(ProgressRow, { active: true, description }),
+    );
+    assert.match(html, /class="progress-avatar"[^>]*><span class="gaia-mark"/);
+    assert.match(
+      html,
+      /class="working-indicator"[^>]*><i><\/i><i><\/i><i><\/i>/,
+    );
+    assert.doesNotMatch(html, /job-avatar-pulse/);
+  }
 });

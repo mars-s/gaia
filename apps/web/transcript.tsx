@@ -1,5 +1,5 @@
 import { CopyButton, codeText } from "./copy-button";
-import { ProgressRow, ReplyNotice } from "./progress-row";
+import { ProgressRow, ReplyNotice, replyError } from "./progress-row";
 import { useMemo, type ReactNode } from "react";
 import type { ThreadMessageLike } from "@assistant-ui/core";
 import {
@@ -156,7 +156,7 @@ export function Transcript({
                     ) : message.status?.type === "incomplete" &&
                       message.status.reason === "cancelled" ? (
                       "Reply stopped."
-                    ) : (
+                    ) : thread.run.kind === "error" ? null : (
                       "No reply received."
                     )}
                   </div>
@@ -173,7 +173,7 @@ export function Transcript({
         </ThreadPrimitiveMessages>
         {thread.run.kind === "error" && (
           <ReplyNotice
-            message={`No reply came back. ${thread.run.message}`}
+            message={replyError(thread.run.message)}
             onRetry={onRetry}
             disabled={retryDisabled}
           />

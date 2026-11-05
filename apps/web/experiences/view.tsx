@@ -1,5 +1,5 @@
 import { CopyButton } from "../copy-button";
-import { ProgressRow } from "../progress-row";
+import { ProgressRow, replyError, OfflineNotice } from "../progress-row";
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState } from "react";
 import { RiHashtag, RiMenuLine } from "@remixicon/react";
@@ -384,11 +384,7 @@ function ScopeConversation({
             {entry.error || controller.error}
           </p>
         )}
-        {entry.offline && (
-          <p role="status" className="text-text-secondary">
-            Offline. Reconnecting… Your draft is safe.
-          </p>
-        )}
+        {entry.offline && <OfflineNotice />}
         {saved.kind === "error" && (
           <p role="alert">
             {saved.message}{" "}
@@ -582,6 +578,7 @@ function JobRows({
         />
       ))}
       <ProgressRow
+        error={state.kind === "failed" || state.kind === "uncertain"}
         active={jobActive(job) && state.kind !== "stopping"}
         startedAt={
           state.kind === "running"
@@ -596,9 +593,10 @@ function JobRows({
           state.kind !== "running" &&
           state.kind !== "stopping" && (
             <span>
-              {job.title} ·{" "}
               {state.kind === "failed" || state.kind === "uncertain"
-                ? `No reply came back. ${state.message}`
+                ? state.kind === "uncertain"
+                  ? "This may already have happened. Try again only if you want it to run again."
+                  : replyError(state.message)
                 : state.kind === "interrupted"
                   ? "Interrupted. Not repeated automatically."
                   : "Stopped"}

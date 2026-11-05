@@ -1,3 +1,4 @@
+import { OfflineNotice } from "./progress-row";
 import { ChatSwitcher } from "./chat-switcher";
 import { createMainRestore, createNavigationGuard } from "./main-navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -646,11 +647,7 @@ export function App() {
                 reloads.
               </p>
             )}
-            {offline && (
-              <p role="alert" className="chat-notice">
-                Offline. Reconnecting… Your draft is safe.
-              </p>
-            )}
+            {offline && <OfflineNotice />}
             <Composer
               key={scopeKey(scope)}
               controller={controller}

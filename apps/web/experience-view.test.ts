@@ -315,7 +315,7 @@ test("queued and running progress has only an avatar and exact-job Stop, without
         /PRIVATE OWNER PROMPT|Queued|Running|Thinking/,
       );
       assert.match(markup, /aria-label="Stop PRIVATE OWNER PROMPT"/);
-      assert.match(markup, /job-avatar-pulse/);
+      assert.match(markup, /working-indicator/);
       assert.equal((markup.match(/aria-live="polite"/g) ?? []).length, 1);
       assert.equal((markup.match(/role="status"/g) ?? []).length, 1);
       assert.match(
@@ -349,6 +349,7 @@ test("concurrent activity rows keep complete descriptions without duplicate live
     markup.replace(/<[^>]*>/g, ""),
     /PRIVATE OWNER PROMPT|Running|Thinking/,
   );
+  assert.match(markup, /working-indicator/);
   assert.doesNotMatch(markup, /job-avatar-pulse/);
   parsed.jobs = parsed.jobs.map((job) => ({
     ...job,
@@ -446,8 +447,11 @@ test("failed, stopped, interrupted and uncertain jobs retain recovery controls",
     const markup = html();
     assert.match(markup, /Try again/);
     assert.doesNotMatch(markup, /job-avatar-pulse|aria-label="Stop PRIVATE/);
-    assert.match(markup, /PRIVATE OWNER PROMPT/);
-    if (state.message) assert.match(markup, new RegExp(state.message));
+    assert.doesNotMatch(markup, /PRIVATE OWNER PROMPT/);
+    if (state.kind === "failed") assert.match(markup, /Gaia couldn&#x27;t finish that reply/);
+    if (state.kind === "uncertain") assert.match(markup, /This may already have happened/);
+    if (state.kind === "interrupted") assert.match(markup, /Interrupted. Not repeated automatically/);
+    if (state.kind === "stopped") assert.match(markup, /Stopped/);
     controller.pause();
   }
 });
