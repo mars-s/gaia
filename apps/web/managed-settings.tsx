@@ -114,9 +114,8 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
     <section className="settings-section" aria-labelledby="changes-title">
       <div className="flex items-center justify-between gap-3">
         <h2 id="changes-title">Changes</h2>
-        <Button
-          variant="ghost"
-          size="small"
+        <button
+          className="quiet-action"
           disabled={submitting}
           onClick={() => {
             setActionError("");
@@ -124,8 +123,11 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
           }}
         >
           Refresh
-        </Button>
+        </button>
       </div>
+      <p className="changes-caption">
+        Changes Gaia has made to its own code. Any change can be reverted.
+      </p>
       {view.kind === "loading" && (
         <p className="text-text-secondary">Loading changes…</p>
       )}

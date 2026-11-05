@@ -119,25 +119,27 @@ export function SetupSettings({
               One conversation
             </p>
           </div>
-          <div className="setup-badges">
-            {controller.mainId === null && (
-              <span className="setup-badge">Main</span>
-            )}
-            {!controller.profile && (
-              <span className="setup-badge">Open now</span>
-            )}
-          </div>
+          <span className="setup-status">
+            {[
+              controller.mainId === null && "Main",
+              !controller.profile && "Current",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="secondary"
-              size="small"
-              onClick={() => {
-                controller.original();
-                onBack();
-              }}
-            >
-              Open
-            </Button>
+            {controller.profile && (
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={() => {
+                  controller.original();
+                  onBack();
+                }}
+              >
+                Open
+              </Button>
+            )}
             {controller.mainId !== null && (
               <Button
                 variant="secondary"
@@ -164,40 +166,43 @@ export function SetupSettings({
                     : ""}
               </p>
             </div>
-            <div className="setup-badges">
-              {controller.mainId === item.id && (
-                <span className="setup-badge">Main</span>
-              )}
-              {controller.profile?.profile.id === item.id && (
-                <span className="setup-badge">Open now</span>
-              )}
-            </div>
+            <span className="setup-status">
+              {[
+                controller.mainId === item.id && "Main",
+                controller.profile?.profile.id === item.id && "Current",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="secondary"
-                size="small"
-                disabled={pending}
-                onClick={() => {
-                  if (item.kind === "proposed") {
-                    if (
-                      item.proposal?.source.kind === "conversation" &&
-                      item.proposal.answerMessageId &&
-                      !item.proposal.dismissedAt
-                    ) {
-                      onReviewConversation(item);
+              {(item.kind === "proposed" ||
+                controller.profile?.profile.id !== item.id) && (
+                <Button
+                  variant="secondary"
+                  size="small"
+                  disabled={pending}
+                  onClick={() => {
+                    if (item.kind === "proposed") {
+                      if (
+                        item.proposal?.source.kind === "conversation" &&
+                        item.proposal.answerMessageId &&
+                        !item.proposal.dismissedAt
+                      ) {
+                        onReviewConversation(item);
+                        return;
+                      }
+                      setCreating(false);
+                      setReviewing(item.id);
                       return;
                     }
-                    setCreating(false);
-                    setReviewing(item.id);
-                    return;
-                  }
-                  void controller.selectProfile(item.id).then((ok) => {
-                    if (ok && active.current) onOpen();
-                  });
-                }}
-              >
-                {item.kind === "proposed" ? "Review" : "Open"}
-              </Button>
+                    void controller.selectProfile(item.id).then((ok) => {
+                      if (ok && active.current) onOpen();
+                    });
+                  }}
+                >
+                  {item.kind === "proposed" ? "Review" : "Open"}
+                </Button>
+              )}
               {item.kind === "ready" && controller.mainId !== item.id && (
                 <Button
                   variant="secondary"

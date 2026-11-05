@@ -396,73 +396,79 @@ export function App() {
       {accountOpen && connected ? (
         <main
           id="account-settings"
-          className="settings-page min-h-0 flex-1 overflow-y-auto p-6"
+          className="settings-page min-h-0 flex-1 overflow-y-auto"
         >
-          <section className="settings-content" aria-labelledby="account-title">
-            <div className="flex flex-col gap-2">
-              <h1 id="account-title" className="text-title-3-semibold">
-                Settings
-              </h1>
-            </div>
-            <section className="settings-section" aria-labelledby="plan-title">
-              <h2 id="plan-title">Plan</h2>
-              <div className="settings-plan-row">
-                <span>ChatGPT</span>
-                <span className="text-text-secondary">Connected</span>
-                <Button
-                  variant="secondary"
-                  disabled={pending || running || offline}
-                  onClick={() =>
-                    void act("auth/connect").then((ok) => {
-                      if (ok) setAccountOpen(false);
-                    })
-                  }
-                >
-                  Reconnect
-                </Button>
-              </div>
+          <div className="reading-column">
+            <section className="settings-content" aria-label="Settings">
+              <section
+                className="settings-section"
+                aria-labelledby="plan-title"
+              >
+                <h2 id="plan-title">Plan</h2>
+                <div className="settings-plan-row">
+                  <div className="plan-status">
+                    <span>ChatGPT</span>
+                    <span className="text-text-secondary">Connected</span>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    disabled={pending || running || offline}
+                    onClick={() =>
+                      void act("auth/connect").then((ok) => {
+                        if (ok) setAccountOpen(false);
+                      })
+                    }
+                  >
+                    Reconnect
+                  </Button>
+                </div>
+              </section>
+              <section
+                className="settings-section"
+                aria-labelledby="appearance-title"
+              >
+                <h2 id="appearance-title">Appearance</h2>
+                <div className="w-60 max-w-full">
+                  <AppearancePicker />
+                </div>
+              </section>
+              {!controller.safeMode && (
+                <SetupSettings
+                  controller={experiences}
+                  onOpen={() => {
+                    setExperienceView("chat");
+                    setAccountOpen(false);
+                  }}
+                  onBack={() => {
+                    setExperienceView("original");
+                    setAccountOpen(false);
+                  }}
+                  onReviewConversation={(proposal) => {
+                    experiences.original();
+                    controller.select(homeScope);
+                    setExperienceView("original");
+                    setAccountOpen(false);
+                    followReply.current = false;
+                    setReviewAnswer(proposal.proposal?.answerMessageId);
+                  }}
+                />
+              )}
+              <section
+                className="settings-section"
+                aria-labelledby="about-title"
+              >
+                <h2 id="about-title">About you</h2>
+                {profilePanel(true)}
+              </section>
+              <ManagedSettings runtime={state?.runtime} />
+              {error && (
+                <p role="alert" className="text-text-error-primary">
+                  {error}
+                </p>
+              )}
             </section>
-            <section
-              className="settings-section"
-              aria-labelledby="appearance-title"
-            >
-              <h2 id="appearance-title">Appearance</h2>
-              <div className="w-60 max-w-full">
-                <AppearancePicker />
-              </div>
-            </section>
-            {!controller.safeMode && (
-              <SetupSettings
-                controller={experiences}
-                onOpen={() => {
-                  setExperienceView("chat");
-                  setAccountOpen(false);
-                }}
-                onBack={() => {
-                  setExperienceView("original");
-                  setAccountOpen(false);
-                }}
-                onReviewConversation={(proposal) => {
-                  experiences.original();
-                  controller.select(homeScope);
-                  setExperienceView("original");
-                  setAccountOpen(false);
-                  followReply.current = false;
-                  setReviewAnswer(proposal.proposal?.answerMessageId);
-                }}
-              />
-            )}
-            <section className="settings-section" aria-labelledby="about-title">
-              <h2 id="about-title">About you</h2>
-              {profilePanel(true)}
-            </section>
-            <ManagedSettings runtime={state?.runtime} />
-            {error && (
-              <p role="alert" className="text-text-error-primary">
-                {error}
-              </p>
-            )}
-          </section>
+          </div>
         </main>
       ) : !state || !connected ? (
         <main className="welcome-page grid min-h-0 flex-1 place-items-center overflow-y-auto px-4">

@@ -13,7 +13,7 @@ test("Settings has its own header, close control and five peer sections in order
   );
   assert.match(app, /accountOpen \? "Close settings"/);
   const page = app.slice(app.indexOf('id="account-settings"'));
-  assert.match(page, /<h1[^>]*>[\s\S]*?Settings/);
+  assert.doesNotMatch(page.slice(0, page.indexOf(") : !state")), /<h1/);
   const positions = [
     'id="plan-title"',
     'id="appearance-title"',
