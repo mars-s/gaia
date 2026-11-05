@@ -116,17 +116,15 @@ export function ProfilePanel({
         </>
       ) : null}
       {!account && state.kind !== "ready" && state.kind !== "skipped" && (
-        <Button
+        <button
           className="quiet-action text-text-secondary"
-          variant="ghost"
-          size="small"
           disabled={skipDisabled}
           onClick={() => onAction("skip")}
         >
           {state.kind === "interview" || state.kind === "proposed"
             ? "Skip interview"
             : "Skip"}
-        </Button>
+        </button>
       )}
       {account && state.kind !== "new" && (
         <>

@@ -308,7 +308,8 @@ export function App() {
   };
   return (
     <div className="app-shell flex h-dvh flex-col bg-background-full text-body-regular text-text-primary">
-      <header className="app-bar flex shrink-0 items-center justify-between gap-4 px-4">
+      <header className="app-bar flex shrink-0 items-center">
+        <div className="app-bar-column reading-column">
         {accountOpen ? (
           <span className="text-body-medium">Settings</span>
         ) : connected && !controller.safeMode ? (
@@ -351,6 +352,7 @@ export function App() {
             onClick={() => setAccountOpen(!accountOpen)}
           />
         )}
+        </div>
       </header>
 
       {accountOpen && connected ? (

@@ -43,14 +43,6 @@ body {
   -webkit-app-region: drag;
 }
 
-[data-desktop="darwin"] .app-bar {
-  padding-left: 88px;
-}
-
-[data-desktop]:not([data-desktop="darwin"]) .app-bar {
-  padding-right: 152px;
-}
-
 .app-control {
   -webkit-app-region: no-drag;
 }
@@ -411,7 +403,7 @@ body {
 }
 .reading-column {
   width: 100%;
-  max-width: 768px;
+  max-width: var(--column-box);
   margin-inline: auto;
   padding-inline: var(--space-gutter);
 }
@@ -539,7 +531,7 @@ body {
   display: inline-flex;
   align-items: center;
   min-height: 36px;
-  padding-inline: 4px;
+  padding-inline: 0;
   border: 0;
   color: var(--color-ink-2);
   font-size: 14px;
@@ -1183,3 +1175,17 @@ a:focus-visible {
 .reply-error .truncate { white-space: normal; overflow: visible; }
 .offline-notice { display: flex; gap: 8px; align-items: center; }
 .offline-notice > span { width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--color-ink-3); flex-shrink: 0; }
+
+:root { --column-text: 680px; --column-box: 728px; }
+.app-bar-column { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.app-bar-side { width: 240px; flex-shrink: 0; }
+.app-bar .chat-switcher-trigger { margin-left: -8px; }
+.app-bar .app-control:not(.chat-switcher-trigger) { width: 36px; height: 36px; border: 0; background: transparent; box-shadow: none; margin-right: -8px; }
+.app-bar .app-control:not(.chat-switcher-trigger):hover { background: var(--color-surface-hover); }
+[data-desktop="darwin"] .app-bar:not(.has-side) .app-bar-column { padding-left: max(var(--space-gutter), min(96px, calc(96px - (100% - 728px) / 2))); }
+.message-list { padding-block: 24px; }
+.settings-page { padding: 24px 0; }
+@media (max-width: 639px) {
+ .app-bar-side { display: none; }
+ [data-desktop="darwin"] .app-bar:not(.has-side) .app-bar-column { padding-left: 16px; }
+}

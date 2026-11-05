@@ -52,18 +52,16 @@ export function ExperienceConversation({
       {layout !== "single" && (
         <>
           <div className="px-4 sm:hidden">
-            <Button
+            <button
               ref={toggle}
-              variant="secondary"
               className="quiet-action"
-              size="small"
               onClick={() => setNavigation(!navigation)}
               aria-expanded={navigation}
               aria-controls="experience-navigation"
             >
               <RiMenuLine className="size-4" />
               {collection}
-            </Button>
+            </button>
           </div>
           <nav
             id="experience-navigation"

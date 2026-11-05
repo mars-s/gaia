@@ -142,15 +142,13 @@ export function ExperienceProposalNotice({
                 >
                   {pending?.has(proposal.id) ? "Setting up…" : "Use this setup"}
                 </Button>
-                <Button
-                  variant="ghost"
+                <button
                   className="quiet-action text-text-secondary"
-                  size="small"
                   disabled={disabled || pending?.has(proposal.id)}
                   onClick={() => onDismiss?.(proposal)}
                 >
                   Not now
-                </Button>
+                </button>
               </div>
               <p className="text-caption-1-regular text-text-secondary">
                 Or tell me what to change.

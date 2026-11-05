@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { SharedComposer } from "./shared-composer";
-import { Button } from "@/components/base/buttons/button";
 import {
   stopScope,
   type ConversationController,
@@ -103,14 +102,12 @@ export function Composer({
           className="flex flex-wrap items-center gap-2 text-text-secondary"
         >
           <p>{state.message}</p>
-          <Button
+          <button
             className="quiet-action"
-            variant="ghost"
-            size="small"
             onClick={() => void entry.draft.load()}
           >
             Retry draft
-          </Button>
+          </button>
         </div>
       ) : state.kind === "ready" && state.durability === "memory" ? (
         <div
@@ -118,14 +115,12 @@ export function Composer({
           className="flex flex-wrap items-center gap-2 text-text-secondary"
         >
           <p>Your draft is kept in this window. Storage is unavailable.</p>
-          <Button
+          <button
             className="quiet-action"
-            variant="ghost"
-            size="small"
             onClick={() => entry.draft.retrySave()}
           >
             Retry saving
-          </Button>
+          </button>
         </div>
       ) : null}
       {images.length > 0 && !supportsImages && (

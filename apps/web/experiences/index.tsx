@@ -233,15 +233,13 @@ export function SetupSettings({
           }}
         />
       )}
-      <Button
-        variant="ghost"
+      <button
         className="quiet-action self-start text-text-secondary"
-        size="small"
         disabled={pending}
         onClick={() => setCreating(!creating)}
       >
         {creating ? "Cancel" : "Create a setup manually"}
-      </Button>
+      </button>
       {creating && (
         <ProposalForm
           disabled={pending}
