@@ -154,6 +154,18 @@ body {
   outline: 2px solid var(--color-border-focus-ring);
   outline-offset: 2px;
 }
+.experience-nav-row {
+  background: transparent;
+  color: var(--color-text-primary);
+}
+.experience-nav-row:hover,
+.experience-nav-row:focus-visible {
+  background: var(--color-background-secondary-default);
+}
+.experience-nav-row[aria-current="page"] {
+  background: var(--color-button-ghost-background);
+}
+
 .workspace-nav {
   scrollbar-width: thin;
   scrollbar-color: var(--color-text-tertiary) transparent;

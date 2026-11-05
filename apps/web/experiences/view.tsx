@@ -93,11 +93,7 @@ export function ExperienceConversation({
                   key={item.id}
                   variant="ghost"
                   size="small"
-                  className={cx(
-                    "w-full justify-start",
-                    item.id === scope.scopeId &&
-                      "bg-background-secondary-default",
-                  )}
+                  className="experience-nav-row w-full justify-start"
                   aria-current={item.id === scope.scopeId ? "page" : undefined}
                   onClick={() => {
                     controller.select({
@@ -115,10 +111,9 @@ export function ExperienceConversation({
                 </Button>
               ))}
             </div>
-            <Button
-              variant="ghost"
-              size="small"
-              className="mt-4"
+            <button
+              type="button"
+              className="quiet-link mx-3 mt-4 text-caption-1-regular text-text-secondary disabled:cursor-not-allowed"
               disabled={creating}
               onClick={() => {
                 if (layout === "sessions") {
@@ -130,7 +125,7 @@ export function ExperienceConversation({
               }}
             >
               {newLabel}
-            </Button>
+            </button>
             {adding && (
               <form
                 className="mt-3 flex flex-col gap-3"

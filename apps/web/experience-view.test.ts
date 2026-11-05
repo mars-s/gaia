@@ -129,6 +129,41 @@ test("four layouts share one chat with distinct navigation and memory semantics"
     controller.pause();
   }
 });
+test("only the selected sidebar row carries the current state in every list layout", () => {
+  for (const layout of ["bots", "channels", "sessions"] as const) {
+    const { controller, parsed, html } = fixture(layout);
+    assert(controller.profile);
+    const other = {
+      ...parsed.scope,
+      id: ScopeId.parse("33333333-3333-4333-8333-333333333333"),
+      label: "Other",
+    };
+    controller.profile.scopes.push(other);
+    for (const selected of [parsed.scope, other]) {
+      controller.selected = { profileId: parsed.profileId, scopeId: selected.id };
+      controller.receive(controller.selected, { ...parsed, scope: selected });
+      const navigation = html().match(/<nav\b[^>]*>(.*?)<\/nav>/s)?.[1];
+      assert(navigation);
+      const rows = [
+        ...navigation.matchAll(/<button\b([^>]*)>(.*?)<\/button>/gs),
+      ].filter((row) => row[1].includes("experience-nav-row"));
+      assert.equal(rows.length, 2);
+      const current = rows.filter((row) =>
+        row[1].includes('aria-current="page"'),
+      );
+      assert.equal(current.length, 1);
+      assert.match(current[0][2], new RegExp(`>${selected.label}<`));
+      assert.equal((navigation.match(/aria-current=/g) ?? []).length, 1);
+      assert.doesNotMatch(navigation, /bg-background-secondary-default/);
+      assert.match(
+        navigation,
+        /class="quiet-link [^"]*"[^>]*>New (?:Bot|channel|session)<\/button>/,
+      );
+    }
+    controller.pause();
+  }
+});
+
 test("independent real activity descriptions disappear on completion", () => {
   const { controller, parsed, html } = fixture("single");
   const base = {
