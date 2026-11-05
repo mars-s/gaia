@@ -619,6 +619,7 @@ export function App() {
             ref={transcript}
             onScroll={() => {
               const el = transcript.current;
+              if (el) el.dataset.scrolled = String(el.scrollTop > 0);
               if (el)
                 followReply.current =
                   el.scrollHeight - el.scrollTop - el.clientHeight < 96;
@@ -686,7 +687,7 @@ export function App() {
                       active.thread.messages.some(
                         (message) =>
                           message.role === "assistant" && message.text.trim(),
-                      ))) && <div className="py-4">{profilePanel()}</div>}
+                      ))) && <div className="interview-slot">{profilePanel()}</div>}
                   {!controller.safeMode && setupCards()}
                   {!controller.safeMode && (
                     <WorkspaceProposalPanel

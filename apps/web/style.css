@@ -1221,7 +1221,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 /* Keep the final actions clear of the composer at every measured height. */
 .conversation-scroll { scroll-padding-bottom: 24px; }
-.transcript-clearance { height: var(--composer-height, 120px); flex-shrink: 0; }
+.transcript-clearance { height: 24px; flex-shrink: 0; }
 .composer-column {
   position: relative;
 }
@@ -1307,3 +1307,14 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .reply-error button:not(.quiet-link) { margin-left: 4px; }
 
 @media (max-width: 639px) { .app-bar-side.sidebar-header { display: none; } }
+
+/* The page behind the mask supplies the top scroll fade in every shell. */
+.conversation-scroll[data-scrolled="true"] {
+  mask-image: linear-gradient(transparent, black 24px);
+}
+.app-shell:has(.conversation-scroll[data-scrolled="true"]) .app-bar {
+  box-shadow: inset 0 -1px var(--color-line);
+}
+.message-list { padding-bottom: 12px; }
+.message-list > .transcript-clearance { height: 0; }
+.message-list > .transcript-clearance + div { margin-top: calc(-1 * var(--space-message-gap)); }

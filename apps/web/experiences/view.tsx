@@ -337,6 +337,7 @@ function ScopeConversation({
         className="conversation-scroll min-h-0 flex-1 overflow-y-auto"
         onScroll={(event) => {
           const el = event.currentTarget;
+              if (el) el.dataset.scrolled = String(el.scrollTop > 0);
           follow.current =
             el.scrollHeight - el.scrollTop - el.clientHeight < 96;
         }}

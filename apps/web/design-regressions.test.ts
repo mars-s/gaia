@@ -43,9 +43,9 @@ test("interview offer uses the card frame and skipped interviews stay hidden", (
   assert.match(render("new"), />Not now</);
   assert.doesNotMatch(render("skipped"), /Set up|Not now|fit Gaia/);
 });
-test("transcript clearance tracks composer resizing and keeps the short fade", () => {
+test("transcript clearance keeps final content visible without duplicating the composer height and keeps the short fade", () => {
   assert.match(read("./shared-composer.tsx"), /new ResizeObserver\(measure\)/);
-  assert.match(css, /height: var\(--composer-height, 120px\)/);
+  assert.match(css, /height: 24px/);
   assert.match(
     css,
     /height: 24px;\s*pointer-events: none;\s*background: linear-gradient/,
@@ -134,4 +134,14 @@ test("clearance precedes the scroll anchor and leaves empty chats centred", () =
 
 test("sidebar header stays out of the narrow title bar", () => {
  assert.match(css, /@media \(max-width: 639px\) \{ .app-bar-side.sidebar-header \{ display: none/);
+});
+
+test("all conversation shells reveal a 24px top fade and header rule only after scrolling", () => {
+  for (const file of ["./app.tsx", "./experiences/view.tsx"]) {
+    assert.match(read(file), /el.dataset.scrolled = String\(el.scrollTop > 0\)/);
+  }
+  assert.match(css, /conversation-scroll\[data-scrolled="true"\][^}]*mask-image: linear-gradient\(transparent, black 24px\)/);
+  assert.match(css, /app-shell:has\(.conversation-scroll\[data-scrolled="true"\]\) .app-bar[^}]*inset 0 -1px/);
+  assert.match(css, /message-list \{ padding-bottom: 12px/);
+  assert.match(read("./app.tsx"), /className="interview-slot"/);
 });
