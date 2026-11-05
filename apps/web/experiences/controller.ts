@@ -1,12 +1,15 @@
 import type {
   Experience,
-  ExperienceId,
-  ScopeId,
   ExperienceState,
   ExperienceScopeState,
   ExperienceJob,
 } from "../../../packages/protocol/experiences.ts";
-import { ExperiencePlan } from "../../../packages/protocol/experiences.ts";
+import { z } from "zod";
+import {
+  ExperienceId,
+  ScopeId,
+  ExperiencePlan,
+} from "../../../packages/protocol/experiences.ts";
 import type { ModelSelection } from "../../../packages/protocol/index.ts";
 import {
   createExperienceClient,
@@ -21,6 +24,27 @@ import { createModelSelectionQueue } from "../model-selection";
 import { appendImages, readImageFiles } from "../image-input";
 
 export type Scope = { profileId: ExperienceId; scopeId: ScopeId };
+const SelectionPreference = z.strictObject({
+  version: z.literal(1),
+  selected: z
+    .strictObject({ profileId: ExperienceId, scopeId: ScopeId })
+    .nullable(),
+});
+export interface SelectionPersistence {
+  load(): unknown;
+  save(value: z.infer<typeof SelectionPreference>): void;
+}
+export const experienceSelectionKey = "gaia:experience-selection:v1";
+export function browserSelectionPersistence(): SelectionPersistence {
+  return {
+    load: () => {
+      const value = localStorage.getItem(experienceSelectionKey);
+      return value === null ? undefined : JSON.parse(value);
+    },
+    save: (value) =>
+      localStorage.setItem(experienceSelectionKey, JSON.stringify(value)),
+  };
+}
 export const experienceKey = (scope: Scope) =>
   `experience:${scope.profileId}:${scope.scopeId}`;
 export function keyboardSend(event: {
@@ -58,10 +82,13 @@ export function createExperienceController(
   options: {
     client?: ExperienceClient;
     persistence?: (key: string) => DraftPersistence;
+    selectionPersistence?: SelectionPersistence;
   } = {},
 ) {
   const client = options.client ?? createExperienceClient();
   const persistence = options.persistence ?? browserDraftPersistence;
+  const selectionPersistence =
+    options.selectionPersistence ?? browserSelectionPersistence();
   const entries = new Map<string, ReturnType<typeof createEntry>>();
   const listeners = new Set<() => void>();
   let version = 0;
@@ -124,7 +151,31 @@ export function createExperienceController(
         }
       });
     },
-    async selectProfile(id: ExperienceId) {
+    async restoreSelection() {
+      if (paused || controller.profile || controller.selected) return false;
+      try {
+        const saved = SelectionPreference.safeParse(
+          selectionPersistence.load(),
+        );
+        if (!saved.success || !saved.data.selected) return false;
+        return await controller.selectProfile(
+          saved.data.selected.profileId,
+          saved.data.selected.scopeId,
+        );
+      } catch {
+        return false;
+      }
+    },
+    original() {
+      controller.pause();
+      paused = false;
+      controller.profile = undefined;
+      controller.selected = undefined;
+      controller.loading = false;
+      saveSelection(null);
+      changed();
+    },
+    async selectProfile(id: ExperienceId, restoredScope?: ScopeId) {
       const token = ++generation;
       close?.();
       close = undefined;
@@ -138,14 +189,30 @@ export function createExperienceController(
       changed();
       try {
         const value = await client.state(id, request.signal);
-        if (paused || token !== generation) return;
+        if (paused || token !== generation) return false;
+        if (
+          restoredScope &&
+          (value.profile.kind !== "ready" ||
+            !value.scopes.some(
+              (scope) => scope.id === restoredScope && scope.profileId === id,
+            ))
+        ) {
+          saveSelection(null);
+          return false;
+        }
         controller.profile = value;
-        const first = value.scopes[0];
+        const first = restoredScope
+          ? value.scopes.find((scope) => scope.id === restoredScope)
+          : value.scopes[0];
         if (first && value.profile.kind === "ready")
           controller.select({ profileId: id, scopeId: first.id });
+        return !!first && value.profile.kind === "ready";
       } catch (cause) {
-        if (!paused && token === generation)
-          controller.error = errorText(cause);
+        if (!paused && token === generation) {
+          if (restoredScope) saveSelection(null);
+          else controller.error = errorText(cause);
+        }
+        return false;
       } finally {
         if (!paused && token === generation) {
           controller.loading = false;
@@ -155,13 +222,18 @@ export function createExperienceController(
     },
     select(scope: Scope) {
       if (
-        controller.profile?.profile.id !== scope.profileId ||
-        !controller.profile.scopes.some((item) => item.id === scope.scopeId)
+        controller.profile?.profile.kind !== "ready" ||
+        controller.profile.profile.id !== scope.profileId ||
+        !controller.profile.scopes.some(
+          (item) =>
+            item.id === scope.scopeId && item.profileId === scope.profileId,
+        )
       )
         return;
       close?.();
       const stream = ++streamGeneration;
       controller.selected = scope;
+      saveSelection(scope);
       const entry = controller.entry(scope);
       entry.composing = false;
       close = client.subscribe(
@@ -328,14 +400,10 @@ export function createExperienceController(
         async (value) => {
           return perform(
             async (signal) =>
-              controller.receive(
+              receiveResponse(
                 scope,
-                await client.model(
-                  scope.profileId,
-                  scope.scopeId,
-                  value,
-                  signal,
-                ),
+                signal,
+                client.model(scope.profileId, scope.scopeId, value, signal),
               ),
             entry,
           );
@@ -349,9 +417,10 @@ export function createExperienceController(
     },
     async compact(scope: Scope) {
       await action(scope, "compact", async (signal) =>
-        controller.receive(
+        receiveResponse(
           scope,
-          await client.compact(scope.profileId, scope.scopeId, signal),
+          signal,
+          client.compact(scope.profileId, scope.scopeId, signal),
         ),
       );
     },
@@ -360,9 +429,10 @@ export function createExperienceController(
         return;
       await action(scope, job.id, async (signal) => {
         await client.stop(scope.profileId, job.id, signal);
-        controller.receive(
+        await receiveResponse(
           scope,
-          await client.scope(scope.profileId, scope.scopeId, signal),
+          signal,
+          client.scope(scope.profileId, scope.scopeId, signal),
         );
       });
     },
@@ -383,9 +453,10 @@ export function createExperienceController(
           },
           signal,
         );
-        controller.receive(
+        await receiveResponse(
           scope,
-          await client.scope(scope.profileId, scope.scopeId, signal),
+          signal,
+          client.scope(scope.profileId, scope.scopeId, signal),
         );
       });
     },
@@ -419,6 +490,26 @@ export function createExperienceController(
     },
     client,
   };
+  async function receiveResponse(
+    scope: Scope,
+    signal: AbortSignal,
+    response: Promise<ExperienceScopeState>,
+  ) {
+    const value = await response;
+    if (!signal.aborted) controller.receive(scope, value);
+  }
+  function saveSelection(selected: Scope | null) {
+    try {
+      selectionPersistence.save({
+        version: 1,
+        selected: selected
+          ? { profileId: selected.profileId, scopeId: selected.scopeId }
+          : null,
+      });
+    } catch {
+      // Navigation still works when browser storage is unavailable.
+    }
+  }
   async function perform(
     run: (signal: AbortSignal) => Promise<unknown>,
     entry?: ReturnType<typeof createEntry>,
@@ -432,7 +523,7 @@ export function createExperienceController(
       await run(request.signal);
       return true;
     } catch (cause) {
-      if (!paused) {
+      if (!paused && !request.signal.aborted) {
         if (entry) entry.error = errorText(cause);
         else controller.error = errorText(cause);
       }

@@ -74,6 +74,7 @@ export function ProfileExperience({
             size="small"
             onClick={() => {
               active.current = false;
+              controller.original();
               onBack();
             }}
           >
@@ -185,6 +186,7 @@ export function ProfileExperience({
             variant="secondary"
             onClick={() => {
               active.current = false;
+              controller.original();
               onSetup();
             }}
           >

@@ -102,6 +102,23 @@ export function App() {
     else experiences.resume();
   }, [connected, state?.runtime?.mode, controller, experiences]);
   useEffect(() => {
+    if (!connected || controller.safeMode || experienceView !== "original")
+      return;
+    let active = true;
+    void experiences.restoreSelection().then((restored) => {
+      if (active && restored) setExperienceView("chat");
+    });
+    return () => {
+      active = false;
+    };
+  }, [
+    connected,
+    state?.runtime?.mode,
+    experienceView,
+    controller,
+    experiences,
+  ]);
+  useEffect(() => {
     setUpdateWaiting(observeRelease(state?.runtime?.release));
   }, [version, state?.runtime?.release, observeRelease]);
   useEffect(() => {
