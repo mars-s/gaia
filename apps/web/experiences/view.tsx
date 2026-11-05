@@ -1,3 +1,4 @@
+import { AssistantHead } from "../assistant-head";
 import { Dialog } from "@base-ui/react/dialog";
 import { CopyButton } from "../copy-button";
 import { ProgressRow, replyError, OfflineNotice } from "../progress-row";
@@ -349,6 +350,9 @@ function ScopeConversation({
                     ? job.answerId === message.id
                     : job.messageId === message.id) && !job.parentId,
               );
+              const runningJob = jobs.find(
+                (job) => job.state.kind === "running",
+              );
               return (
                 <div
                   key={message.id}
@@ -359,7 +363,9 @@ function ScopeConversation({
                     aria-label={
                       message.role === "user"
                         ? "You"
-                        : controller.profile?.profile.plan.assistantName
+                        : controller.profile?.profile.plan.layout === "bots"
+                          ? state.scope.label
+                          : controller.profile?.profile.plan.assistantName
                     }
                     className={cx(
                       "message-text min-w-0 wrap-anywhere",
@@ -368,6 +374,26 @@ function ScopeConversation({
                         : "w-full",
                     )}
                   >
+                    {message.role === "assistant" && (
+                      <AssistantHead
+                        name={
+                          controller.profile?.profile.plan.layout === "bots"
+                            ? state.scope.label
+                            : controller.profile?.profile.plan.assistantName
+                        }
+                        avatar={
+                          controller.profile?.profile.plan.layout === "bots" ? (
+                            <BotAvatar avatar={state.scope.avatar} />
+                          ) : undefined
+                        }
+                        active={jobs.some(jobActive)}
+                        startedAt={
+                          runningJob?.state.kind === "running"
+                            ? runningJob.state.startedAt
+                            : undefined
+                        }
+                      />
+                    )}
                     {message.attachments?.map((image) => (
                       <img
                         key={image.id}
@@ -580,6 +606,9 @@ function JobRows({
     profile?.profile.plan.layout === "bots"
       ? profile.scopes.find((item) => item.id === job.scopeId)?.avatar
       : undefined;
+  const hasAnswer = entry.state?.messages.some(
+    (message) => message.role === "assistant" && message.id === job.answerId,
+  );
   const activities =
     state.kind === "running" || state.kind === "stopping"
       ? state.activity.filter((activity) => activity.description.trim())
@@ -613,18 +642,30 @@ function JobRows({
     ) : null;
   return (
     <div className="job-progress flex min-w-0 flex-col gap-2 text-caption-1-regular text-text-secondary">
+      {!hasAnswer && (
+        <AssistantHead
+          name={
+            profile?.profile.plan.layout === "bots"
+              ? profile.scopes.find((item) => item.id === job.scopeId)?.label
+              : profile?.profile.plan.assistantName
+          }
+          avatar={assistantAvatar}
+          active={jobActive(job)}
+          startedAt={state.kind === "running" ? state.startedAt : undefined}
+        />
+      )}
       {activities.map((activity) => (
         <ProgressRow
           key={activity.id}
-          active
+          active={false}
           startedAt={state.kind === "running" ? state.startedAt : undefined}
-          avatar={assistantAvatar}
+          avatar={null}
           description={activity.description}
         />
       ))}
       <ProgressRow
         error={state.kind === "failed" || state.kind === "uncertain"}
-        active={jobActive(job) && state.kind !== "stopping"}
+        active={false}
         startedAt={
           state.kind === "running"
             ? state.startedAt
@@ -632,7 +673,7 @@ function JobRows({
               ? state.acceptedAt
               : undefined
         }
-        avatar={activities.length ? null : assistantAvatar}
+        avatar={null}
       >
         {state.kind !== "queued" &&
           state.kind !== "running" &&

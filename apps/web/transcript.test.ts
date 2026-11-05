@@ -115,7 +115,9 @@ test("original chat shows an avatar while awaiting a reply and clears it on sett
     }),
   );
   assert.match(settled, /All clear\./);
-  assert.doesNotMatch(settled, /gaia-mark|role="status"/);
+  assert.match(settled, /assistant-head/);
+  assert.match(settled, /assistant-name">Gaia/);
+  assert.doesNotMatch(settled, /role="status"/);
 });
 
 test("failed reply notice belongs inside the transcript after its turn with reason and secondary retry", () => {

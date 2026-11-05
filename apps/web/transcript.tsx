@@ -1,5 +1,6 @@
+import { AssistantHead } from "./assistant-head";
 import { CopyButton, codeText } from "./copy-button";
-import { ProgressRow, ReplyNotice, replyError } from "./progress-row";
+import { ReplyNotice, replyError } from "./progress-row";
 import { useMemo, type ReactNode } from "react";
 import type { ThreadMessageLike } from "@assistant-ui/core";
 import {
@@ -130,6 +131,14 @@ export function Transcript({
                   user ? "owner-bubble self-end" : "w-full self-start",
                 )}
               >
+                {!user && (
+                  <AssistantHead
+                    key={
+                      thread.run.kind === "running" ? thread.run.id : message.id
+                    }
+                    active={message.status?.type === "running"}
+                  />
+                )}
                 {source?.attachments?.length ? (
                   <MessageImages images={source.attachments} />
                 ) : null}
@@ -144,21 +153,14 @@ export function Transcript({
                       message.status?.type === "running" ? "status" : undefined
                     }
                   >
-                    {message.status?.type === "running" ? (
-                      <ProgressRow
-                        key={
-                          thread.run.kind === "running"
-                            ? thread.run.id
-                            : message.id
-                        }
-                        active
-                      />
-                    ) : message.status?.type === "incomplete" &&
-                      message.status.reason === "cancelled" ? (
-                      "Reply stopped."
-                    ) : thread.run.kind === "error" ? null : (
-                      "No reply received."
-                    )}
+                    {message.status?.type === "running"
+                      ? null
+                      : message.status?.type === "incomplete" &&
+                          message.status.reason === "cancelled"
+                        ? "Reply stopped."
+                        : thread.run.kind === "error"
+                          ? null
+                          : "No reply received."}
                   </div>
                 ) : null}
                 {!user &&
@@ -166,25 +168,49 @@ export function Transcript({
                   message.status?.type === "complete" && (
                     <CopyButton label="Copy answer" text={source.text} />
                   )}
+                {!user &&
+                  message.id === thread.messages.at(-1)?.id &&
+                  (thread.run.kind === "error" ? (
+                    <ReplyNotice
+                      message={replyError(thread.run.message)}
+                      onRetry={onRetry}
+                      disabled={retryDisabled}
+                    />
+                  ) : thread.run.kind === "stopped" && onRetry ? (
+                    <ReplyNotice
+                      message="Stopped."
+                      onRetry={onRetry}
+                      disabled={retryDisabled}
+                    />
+                  ) : null)}
                 {afterMessage?.(message.id)}
               </article>
             );
           }}
         </ThreadPrimitiveMessages>
-        {thread.run.kind === "error" && (
-          <ReplyNotice
-            message={replyError(thread.run.message)}
-            onRetry={onRetry}
-            disabled={retryDisabled}
-          />
-        )}
-        {thread.run.kind === "stopped" && onRetry && (
-          <ReplyNotice
-            message="Stopped."
-            onRetry={onRetry}
-            disabled={retryDisabled}
-          />
-        )}
+        {thread.messages.at(-1)?.role !== "assistant" &&
+          (thread.run.kind === "error" || thread.run.kind === "stopped") && (
+            <article
+              aria-label="Gaia"
+              data-role="assistant"
+              className="message-text w-full"
+            >
+              <AssistantHead />
+              {thread.run.kind === "error" ? (
+                <ReplyNotice
+                  message={replyError(thread.run.message)}
+                  onRetry={onRetry}
+                  disabled={retryDisabled}
+                />
+              ) : thread.run.kind === "stopped" && onRetry ? (
+                <ReplyNotice
+                  message="Stopped."
+                  onRetry={onRetry}
+                  disabled={retryDisabled}
+                />
+              ) : null}
+            </article>
+          )}
       </div>
     </AssistantRuntimeProvider>
   );

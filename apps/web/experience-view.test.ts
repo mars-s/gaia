@@ -365,7 +365,7 @@ test("concurrent activity rows keep complete descriptions without duplicate live
   parsed.revision++;
   controller.receive(controller.selected, { ...parsed });
   const settled = html();
-  assert.doesNotMatch(settled, /job-progress|gaia-mark|Stop PRIVATE/);
+  assert.doesNotMatch(settled, /job-progress|Stop PRIVATE/);
   assert.match(settled, /The actual streamed answer stays/);
   controller.pause();
 });
@@ -553,4 +553,17 @@ test("every setup uses the shared composer contract and only settled answers off
     assert.doesNotMatch(html(), /aria-label="Copy answer"/);
     controller.pause();
   }
+});
+
+test("assistant turns use the scope identity and owner turns have no head", () => {
+ for (const layout of ["single", "bots", "channels", "sessions"] as const) {
+  const {html, controller} = fixture(layout);
+  const markup = html();
+  const articles = [...markup.matchAll(/<article[\s\S]*?<\/article>/g)].map(match => match[0]);
+  assert.doesNotMatch(articles[0], /assistant-head/);
+  assert.match(articles[1], /assistant-head/);
+  assert.match(articles[1], layout === "bots" ? /assistant-name">Main/ : /assistant-name">Gaia/);
+  assert.match(articles[1], layout === "bots" ? /bot-01.svg/ : /gaia-mark/);
+  controller.pause();
+ }
 });

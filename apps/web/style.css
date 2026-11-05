@@ -1210,3 +1210,9 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 }
 @media (prefers-reduced-motion: reduce) { .navigation-drawer, .navigation-backdrop { transition: opacity 80ms; transform: none; } }
 @media (min-width: 640px) { .desktop-sidebar { display: flex; flex-shrink: 0; } }
+.assistant-head { display: flex; align-items: center; gap: 8px; height: 24px; margin-bottom: 6px; }
+.assistant-head .gaia-mark, .assistant-head .avatar-tile { width: 24px; height: 24px; border-radius: 8px; }
+.assistant-head .gaia-mark { background: var(--color-accent); }
+.assistant-name { font-size: 13px; line-height: 18px; color: var(--color-ink-2); }
+.assistant-head .progress-row { margin-left: 4px; }
+.assistant-head .working-indicator { padding: 0; }
