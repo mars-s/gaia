@@ -236,7 +236,7 @@ export function createExperienceController(
               : await client.confirm(proposal.id, proposal.revision, signal);
         } catch (cause) {
           if (cause instanceof ExperienceRequestError && cause.status === 409)
-            throw new Error("This setup changed. Look again.", { cause });
+            throw new Error("This setup changed since you looked. Read it again.", { cause });
           throw cause;
         }
         indexGeneration++;

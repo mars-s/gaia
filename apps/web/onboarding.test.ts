@@ -54,7 +54,7 @@ test("legacy owner states load and answered setup prompts disappear without re-a
   );
   assert(!html.includes("What should"));
   assert(!html.includes("most like"));
-  assert(html.includes("Skip setup"));
+  assert(html.includes("Skip interview"));
   assert(
     !html.includes("disabled="),
     "Skip stays available during a model reply.",

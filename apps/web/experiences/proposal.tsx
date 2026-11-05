@@ -2,11 +2,13 @@ import type {
   Experience,
   ExperienceId,
 } from "../../../packages/protocol/experiences.ts";
+import { RiCheckLine, RiHashtag } from "@remixicon/react";
+import { BotAvatar } from "./view";
 import { Button } from "../components/base/buttons/button";
-const layouts = {
+export const setupLayouts = {
   single: { label: "One conversation" },
   bots: { label: "Separate Bots" },
-  channels: { label: "Shared assistant with channels" },
+  channels: { label: "One assistant with channels" },
   sessions: { label: "Separate sessions" },
 };
 
@@ -53,13 +55,15 @@ export function ExperienceProposalNotice({
       {visible.map((proposal) => (
         <article
           key={proposal.id}
-          className="flex min-w-0 flex-col gap-3 rounded-xl border border-separator-border p-4 wrap-anywhere"
+          data-setup-answer={proposal.proposal?.answerMessageId}
+          className="setup-card flex min-w-0 flex-col gap-4 rounded-xl border border-separator-border p-5 wrap-anywhere"
         >
           {proposal.kind === "ready" ? (
-            <>
-              <p>Setup created.</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <RiCheckLine className="size-5 shrink-0" aria-hidden="true" />
+              <p className="mr-auto">Setup created.</p>
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="small"
                 disabled={disabled || pending?.has(proposal.id)}
                 onClick={() => onReview?.(proposal.id)}
@@ -76,42 +80,71 @@ export function ExperienceProposalNotice({
                   Try making it main again
                 </Button>
               )}
-            </>
+            </div>
           ) : proposal.proposal?.supersededBy ? (
-            <p className="text-text-secondary">Replaced by a newer setup.</p>
+            <p className="text-text-secondary">Replaced by a newer proposal.</p>
           ) : (
             <>
-              <h2 className="text-body-medium">{proposal.plan.title}</h2>
-              <p>
-                {proposal.plan.assistantName} ·{" "}
-                {layouts[proposal.plan.layout].label}
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-title-3-semibold">{proposal.plan.title}</h2>
+                <span className="text-caption-1-regular text-text-secondary">
+                  Proposed
+                </span>
+              </div>
+              <p className="whitespace-pre-wrap text-text-secondary">
+                {setupLayouts[proposal.plan.layout].label}.{" "}
+                {proposal.plan.assistantName}. {proposal.plan.purpose}
               </p>
-              <p className="whitespace-pre-wrap">{proposal.plan.purpose}</p>
-              <ul className="flex flex-col gap-3">
+              <ul className="flex min-w-0 flex-col gap-2">
                 {proposal.plan.scopes.map((scope, index) => (
-                  <li key={index}>
-                    <p className="text-body-medium">{scope.label}</p>
-                    <p className="whitespace-pre-wrap text-text-secondary">
-                      {scope.purpose}
-                    </p>
+                  <li
+                    key={index}
+                    className="setup-scope-row flex min-w-0 items-center gap-3"
+                  >
+                    {proposal.plan.layout === "bots" ? (
+                      <BotAvatar avatar={scope.avatar} />
+                    ) : proposal.plan.layout === "channels" ? (
+                      <span className="avatar-tile">
+                        <RiHashtag aria-hidden="true" className="size-4" />
+                      </span>
+                    ) : (
+                      <span className="avatar-tile">
+                        <span className="gaia-mark" aria-hidden="true" />
+                      </span>
+                    )}
+                    <div className="setup-scope-copy min-w-0 flex-1">
+                      <p className="shrink-0 text-body-medium">{scope.label}</p>
+                      <p
+                        className="truncate text-body-regular text-text-secondary"
+                        title={scope.purpose}
+                      >
+                        {scope.purpose}
+                      </p>
+                    </div>
                   </li>
                 ))}
               </ul>
               <p className="text-caption-1-regular text-text-secondary">
-                Use this setup makes it your main chat. Earlier chat stays
+                Using it makes this your main chat. The earlier chat stays
                 available.
               </p>
-              <div className="flex flex-wrap gap-2">
+              {errors?.get(proposal.id) && (
+                <p role="alert" className="text-text-error-primary">
+                  {errors.get(proposal.id)}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-3">
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="small"
                   disabled={disabled || pending?.has(proposal.id)}
                   onClick={() => onUse?.(proposal)}
                 >
-                  Use this setup
+                  {pending?.has(proposal.id) ? "Setting up…" : "Use this setup"}
                 </Button>
                 <Button
                   variant="ghost"
+                  className="quiet-action text-text-secondary"
                   size="small"
                   disabled={disabled || pending?.has(proposal.id)}
                   onClick={() => onDismiss?.(proposal)}
@@ -124,7 +157,7 @@ export function ExperienceProposalNotice({
               </p>
             </>
           )}
-          {errors?.get(proposal.id) && (
+          {proposal.kind === "ready" && errors?.get(proposal.id) && (
             <p role="alert" className="text-text-error-primary">
               {errors.get(proposal.id)}
             </p>

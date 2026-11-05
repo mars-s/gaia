@@ -26,7 +26,7 @@ import { Composer } from "./composer";
 import { createConversationController } from "./conversation-controller";
 import { homeScope, scopeKey } from "./workspace-controller";
 import { WorkspaceNavigation, WorkspaceProposalPanel } from "./workspace-panel";
-import { ProfileExperience } from "./experiences";
+import { ProfileExperience, SetupSettings } from "./experiences";
 import { createExperienceController } from "./experiences/controller";
 import {
   ExperienceProposalNotice,
@@ -37,9 +37,9 @@ export function App() {
   const [experiences] = useState(() => createExperienceController());
   useSyncExternalStore(experiences.subscribe, experiences.version);
   const [restoreMain] = useState(createMainRestore);
-  const [experienceView, updateExperienceView] = useState<
-    "original" | "profiles" | "chat"
-  >("original");
+  const [experienceView, updateExperienceView] = useState<"original" | "chat">(
+    "original",
+  );
   const [legacyStore] = useState(() => createDraftStore(() => sessionStorage));
   const [controller] = useState(() =>
     createConversationController({
@@ -60,7 +60,7 @@ export function App() {
       });
     }),
   );
-  function setExperienceView(value: "original" | "profiles" | "chat") {
+  function setExperienceView(value: "original" | "chat") {
     navigation.moved();
     updateExperienceView(value);
   }
@@ -105,6 +105,17 @@ export function App() {
       loadedRelease(import.meta.url),
     ),
   );
+  const [reviewAnswer, setReviewAnswer] = useState<string>();
+  useEffect(() => {
+    if (accountOpen || !reviewAnswer) return;
+    const card = [...document.querySelectorAll(".setup-card")].find(
+      (card) => card.getAttribute("data-setup-answer") === reviewAnswer,
+    );
+    if (card) {
+      card.scrollIntoView({ block: "center" });
+      setReviewAnswer(undefined);
+    }
+  }, [accountOpen, reviewAnswer, experienceView]);
   const bottom = useRef<HTMLDivElement>(null);
   const transcript = useRef<HTMLDivElement>(null);
   const followReply = useRef(true);
@@ -337,7 +348,7 @@ export function App() {
           className="grid min-h-0 flex-1 place-items-center overflow-y-auto p-6"
         >
           <section
-            className="flex w-full max-w-xs flex-col items-start gap-6"
+            className="flex w-full max-w-lg flex-col items-start gap-6"
             aria-labelledby="account-title"
           >
             <div className="flex flex-col gap-2">
@@ -359,15 +370,25 @@ export function App() {
             </Button>
             <AppearancePicker />
             {!controller.safeMode && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setExperienceView("profiles");
+              <SetupSettings
+                controller={experiences}
+                onOpen={() => {
+                  setExperienceView("chat");
                   setAccountOpen(false);
                 }}
-              >
-                Setups
-              </Button>
+                onBack={() => {
+                  setExperienceView("original");
+                  setAccountOpen(false);
+                }}
+                onReviewConversation={(proposal) => {
+                  experiences.original();
+                  controller.select(homeScope);
+                  setExperienceView("original");
+                  setAccountOpen(false);
+                  followReply.current = false;
+                  setReviewAnswer(proposal.proposal?.answerMessageId);
+                }}
+              />
             )}
             <h2 className="text-body-medium">About you</h2>
             {profilePanel(true)}
@@ -492,20 +513,7 @@ export function App() {
           </section>
         </main>
       ) : experienceView !== "original" && !controller.safeMode ? (
-        <ProfileExperience
-          controller={experiences}
-          manage={experienceView === "profiles"}
-          onOpen={() => setExperienceView("chat")}
-          onBack={() => {
-            experiences.original();
-            setExperienceView("original");
-          }}
-          onSetup={() => {
-            experiences.original();
-            setExperienceView("original");
-            controller.select(homeScope);
-          }}
-        />
+        <ProfileExperience controller={experiences} />
       ) : (
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {!controller.safeMode && (

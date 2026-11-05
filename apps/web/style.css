@@ -717,3 +717,39 @@ a:focus-visible {
 .composer [data-focus-visible]:not(button) {
   outline: none;
 }
+
+.setup-card {
+  background: var(--color-surface-raised);
+}
+.setup-scope-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.setup-list-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+@media (max-width: 480px) {
+  .setup-scope-copy {
+    display: block;
+  }
+  .setup-list-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .setup-card {
+    transition:
+      opacity var(--motion-card),
+      transform var(--motion-card);
+    @starting-style {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}

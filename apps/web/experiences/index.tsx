@@ -3,9 +3,15 @@ import { Button } from "../components/base/buttons/button";
 import {
   ExperiencePlan,
   type ExperienceLayout,
+  type Experience,
+  type ExperienceId,
 } from "../../../packages/protocol/experiences.ts";
 import type { ExperienceController } from "./controller";
-import { BotAvatar, ExperienceConversation } from "./view";
+import { ExperienceConversation } from "./view";
+import { ExperienceProposalNotice, setupLayouts } from "./proposal";
+import { Input } from "../components/base/input/input";
+import { Textarea } from "../components/base/textarea/textarea";
+import { Select, SelectItem } from "../components/base/select/select";
 
 const layouts: Record<
   ExperienceLayout,
@@ -33,185 +39,230 @@ const layouts: Record<
 };
 export function ProfileExperience({
   controller,
-  manage,
-  onOpen,
-  onBack,
-  onSetup,
 }: {
   controller: ExperienceController;
-  manage: boolean;
+}) {
+  useSyncExternalStore(
+    controller.subscribe,
+    controller.version,
+    controller.version,
+  );
+  return <ExperienceConversation controller={controller} />;
+}
+
+export function SetupSettings({
+  controller,
+  onOpen,
+  onBack,
+  onReviewConversation,
+}: {
+  controller: ExperienceController;
   onOpen: () => void;
   onBack: () => void;
-  onSetup?: () => void;
+  onReviewConversation: (proposal: Experience) => void;
 }) {
-  useSyncExternalStore(controller.subscribe, controller.version);
+  useSyncExternalStore(
+    controller.subscribe,
+    controller.version,
+    controller.version,
+  );
   const [creating, setCreating] = useState(false);
   const [pending, setPending] = useState(false);
+  const [reviewing, setReviewing] = useState<ExperienceId>();
+  const section = useRef<HTMLElement>(null);
   const active = useRef(true);
   useEffect(() => {
     active.current = true;
+    void controller.refresh();
     return () => {
       active.current = false;
     };
-  }, []);
-  useEffect(() => {
-    if (manage) void controller.refresh();
-  }, [controller, manage]);
-  const profile = controller.profile?.profile;
-  if (!manage && profile?.kind === "ready")
-    return <ExperienceConversation controller={controller} />;
+  }, [controller]);
+  const review = controller.profiles.find((item) => item.id === reviewing);
   return (
-    <main className="min-h-0 flex-1 overflow-y-auto p-6">
-      <section className="mx-auto flex w-full max-w-lg flex-col items-start gap-6">
-        <div className="flex w-full items-center justify-between gap-3">
-          <h1 className="text-title-3-semibold">Setups</h1>
-          <Button
-            variant="ghost"
-            size="small"
-            onClick={() => {
-              active.current = false;
-              controller.original();
-              onBack();
-            }}
+    <section
+      ref={section}
+      className="setup-settings flex w-full min-w-0 flex-col gap-3"
+      aria-labelledby="setups-title"
+    >
+      <h2 id="setups-title" className="text-body-medium">
+        <button
+          className="quiet-link"
+          onClick={() =>
+            section.current?.scrollIntoView({
+              block: "start",
+              behavior: "smooth",
+            })
+          }
+        >
+          Setups
+        </button>
+      </h2>
+      {controller.error && (
+        <p role="alert" className="text-text-error-primary">
+          {controller.error}{" "}
+          <button
+            className="quiet-link"
+            onClick={() => void controller.refresh()}
           >
-            Earlier chat
-          </Button>
-        </div>
-        <p className="text-text-secondary">
-          Tell Gaia how you want to work, then review its proposed setup.
+            Retry
+          </button>
         </p>
-        {controller.error && (
-          <p role="alert" className="text-text-error-primary">
-            {controller.error}{" "}
-            <button
-              className="quiet-link"
-              onClick={() => void controller.refresh()}
-            >
-              Retry
-            </button>
-          </p>
-        )}
-        <div className="flex w-full flex-col gap-2">
-          {controller.profiles.map((item) => (
-            <Button
-              key={item.id}
-              variant="ghost"
-              className="justify-between"
-              disabled={pending}
-              onClick={() => {
-                setCreating(false);
-                void controller.selectProfile(item.id).then(() => {
-                  if (
-                    active.current &&
-                    controller.profile?.profile.id === item.id &&
-                    controller.profile.profile.kind === "ready"
-                  )
-                    onOpen();
-                });
-              }}
-            >
-              <span className="truncate">{item.plan.title}</span>
-              <span className="text-caption-1-regular text-text-secondary">
-                {item.kind === "proposed"
-                  ? "Review proposal"
-                  : layouts[item.plan.layout].label}
-              </span>
-            </Button>
-          ))}
-        </div>
-        {controller.loading && (
-          <p role="status" className="text-text-secondary">
-            Loading setup…
-          </p>
-        )}
-        {profile?.kind === "proposed" && !creating && (
-          <section
-            className="flex w-full flex-col gap-4"
-            aria-label="Review exact setup proposal"
-          >
-            <h2 className="text-body-medium">{profile.plan.title}</h2>
-            <p>
-              {layouts[profile.plan.layout].label} ·{" "}
-              {profile.plan.assistantName}
+      )}
+      <ul className="flex w-full min-w-0 flex-col divide-y divide-separator-border">
+        <li className="setup-list-row">
+          <div className="min-w-0 flex-1">
+            <p className="text-body-medium">Earlier chat</p>{" "}
+            <p className="text-caption-1-regular text-text-secondary">
+              One conversation{controller.mainId === null ? " · Main chat" : ""}
             </p>
-            <p className="whitespace-pre-wrap">{profile.plan.purpose}</p>
-            <ul className="flex flex-col gap-3">
-              {profile.plan.scopes.map((scope, index) => (
-                <li key={index}>
-                  <p className="flex items-center gap-2 text-body-medium">
-                    {profile.plan.layout === "bots" && (
-                      <BotAvatar avatar={scope.avatar} />
-                    )}
-                    {scope.label}
-                  </p>
-                  <p className="whitespace-pre-wrap text-text-secondary">
-                    {scope.purpose}
-                  </p>
-                </li>
-              ))}
-            </ul>
-            <p className="text-text-secondary">
-              Use this setup makes it your main chat. Earlier chat stays
-              available.
-            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="secondary"
-              disabled={pending}
+              size="small"
               onClick={() => {
-                setPending(true);
-                void controller
-                  .useSetup(profile)
-                  .then((ok) => {
-                    if (
-                      ok &&
-                      active.current &&
-                      controller.profile?.profile.id === profile.id &&
-                      controller.profile.profile.kind === "ready"
-                    )
-                      onOpen();
-                  })
-                  .finally(() => setPending(false));
+                controller.original();
+                onBack();
               }}
             >
-              Use this setup
+              Open
             </Button>
-          </section>
-        )}
-        {onSetup && (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              active.current = false;
-              controller.original();
-              onSetup();
-            }}
-          >
-            Set up in chat
-          </Button>
-        )}
-        <Button
-          variant="ghost"
+            {controller.mainId !== null && (
+              <Button
+                className="quiet-action text-text-secondary"
+                variant="ghost"
+                size="small"
+                onClick={() => void controller.makeMain(null)}
+              >
+                Make main
+              </Button>
+            )}
+          </div>
+        </li>
+        {controller.profiles.map((item) => (
+          <li key={item.id} className="setup-list-row">
+            <div className="min-w-0 flex-1">
+              <p className="text-body-medium wrap-anywhere">
+                {item.plan.title}
+              </p>{" "}
+              <p className="text-caption-1-regular text-text-secondary">
+                {setupLayouts[item.plan.layout].label}
+                {" · "}
+                {controller.mainId === item.id
+                  ? "Main chat"
+                  : item.proposal?.dismissedAt || item.proposal?.supersededBy
+                    ? "Hidden"
+                    : item.kind === "proposed"
+                      ? "Proposed"
+                      : "Created"}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                size="small"
+                disabled={pending}
+                onClick={() => {
+                  if (item.kind === "proposed") {
+                    if (
+                      item.proposal?.source.kind === "conversation" &&
+                      item.proposal.answerMessageId &&
+                      !item.proposal.dismissedAt
+                    ) {
+                      onReviewConversation(item);
+                      return;
+                    }
+                    setCreating(false);
+                    setReviewing(item.id);
+                    return;
+                  }
+                  void controller.selectProfile(item.id).then((ok) => {
+                    if (ok && active.current) onOpen();
+                  });
+                }}
+              >
+                {item.kind === "proposed" ? "Review" : "Open"}
+              </Button>
+              {item.kind === "ready" && controller.mainId !== item.id && (
+                <Button
+                  variant="ghost"
+                  className="quiet-action text-text-secondary"
+                  size="small"
+                  disabled={pending}
+                  onClick={() => void controller.makeMain(item.id)}
+                >
+                  Make main
+                </Button>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+      {controller.loading && (
+        <p role="status" className="text-text-secondary">
+          Loading setup…
+        </p>
+      )}
+      {review && !creating && (
+        <ExperienceProposalNotice
+          proposals={[
+            {
+              ...review,
+              proposal: review.proposal
+                ? { ...review.proposal, dismissedAt: undefined }
+                : undefined,
+            },
+          ]}
           disabled={pending}
-          onClick={() => setCreating(!creating)}
-        >
-          {creating ? "Cancel manual setup" : "Create manually"}
-        </Button>
-        {creating && (
-          <ProposalForm
-            disabled={pending}
-            onPropose={(plan) => {
-              setPending(true);
-              void controller
-                .propose(plan)
-                .then((ok) => {
-                  if (ok && active.current) setCreating(false);
-                })
-                .finally(() => setPending(false));
-            }}
-          />
-        )}
-      </section>
-    </main>
+          errors={controller.proposalErrors}
+          pending={controller.proposalPending}
+          onUse={(proposal) => {
+            void controller
+              .useSetup(proposal, () => active.current)
+              .then((ok) => {
+                if (ok && active.current) onOpen();
+              });
+          }}
+          onDismiss={(proposal) => {
+            void controller.dismiss(proposal).then(() => {
+              if (active.current) setReviewing(undefined);
+            });
+          }}
+          onReview={() => {
+            void controller.selectProfile(review.id).then((ok) => {
+              if (ok && active.current) onOpen();
+            });
+          }}
+        />
+      )}
+      <Button
+        variant="ghost"
+        className="quiet-action self-start text-text-secondary"
+        size="small"
+        disabled={pending}
+        onClick={() => setCreating(!creating)}
+      >
+        {creating ? "Cancel" : "Create a setup manually"}
+      </Button>
+      {creating && (
+        <ProposalForm
+          disabled={pending}
+          onPropose={(plan) => {
+            setPending(true);
+            void controller
+              .propose(plan)
+              .then((ok) => {
+                if (ok && active.current) {
+                  setCreating(false);
+                  setReviewing(controller.profile?.profile.id);
+                }
+              })
+              .finally(() => setPending(false));
+          }}
+        />
+      )}
+    </section>
   );
 }
 function ProposalForm({
@@ -227,8 +278,6 @@ function ProposalForm({
   const [purpose, setPurpose] = useState("");
   const [scopes, setScopes] = useState([{ label: "Main", purpose: "" }]);
   const [error, setError] = useState("");
-  const field =
-    "w-full rounded-lg bg-background-tertiary-default p-3 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring";
   return (
     <form
       className="flex w-full flex-col gap-4"
@@ -255,73 +304,61 @@ function ProposalForm({
         onPropose(parsed.data);
       }}
     >
-      <label>
-        Pattern
-        <select
-          className={field}
-          value={layout}
-          disabled={disabled}
-          onChange={(event) => {
-            const value = ExperiencePlan.shape.layout.parse(event.target.value);
-            setLayout(value);
-            setScopes(
-              value === "bots"
-                ? [
-                    {
-                      label: "Home",
-                      purpose: "Coordinate selected work across Bots.",
-                    },
-                  ]
-                : [
-                    {
-                      label: value === "sessions" ? "First session" : "Main",
-                      purpose: "",
-                    },
-                  ],
-            );
-          }}
-        >
-          {Object.entries(layouts).map(([id, value]) => (
-            <option key={id} value={id}>
-              {value.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Select
+        label="Pattern"
+        selectedKey={layout}
+        isDisabled={disabled}
+        onSelectionChange={(key) => {
+          const value = ExperiencePlan.shape.layout.parse(key);
+          setLayout(value);
+          setScopes(
+            value === "bots"
+              ? [
+                  {
+                    label: "Home",
+                    purpose: "Coordinate selected work across Bots.",
+                  },
+                ]
+              : [
+                  {
+                    label: value === "sessions" ? "First session" : "Main",
+                    purpose: "",
+                  },
+                ],
+          );
+        }}
+      >
+        {Object.entries(layouts).map(([id, value]) => (
+          <SelectItem key={id} id={id} textValue={value.label}>
+            {value.label}
+          </SelectItem>
+        ))}
+      </Select>
       <p className="text-text-secondary">{layouts[layout].description}</p>
-      <label>
-        Setup name
-        <input
-          required
-          className={field}
-          value={title}
-          maxLength={100}
-          disabled={disabled}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-      </label>
-      <label>
-        Assistant name
-        <input
-          required
-          className={field}
-          value={assistantName}
-          maxLength={100}
-          disabled={disabled}
-          onChange={(event) => setAssistantName(event.target.value)}
-        />
-      </label>
-      <label>
-        Purpose
-        <textarea
-          required
-          className={field}
-          value={purpose}
-          maxLength={4000}
-          disabled={disabled}
-          onChange={(event) => setPurpose(event.target.value)}
-        />
-      </label>
+      <Input
+        label="Setup name"
+        isRequired
+        value={title}
+        maxLength={100}
+        isDisabled={disabled}
+        onChange={(value) => setTitle(value)}
+      />
+      <Input
+        label="Assistant name"
+        isRequired
+        value={assistantName}
+        maxLength={100}
+        isDisabled={disabled}
+        onChange={(value) => setAssistantName(value)}
+      />
+      <Textarea
+        label="Purpose"
+        isRequired
+        value={purpose}
+        maxLength={4000}
+        isDisabled={disabled}
+        onChange={(value) => setPurpose(value)}
+      />
       {scopes.map((scope, index) => (
         <fieldset key={index} className="flex flex-col gap-2">
           <legend className="text-caption-1-medium">
@@ -332,44 +369,34 @@ function ProposalForm({
                 : "Conversation"}{" "}
             {index + 1}
           </legend>
-          <label>
-            Name
-            <input
-              required
-              maxLength={100}
-              className={field}
-              disabled={disabled}
-              value={scope.label}
-              onChange={(event) =>
+          <Input
+            label="Name"
+            isRequired
+            maxLength={100}
+            isDisabled={disabled}
+            value={scope.label}
+            onChange={(next) =>
+              setScopes(
+                scopes.map((value, i) =>
+                  i === index ? { ...value, label: next } : value,
+                ),
+              )
+            }
+          />
+          {layout !== "single" && (
+            <Textarea
+              label="Purpose, or use the setup purpose"
+              maxLength={4000}
+              value={scope.purpose}
+              isDisabled={disabled}
+              onChange={(next) =>
                 setScopes(
                   scopes.map((value, i) =>
-                    i === index
-                      ? { ...value, label: event.target.value }
-                      : value,
+                    i === index ? { ...value, purpose: next } : value,
                   ),
                 )
               }
             />
-          </label>
-          {layout !== "single" && (
-            <label>
-              Purpose, or use the setup purpose
-              <textarea
-                className={field}
-                maxLength={4000}
-                value={scope.purpose}
-                disabled={disabled}
-                onChange={(event) =>
-                  setScopes(
-                    scopes.map((value, i) =>
-                      i === index
-                        ? { ...value, purpose: event.target.value }
-                        : value,
-                    ),
-                  )
-                }
-              />
-            </label>
           )}
         </fieldset>
       ))}

@@ -43,15 +43,13 @@ export function ProfilePanel({
       : undefined;
   return (
     <section
-      aria-label="Owner setup"
+      aria-label="About you"
       className="flex min-w-0 flex-col items-start gap-3 text-body-regular text-text-secondary"
     >
       {details ? (
         <>
           <h2 className="text-body-medium text-text-primary">
-            {state.kind === "ready"
-              ? "Saved owner profile"
-              : "Proposed owner profile"}
+            {state.kind === "ready" ? "Saved details" : "Proposed details"}
           </h2>
           <dl className="grid max-w-full gap-2 wrap-anywhere">
             <div>
@@ -80,8 +78,7 @@ export function ProfilePanel({
           {state.kind === "proposed" && (
             <>
               <p>
-                Review these details. They become your owner profile only when
-                you select Save.
+                Review these details. They are saved only when you select Save.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button disabled={disabled} onClick={() => onAction("confirm")}>
@@ -92,7 +89,7 @@ export function ProfilePanel({
                   disabled={disabled}
                   onClick={() => onAction("edit")}
                 >
-                  Continue editing
+                  Keep editing
                 </Button>
               </div>
             </>
@@ -104,13 +101,17 @@ export function ProfilePanel({
         ) : null
       ) : account || state.kind === "new" ? (
         <>
-          <p>Want to tell Gaia a little about yourself? Setup is optional.</p>
+          <p>
+            {state.kind === "skipped"
+              ? "You skipped the short interview. You can do it any time."
+              : "Tell Gaia a little about yourself so it can fit around how you work."}
+          </p>
           <Button
             variant="secondary"
             disabled={disabled}
             onClick={() => onAction("start")}
           >
-            Start setup
+            Start the short interview
           </Button>
         </>
       ) : null}
@@ -123,7 +124,7 @@ export function ProfilePanel({
           onClick={() => onAction("skip")}
         >
           {state.kind === "interview" || state.kind === "proposed"
-            ? "Skip setup"
+            ? "Skip interview"
             : "Skip"}
         </Button>
       )}
@@ -143,7 +144,7 @@ export function ProfilePanel({
                   setResetting(false);
                 }}
               >
-                Forget profile only
+                Forget these details
               </Button>
               <Button variant="ghost" onClick={() => setResetting(false)}>
                 Cancel
@@ -155,7 +156,7 @@ export function ProfilePanel({
               disabled={disabled}
               onClick={() => setResetting(true)}
             >
-              Reset or forget profile
+              Forget these details
             </Button>
           )}
         </>
