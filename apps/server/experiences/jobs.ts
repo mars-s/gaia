@@ -9,6 +9,7 @@ import { ProfileDoc, State, terminal, now } from "./state.ts";
 import { HttpError } from "../http-error.ts";
 import { conversationAdapter } from "../pi-conversation.ts";
 import { Images } from "./images.ts";
+import { textProjection } from "./text-projection.ts";
 import type { ProfileOptions } from "./profile.ts";
 function citations(job: State["jobs"][number]) {
   const result = job.receipts.flatMap((receipt) => {
@@ -219,8 +220,23 @@ export function createJobTask({
               mimeType: file.attachment.mimeType,
             };
           });
-          let progress = Promise.resolve();
           let projectionError: unknown;
+          const projection = textProjection(
+            (text) =>
+              mutate((state) => {
+                const job = jobIn(state, task.input.jobId);
+                job.partialText = text;
+                const answer = scopeIn(state, job.public.scopeId).messages.find(
+                  (message) => message.id === job.public.answerId,
+                );
+                if (answer) answer.text = text;
+              }),
+            (error) => {
+              projectionError = error;
+              controller.abort();
+            },
+          );
+          let previousActivity = "[]";
           const watch = await worker.watch(ctx);
           watch.start(async (call) => {
             if (call.kind !== "value") return;
@@ -267,6 +283,8 @@ export function createJobTask({
                     ]
                   : [];
               });
+            const activityKey = JSON.stringify(activity);
+            if (activityKey === previousActivity) return;
             await mutate((state) => {
               const job = jobIn(state, task.input.jobId);
               if (
@@ -275,6 +293,7 @@ export function createJobTask({
               )
                 job.public.state.activity = activity;
             });
+            previousActivity = activityKey;
           });
           try {
             await adapter.run({
@@ -282,30 +301,14 @@ export function createJobTask({
               images: files,
               requestId: initial.input.requestId,
               signal: controller.signal,
-              onText: (text) => {
-                progress = progress
-                  .then(() =>
-                    mutate((state) => {
-                      const job = jobIn(state, task.input.jobId);
-                      job.partialText = text;
-                      const answer = scopeIn(
-                        state,
-                        job.public.scopeId,
-                      ).messages.find((m) => m.id === job.public.answerId);
-                      if (answer) answer.text = text;
-                    }),
-                  )
-                  .catch((error) => {
-                    projectionError = error;
-                    controller.abort();
-                  });
-              },
+              onText: projection.update,
             });
-            await progress;
-            if (projectionError) throw projectionError;
           } finally {
-            await watch.stop();
-            await progress;
+            try {
+              await watch.stop();
+            } finally {
+              await projection.finish();
+            }
           }
           if (projectionError) throw projectionError;
           controller.signal.throwIfAborted();
