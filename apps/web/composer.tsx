@@ -60,7 +60,7 @@ export function Composer({
           {busyName ?? "Another conversation"} is working.{" "}
           <button
             type="button"
-            className="quiet-link"
+            className="quiet-action quiet-link"
             onClick={() => controller.select(busy)}
           >
             Open conversation
@@ -73,7 +73,7 @@ export function Composer({
             ? "Workspace unavailable."
             : "Checking conversation status…"}{" "}
           <button
-            className="quiet-link"
+            className="quiet-action quiet-link"
             type="button"
             onClick={() => void controller.workspace.refresh()}
           >

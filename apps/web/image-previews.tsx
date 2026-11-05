@@ -36,7 +36,7 @@ function Thumbnail({
       {remove && (
         <button
           type="button"
-          className="remove-image"
+          className="quiet-action remove-image"
           aria-label={`Remove ${name}`}
           onClick={remove}
         >

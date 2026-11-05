@@ -197,6 +197,7 @@ export function SharedComposer({
           />
         )}
         <IconButton
+          variant="primary"
           className={cx(
             "composer-send col-start-3 row-start-1 shrink-0 self-end rounded-full shadow-none sm:col-start-4",
             onStop && "composer-stop",

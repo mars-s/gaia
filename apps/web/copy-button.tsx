@@ -27,7 +27,7 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
   return (
     <button
       type="button"
-      className="copy-action"
+      className="copy-action quiet-action"
       aria-label={label}
       onClick={async () => {
         clearTimeout(timer.current);

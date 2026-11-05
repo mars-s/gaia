@@ -34,6 +34,7 @@ export interface IconButtonProps extends Omit<
   "children"
 > {
   icon: IconComponent;
+  variant?: "primary" | "secondary" | "quiet";
   size?: IconButtonSize;
   /** Accessible name — required since there is no visible label. */
   "aria-label": string;
@@ -45,6 +46,7 @@ export interface IconLinkButtonProps extends Omit<
   "children"
 > {
   icon: IconComponent;
+  variant?: "primary" | "secondary" | "quiet";
   size?: IconButtonSize;
   /** Accessible name — required since there is no visible label. */
   "aria-label": string;
@@ -76,6 +78,7 @@ const styles = sortCx({
 export function IconButton({
   icon: Icon,
   size = "medium",
+  variant = "quiet",
   className,
   type = "button",
   ref,
@@ -85,7 +88,7 @@ export function IconButton({
     <button
       ref={ref}
       type={type}
-      className={cx(styles.base, styles.size[size], className)}
+      className={cx(styles.base, styles.size[size], `${variant}-action`, className)}
       {...props}
     >
       <Icon
@@ -100,6 +103,7 @@ export function IconButton({
 export function IconLinkButton({
   icon: Icon,
   size = "medium",
+  variant = "quiet",
   className,
   ref,
   ...props
@@ -107,7 +111,7 @@ export function IconLinkButton({
   return (
     <a
       ref={ref}
-      className={cx(styles.base, styles.size[size], className)}
+      className={cx(styles.base, styles.size[size], `${variant}-action`, className)}
       {...props}
     >
       <Icon

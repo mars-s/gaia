@@ -114,7 +114,7 @@ export function Select<T extends object>({
             ref={triggerRef}
             className={cx(
               "flex w-full cursor-pointer items-center justify-between rounded-2lg",
-              "border border-border-button-default bg-background-primary-default shadow-xs",
+              "secondary-action border border-border-button-default bg-background-primary-default shadow-xs",
               "text-text-primary",
               "transition-[background-color,border-color,box-shadow,padding,font-size] duration-200 ease",
               "hover:bg-background-primary-hover hover:border-border-button-hover",

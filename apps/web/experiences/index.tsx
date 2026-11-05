@@ -107,7 +107,7 @@ export function SetupSettings({
         <p role="alert" className="text-text-error-primary">
           {controller.error}{" "}
           <button
-            className="quiet-link"
+            className="quiet-action quiet-link"
             onClick={() => void controller.refresh()}
           >
             Retry

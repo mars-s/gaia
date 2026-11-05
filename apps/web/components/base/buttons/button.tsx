@@ -166,6 +166,7 @@ export function Button({
         styles.base,
         styles.size[size],
         styles.variant[variant],
+        variant === "primary" ? "primary-action" : variant === "ghost" ? "quiet-action" : "secondary-action",
         iconOnly && styles.iconOnlySize[size],
         className,
       )}
@@ -209,6 +210,7 @@ export function ButtonLink({
         styles.base,
         styles.size[size],
         styles.variant[variant],
+        variant === "primary" ? "primary-action" : variant === "ghost" ? "quiet-action" : "secondary-action",
         iconOnly && styles.iconOnlySize[size],
         className,
       )}

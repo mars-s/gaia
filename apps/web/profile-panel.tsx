@@ -49,7 +49,7 @@ export function ProfilePanel({
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <Button disabled={disabled} onClick={() => onAction("start")}>
-            Set up
+            Start the short interview
           </Button>
           <button
             className="quiet-action"
@@ -133,7 +133,7 @@ export function ProfilePanel({
                 : "Want me to fit Gaia around how you work? It takes a minute, and you can skip it."}
           </p>
           <Button
-            variant="secondary"
+            variant="primary"
             disabled={disabled}
             onClick={() => onAction("start")}
           >

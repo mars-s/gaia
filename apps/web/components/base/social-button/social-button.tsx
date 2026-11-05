@@ -219,6 +219,7 @@ export function SocialButton({
 
   const classes = cx(
     styles.base,
+        "primary-action",
     iconOnly ? styles.iconOnlySize[size] : styles.size[size],
     styles.appearance[appearance],
     // `bg-button-primary` carries its own hover and active gradients; the

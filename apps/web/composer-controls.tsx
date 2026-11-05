@@ -421,7 +421,7 @@ export function ComposerControls({
                         {remaining.length > 0 && (
                           <>
                             <AriaButton
-                              className="model-all-toggle"
+                              className="quiet-action model-all-toggle"
                               aria-expanded={expanded}
                               onPress={() => setExpanded(!expanded)}
                               onKeyDown={(event) => {
@@ -478,7 +478,7 @@ export function ComposerControls({
             changeOpen(true);
           }
         }}
-        className="model-trigger col-start-2 row-start-2 flex min-w-0 items-center justify-self-end gap-1 sm:col-start-3 sm:row-start-1"
+        className="quiet-action model-trigger col-start-2 row-start-2 flex min-w-0 items-center justify-self-end gap-1 sm:col-start-3 sm:row-start-1"
       >
         <span className="model-trigger-name">
           {loading ? "Loading models…" : name}
@@ -620,7 +620,7 @@ export function ComposerActions({
         type="button"
         aria-label="Chat actions"
         isDisabled={disabled}
-        className="flex size-9 shrink-0 items-center justify-center self-end rounded-full bg-transparent text-text-primary transition-colors hover:bg-background-secondary-hover disabled:opacity-40"
+        className="quiet-action flex size-9 shrink-0 items-center justify-center self-end rounded-full bg-transparent text-text-primary transition-colors hover:bg-background-secondary-hover disabled:opacity-40"
       >
         <RiAddLine className="size-5" aria-hidden />
       </DropdownTrigger>

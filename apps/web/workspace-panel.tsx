@@ -23,7 +23,7 @@ export function WorkspaceProposalPanel({
     return error ? (
       <p role="alert" className="text-caption-1-regular text-text-secondary">
         Workspace could not be loaded.{" "}
-        <button type="button" className="quiet-link" onClick={onRetry}>
+        <button type="button" className="quiet-action quiet-link" onClick={onRetry}>
           Retry setup
         </button>
       </p>
@@ -71,7 +71,7 @@ export function WorkspaceProposalPanel({
       {error && (
         <p role="alert" className="text-text-error-primary">
           {error}{" "}
-          <button type="button" className="quiet-link" onClick={onRetry}>
+          <button type="button" className="quiet-action quiet-link" onClick={onRetry}>
             Refresh proposal
           </button>
         </p>

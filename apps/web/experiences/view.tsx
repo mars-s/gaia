@@ -235,7 +235,7 @@ export function ExperienceConversation({
             {layout !== "single" && (
               <button
                 ref={toggle}
-                className="app-control drawer-toggle"
+                className="quiet-action app-control drawer-toggle"
                 aria-label={`Open ${collection}`}
                 onClick={() => setNavigation(true)}
               >
@@ -499,7 +499,7 @@ function ScopeConversation({
           <p role="alert">
             {saved.message}{" "}
             <button
-              className="quiet-link"
+              className="quiet-action quiet-link"
               onClick={() => void entry.draft.load()}
             >
               Retry draft
@@ -510,7 +510,7 @@ function ScopeConversation({
           <p role="alert" className="text-text-secondary">
             Your draft is kept in this window. Storage is unavailable.{" "}
             <button
-              className="quiet-link"
+              className="quiet-action quiet-link"
               onClick={() => entry.draft.retrySave()}
             >
               Retry saving
@@ -737,7 +737,7 @@ function JobRows({
           )}
         {jobActive(job) ? (
           <button
-            className="quiet-link"
+            className="quiet-action quiet-link"
             disabled={entry.actions.has(job.id) || state.kind === "stopping"}
             aria-label={`Stop ${job.title}`}
             onClick={() => void controller.stop(scope, job)}
@@ -746,7 +746,7 @@ function JobRows({
           </button>
         ) : (
           <button
-            className="retry-button"
+            className="secondary-action retry-button"
             disabled={entry.actions.has(job.id)}
             onClick={() =>
               state.kind === "uncertain" || job.dispatchedEffect
@@ -810,10 +810,10 @@ export function RetryConfirmation({
           ? "This action may already have happened. Trying again could repeat it."
           : "Gaia already started an action in this attempt. Trying again runs the whole request again, so that action may happen twice."}
       </p>
-      <button className="quiet-link" disabled={disabled} onClick={onConfirm}>
+      <button className="quiet-action quiet-link" disabled={disabled} onClick={onConfirm}>
         {uncertain ? "Repeat action" : "Run it again"}
       </button>
-      <button className="quiet-link" onClick={onCancel}>
+      <button className="quiet-action quiet-link" onClick={onCancel}>
         Cancel
       </button>
     </div>

@@ -39,9 +39,9 @@ test("interview offer uses the card frame and skipped interviews stay hidden", (
       }),
     );
   assert.match(render("new"), /setup-card interview-offer/);
-  assert.match(render("new"), />Set up</);
+  assert.match(render("new"), />Start the short interview</);
   assert.match(render("new"), />Not now</);
-  assert.doesNotMatch(render("skipped"), /Set up|Not now|fit Gaia/);
+  assert.doesNotMatch(render("skipped"), /Start the short interview|Not now|fit Gaia/);
 });
 test("transcript clearance keeps final content visible without duplicating the composer height and keeps the short fade", () => {
   assert.match(read("./shared-composer.tsx"), /new ResizeObserver\(measure\)/);
@@ -61,7 +61,7 @@ test("settings hierarchy, actions and status use the content grid", () => {
   assert.match(css, /setup-list-row:has\(> div:last-child:empty\)/);
   assert.match(
     css,
-    /settings-content .quiet-action[^}]*text-decoration: underline/,
+    /settings-content .quiet-action[^}]*text-decoration: none/,
   );
 });
 test("Gaia artwork has fixed pink and white pixels and is never a theme mask", () => {

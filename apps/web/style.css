@@ -87,8 +87,7 @@ body {
   font-weight: 600;
 }
 .message-markdown a {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 .message-markdown a:focus-visible {
   outline: 2px solid var(--color-border-focus-ring);
@@ -616,8 +615,7 @@ a:focus-visible {
 }
 .composer:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px
-    color-mix(in oklab, var(--color-accent) 20%, transparent);
+  box-shadow: none;
 }
 @media (max-width: 639px) {
   :root {
@@ -702,8 +700,8 @@ a:focus-visible {
   opacity: 1;
 }
 .composer-stop {
-  background: var(--color-ink);
-  color: var(--color-surface-raised);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
 }
 .composer-dragging {
   border-color: var(--color-accent);
@@ -790,7 +788,7 @@ a:focus-visible {
   background: var(--color-accent);
 }
 .composer-stop:not(:disabled):hover {
-  background: var(--color-ink);
+  background: var(--color-accent);
 }
 
 /* Model and effort picker. */
@@ -1250,9 +1248,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
   display: none;
 }
 .settings-content .quiet-action {
-  color: var(--color-ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  color: var(--color-ink-2);
+  text-decoration: none;
 }
 .sidebar-header {
   padding-inline: 12px;
@@ -1318,3 +1315,23 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .message-list { padding-bottom: 12px; }
 .message-list > .transcript-clearance { height: 0; }
 .message-list > .transcript-clearance + div { margin-top: calc(-1 * var(--space-message-gap)); }
+
+/* Three action styles, with one rounded rectangle from the shared tokens. */
+.primary-action, .secondary-action, .quiet-action {
+  border-radius: var(--radius-sm);
+  background-image: none;
+  text-decoration: none;
+}
+.primary-action, .welcome-composition .welcome-button.primary-action {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border-color: transparent;
+  box-shadow: none;
+}
+.secondary-action { background: var(--color-surface-raised); color: var(--color-ink); box-shadow: none; }
+.quiet-action { background: transparent; color: var(--color-ink-2); box-shadow: none; }
+.quiet-action:hover { background: var(--color-surface-hover); text-decoration: none; }
+.primary-action:not(:disabled):hover { background: var(--color-accent); filter: brightness(.95); }
+.secondary-action:not(:disabled):hover { background: var(--color-surface-hover); }
+.quiet-action:disabled { opacity: 1; cursor: default; }
+.composer-send { border-radius: var(--radius-sm); }
