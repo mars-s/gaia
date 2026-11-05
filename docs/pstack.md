@@ -1,39 +1,27 @@
 # pstack for Gaia
 
-Use pstack for Gaia work. Skills are installed in `~/.agents/skills/`. Start with `poteto-mode/SKILL.md` and read its `references/codex-tools.md` when running under Codex.
+Before project work, read `~/.agents/skills/poteto-mode/SKILL.md` and its `references/codex-tools.md` under Codex. Project instructions and Avi's current role choices take precedence over installed skill defaults. Global model settings stay unchanged.
 
-This file supplies project model overrides. Avi chose `gpt-6.1-sol` for all Gaia work on 4 November 2026. This includes planning, implementation, reviews and delegated tasks. These project values take precedence over installed skill defaults and global model settings. Global settings remain unchanged.
+## Model roles
 
-```text
-feature, refactoring: gpt-6.1-sol
-bug-fix: gpt-6.1-sol
-perf-issue: gpt-6.1-sol
-hillclimb: gpt-6.1-sol
-judgment and prose: gpt-6.1-sol
-strongest judgment: gpt-6.1-sol
-how explorer: gpt-6.1-sol
-how explainer: gpt-6.1-sol
-why investigators: gpt-6.1-sol
-why synthesizer: gpt-6.1-sol
-reflect tooling: gpt-6.1-sol
-reflect judgment, divergent, synthesizer: gpt-6.1-sol
-arena runners: gpt-6.1-sol, gpt-6.1-sol, gpt-6.1-sol
-arena cross-judge pool: gpt-6.1-sol, gpt-6.1-sol, gpt-6.1-sol
-swarm workers: gpt-6.1-sol
-architect runners: gpt-6.1-sol, gpt-6.1-sol, gpt-6.1-sol
-interrogate reviewers: gpt-6.1-sol, gpt-6.1-sol, gpt-6.1-sol
-```
+On 5 November 2026, Avi assigned Claude product and design leadership, with Sol implementing and executing. This supersedes the earlier Sol-only policy and the Sonnet 5.5 review exception.
 
-Choose any supported reasoning effort to suit the task. Use higher effort for difficult design, recovery and concurrency work. Panels keep their configured number of reviewers, all on Sol 6.1; their diversity comes from independent angles and reasoning effort rather than different models. Do not use Claude models for project work. This development policy does not remove Gaia's planned support for Claude subscription sign-in.
+| Work | Provider and model | Effort |
+| --- | --- | --- |
+| Product direction, north star and architecture | Claude provider, `claude-opus-5-5` | High |
+| UI/UX design, product critique and code critique | Claude provider, `claude-fable-5-1` | High |
+| Independent founder/design counterproposal | The other Claude model above | High |
+| Implementation, fixes, refactoring and code changes | Codex provider, `gpt-6.1-sol` | High, or higher where useful |
+| Builds, tests, app execution and acceptance | Codex provider, `gpt-6.1-sol` | High, or higher where useful |
 
-For the overnight run starting 5 November 2026, Avi explicitly requested Sonnet 5.5 to critique the spec, north-star alignment and UI. That review role is the authorised exception to the Sol-only defaults above. Implementation remains on Sol 6.1, with high, xhigh or max effort as useful.
+Opus and Fable act as founders, product managers and designers. Give them concrete source and rendered evidence, ask them to challenge the current approach from first principles, and have them return prioritised decisions with acceptance criteria and bounded Sol briefs. They do not edit application code, run builds or tests, operate the app, or deploy. Sol assesses their recommendations against the owner requirements and evidence, implements accepted changes and verifies the result. Record a specific reason for rejecting or deferring a recommendation.
 
-In T3 Code, follow the session's orchestration instructions for dispatch, isolation and waiting. Use native subagents for Sol 6.1 when inheriting session settings; use `delegate_task` when separate settings or a separate checkout are needed. Report an unavailable model rather than substituting one silently.
+Use the actual Claude provider so this work uses Avi's Claude allowance. In T3 Code that provider is `claudeAgent`, and the High option is `effort: high`. Codex uses `reasoningEffort`. Discover current availability through the orchestrator when changing providers. Report an unavailable requested model rather than substituting one silently. This development policy is separate from Gaia's own Pi subscription providers.
 
 ## Coordination
 
-The master thread owns planning, task briefs, integration decisions and the overall progress report. Future delegated tasks belong under that thread. Create separate top-level threads only when Avi requests them.
+The master thread owns scope, dependencies, integration and the overall report. Delegates stay under this thread. Create top-level threads only when Avi requests them. Use T3 `delegate_task` for a different provider or a prepared separate checkout. Follow each running task's orchestration instructions and do not poll it before completion.
 
-Each brief names the goal, allowed paths, dependencies, acceptance criteria and verification commands. Give concurrent writers separate checkouts. Reports include the branch and commit, changed behaviour, checks actually run, blockers and any PR link. Read the actual changes and verification evidence before accepting a report.
+Each implementation brief names the goal, owned paths, dependencies, acceptance criteria and checks. Give concurrent writers separate prepared checkouts. Reports name exact commits, behaviour, checks actually run and remaining issues. Read the changes and evidence before accepting them.
 
-Use the milestone order in `SPEC.md`. Implementation starts when Avi assigns work. Setting up this coordination thread does not start the milestone programme or authorise deployment.
+Keep the product's existing owner data and protected recovery/auth boundaries intact while revising the design. Owner-authorised protected integration uses the checked owner-upgrade path. Product critique may propose spec changes explicitly; Sol records accepted decisions before implementation rather than silently drifting from the locked spec.

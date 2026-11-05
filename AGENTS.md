@@ -13,6 +13,6 @@ For Codex, Sol 6.1 and any other agent working in this repo.
 
 ## pstack
 
-- Use `gpt-6.1-sol` for implementation and planning. Avi explicitly requested Sonnet 5.5 for the current overnight spec, north-star and UI critique. Other reviews and delegates use Sol 6.1 unless Avi requests another model. This overrides installed skill defaults and global model settings.
+- Use `gpt-6.1-sol` for implementation, code changes, builds, tests and execution. Use Claude Opus 5.5 High and Claude Fable 5.1 High for product direction, north-star critique, architecture, code critique and UI/UX design. Claude returns decisions and implementation briefs; Sol implements and verifies them. Follow [docs/pstack.md](docs/pstack.md) for provider and role details. This replaces the earlier Sol-only and Sonnet review defaults.
 - Before starting a task, read the installed `pstack:poteto-mode` skill and [docs/pstack.md](docs/pstack.md). Use the matching playbook, with the project rules above taking precedence.
 - This project's master thread coordinates scope, dependencies and results. Give each implementation task a bounded brief and return its changes, checks and remaining issues to the master thread.
