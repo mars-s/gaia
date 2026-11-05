@@ -1258,6 +1258,8 @@
   --color-link: var(--color-accent-700);
   --color-link-hover: var(--color-accent-800);
   --color-accent-ink: var(--color-white);
+  --color-primary-fill: var(--color-accent-700);
+  --color-primary-ink: var(--color-white);
   --color-accent-soft: var(--color-accent-100);
   --color-danger: var(--color-red-600);
   --color-focus: var(--color-accent-500);
