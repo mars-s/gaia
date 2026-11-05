@@ -50,6 +50,7 @@ export interface ChatAdapter {
   compact?(signal: AbortSignal): Promise<"done" | "noop">;
   run(input: {
     owner?: OwnerCapability;
+    answerMessageId?: string;
     text: string;
     images?: ImageContent[];
     attachments?: Attachment[];
@@ -76,7 +77,9 @@ export async function createPi(
     ? await createExperienceToolHost(options.tools)
     : undefined;
   const registry = createRegistry();
-  let current: { owner: OwnerCapability; signal: AbortSignal } | undefined;
+  let current:
+    | { owner: OwnerCapability; signal: AbortSignal; answerMessageId?: string }
+    | undefined;
   registry.install(
     defineExtension({
       name: "gaia-owner",
@@ -89,7 +92,7 @@ export async function createPi(
             const baseline =
               "Answer the current request normally outside explicit setup. Never infer profile values from old chats. Do not promise agents or machine tools that are unavailable. Use only tools actually offered. Only the owner can save a personal profile with the in-app Save button. You cannot confirm or reset it." +
               (options.experiencesEnabled === true
-                ? " When the owner asks for a different chat layout or working style, use propose_experience for an isolated setup. This is separate from optional personal-profile questions and must not reset their current chat or personal profile. Research unfamiliar named product references with search_web when available. Central chat and channels support independent background jobs and bounded subordinate agents; Bots have separate identities and memory; sessions keep independent histories and controls. Propose the appropriate available layout. The actual proposal appears in a Review setup notice after your reply. Summarise it briefly and ask the owner to select Review setup, then Use this setup. Typed agreement cannot confirm it. Keep internal proposal IDs and revision numbers out of your reply."
+                ? " When the owner asks for a different chat layout or working style, use propose_experience for an isolated setup. This is separate from optional personal-profile questions and must not reset their current chat or personal profile. Research unfamiliar named product references with search_web when available. Central chat and channels support independent background jobs and bounded subordinate agents; Bots have separate identities and memory; sessions keep independent histories and controls. Propose the appropriate available layout. The card under your reply shows the plan. Reply in one or two sentences and do not list its fields. The owner chooses Use this setup or Not now. Typed agreement cannot confirm it."
                 : "");
             if (state?.kind === "ready")
               return (
@@ -137,24 +140,23 @@ export async function createPi(
                   );
                   const proposal = await experiences.create(
                     ExperienceCreate.parse({ requestId, plan: input }),
+                    {
+                      source: {
+                        kind: "conversation",
+                        conversationId: String(root.id),
+                      },
+                      answerMessageId: current?.answerMessageId,
+                    },
                   );
                   return {
                     output: [
                       {
                         type: "text" as const,
                         text: JSON.stringify({
-                          status:
-                            proposal.kind === "ready"
-                              ? "ready"
-                              : "awaiting-review",
+                          status: "awaiting owner review",
                           title: proposal.plan.title,
                           layout: proposal.plan.layout,
-                          conversations: {
-                            labels: proposal.plan.scopes.map(
-                              (scope) => scope.label,
-                            ),
-                            count: proposal.plan.scopes.length,
-                          },
+                          conversations: proposal.plan.scopes.length,
                         }),
                       },
                     ],
@@ -213,7 +215,16 @@ export async function createPi(
     }),
   );
   const workspaceTools = createWorkspaceTools(options.areasEnabled === true);
-  registry.install(workspaceTools.extension);
+  registry.install(
+    options.experiencesEnabled === true
+      ? {
+          ...workspaceTools.extension,
+          tools: workspaceTools.extension.tools?.filter(
+            (tool) => tool.name !== "propose_workspace",
+          ),
+        }
+      : workspaceTools.extension,
+  );
   for (const extension of extensions) registry.install(extension);
   const homeExtensions = [...registry.snapshot().installed()];
   const { harness } = await openRecoveredHarness(
@@ -280,7 +291,11 @@ export async function createPi(
     async run(input) {
       if (current) throw new Error("A model run is already active.");
       current = input.owner
-        ? { owner: input.owner, signal: input.signal }
+        ? {
+            owner: input.owner,
+            signal: input.signal,
+            answerMessageId: input.answerMessageId,
+          }
         : undefined;
       const machineExtension =
         toolHost && options.tools

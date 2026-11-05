@@ -3,6 +3,8 @@ import { ApiError, ModelSelection } from "../protocol/index.ts";
 import { ImageUpload, AttachmentId } from "../protocol/attachments.ts";
 import {
   Experience,
+  ExperienceMain,
+  ExperienceMainSelect,
   ExperienceIndex,
   ExperienceState,
   ExperienceScopeState,
@@ -30,6 +32,14 @@ export interface ExperienceTransport {
     close(): void;
   };
 }
+export class ExperienceRequestError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
 const root = "/api/v1/experiences";
 export function createExperienceClient(
   transport: ExperienceTransport = {
@@ -45,10 +55,11 @@ export function createExperienceClient(
     schema: z.ZodType<T>,
     signal?: AbortSignal,
     body?: unknown,
+    method?: "PUT",
   ): Promise<T> {
     try {
       const response = await transport.fetch(url, {
-        method: body === undefined ? "GET" : "POST",
+        method: method ?? (body === undefined ? "GET" : "POST"),
         headers:
           body === undefined
             ? undefined
@@ -61,7 +72,8 @@ export function createExperienceClient(
       const value: unknown = await response.json();
       if (!response.ok) {
         const parsed = ApiError.safeParse(value);
-        throw new Error(
+        throw new ExperienceRequestError(
+          response.status,
           parsed.success
             ? parsed.data.error
             : "Gaia could not complete that request. Try again.",
@@ -114,6 +126,18 @@ export function createExperienceClient(
       (value) => value.profileId === id && (!sid || value.scopeId === sid),
     );
   return {
+    main: (signal?: AbortSignal) =>
+      request(root + "/main", ExperienceMain, signal),
+    selectMain: (profileId: ExperienceId | null, signal?: AbortSignal) =>
+      request(
+        root + "/main",
+        ExperienceMain,
+        signal,
+        ExperienceMainSelect.parse({ profileId }),
+        "PUT",
+      ),
+    dismiss: (id: ExperienceId, signal?: AbortSignal) =>
+      request(profile(id) + "/dismiss", Experience, signal, {}),
     index: (signal?: AbortSignal) => request(root, ExperienceIndex, signal),
     create: (input: z.infer<typeof ExperienceCreate>, signal?: AbortSignal) =>
       request(root, Experience, signal, ExperienceCreate.parse(input)),

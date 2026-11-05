@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { ThreadMessageLike } from "@assistant-ui/core";
 import {
   AssistantRuntimeProvider,
@@ -86,7 +86,13 @@ async function readOnlyTranscript(): Promise<void> {
   throw new Error("Send messages using Gaia's composer.");
 }
 
-export function Transcript({ thread }: { thread: Thread }) {
+export function Transcript({
+  thread,
+  afterMessage,
+}: {
+  thread: Thread;
+  afterMessage?: (id: string) => ReactNode;
+}) {
   const messages = useMemo(() => transcriptMessages(thread), [thread]);
   const byId = new Map(thread.messages.map((message) => [message.id, message]));
   const runtime = useExternalStoreRuntime({
@@ -135,6 +141,7 @@ export function Transcript({ thread }: { thread: Thread }) {
                         : "No reply received."}
                   </span>
                 ) : null}
+                {afterMessage?.(message.id)}
               </article>
             );
           }}

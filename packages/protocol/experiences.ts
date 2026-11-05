@@ -39,11 +39,37 @@ export const ExperiencePlan = z
     "A central chat has one conversation.",
   );
 export type ExperiencePlan = z.infer<typeof ExperiencePlan>;
+export const ProposalSource = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("legacy") }),
+  z.strictObject({ kind: z.literal("manual") }),
+  z.strictObject({
+    kind: z.literal("conversation"),
+    conversationId: z.string().min(1),
+  }),
+]);
+export const ProposalMetadata = z.strictObject({
+  version: z.literal(1),
+  createdAt: z.iso.datetime(),
+  source: ProposalSource,
+  answerMessageId: z.string().min(1).optional(),
+  dismissedAt: z.iso.datetime().optional(),
+  supersededBy: ExperienceId.optional(),
+});
+export type ProposalMetadata = z.infer<typeof ProposalMetadata>;
+export const ExperienceMain = z.strictObject({
+  version: z.literal(1),
+  profileId: ExperienceId.nullable(),
+  setAt: z.iso.datetime(),
+});
+export const ExperienceMainSelect = z.strictObject({
+  profileId: ExperienceId.nullable(),
+});
 export const Experience = z.object({
   id: ExperienceId,
   revision: z.number().int().nonnegative(),
   kind: z.enum(["proposed", "ready"]),
   plan: ExperiencePlan,
+  proposal: ProposalMetadata.optional(),
 });
 export type Experience = z.infer<typeof Experience>;
 export const ExperienceScope = z.object({

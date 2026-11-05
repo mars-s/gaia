@@ -68,7 +68,7 @@ export function ProfileExperience({
     <main className="min-h-0 flex-1 overflow-y-auto p-6">
       <section className="mx-auto flex w-full max-w-lg flex-col items-start gap-6">
         <div className="flex w-full items-center justify-between gap-3">
-          <h1 className="text-title-3-semibold">Profiles</h1>
+          <h1 className="text-title-3-semibold">Setups</h1>
           <Button
             variant="ghost"
             size="small"
@@ -78,7 +78,7 @@ export function ProfileExperience({
               onBack();
             }}
           >
-            Original chat
+            Earlier chat
           </Button>
         </div>
         <p className="text-text-secondary">
@@ -125,13 +125,13 @@ export function ProfileExperience({
         </div>
         {controller.loading && (
           <p role="status" className="text-text-secondary">
-            Loading profile…
+            Loading setup…
           </p>
         )}
         {profile?.kind === "proposed" && !creating && (
           <section
             className="flex w-full flex-col gap-4"
-            aria-label="Review exact profile proposal"
+            aria-label="Review exact setup proposal"
           >
             <h2 className="text-body-medium">{profile.plan.title}</h2>
             <p>
@@ -155,8 +155,8 @@ export function ProfileExperience({
               ))}
             </ul>
             <p className="text-text-secondary">
-              This creates the conversations shown above. Your original chat
-              stays available.
+              Use this setup makes it your main chat. Earlier chat stays
+              available.
             </p>
             <Button
               variant="secondary"
@@ -164,7 +164,7 @@ export function ProfileExperience({
               onClick={() => {
                 setPending(true);
                 void controller
-                  .confirm(profile)
+                  .useSetup(profile)
                   .then((ok) => {
                     if (
                       ok &&
@@ -198,7 +198,7 @@ export function ProfileExperience({
           disabled={pending}
           onClick={() => setCreating(!creating)}
         >
-          {creating ? "Cancel manual setup" : "Set up manually"}
+          {creating ? "Cancel manual setup" : "Create manually"}
         </Button>
         {creating && (
           <ProposalForm
@@ -252,9 +252,7 @@ function ProposalForm({
           })),
         });
         if (!parsed.success) {
-          setError(
-            "Give the profile and every conversation a name and purpose.",
-          );
+          setError("Give the setup and every conversation a name and purpose.");
           return;
         }
         setError("");
@@ -296,7 +294,7 @@ function ProposalForm({
       </label>
       <p className="text-text-secondary">{layouts[layout].description}</p>
       <label>
-        Profile name
+        Setup name
         <input
           required
           className={field}
@@ -359,7 +357,7 @@ function ProposalForm({
           </label>
           {layout !== "single" && (
             <label>
-              Purpose, or use the profile purpose
+              Purpose, or use the setup purpose
               <textarea
                 className={field}
                 maxLength={4000}

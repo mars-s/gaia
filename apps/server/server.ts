@@ -259,6 +259,7 @@ export function createChatServer({
       .then(() =>
         adapter.run({
           owner,
+          answerMessageId: answer.id,
           text,
           images,
           attachments: files,
@@ -423,7 +424,11 @@ export function createChatServer({
         });
         return;
       }
-      if (req.method !== "POST") throw new HttpError(404, "Not found.");
+      if (
+        req.method !== "POST" &&
+        !(req.method === "PUT" && url.pathname === "/api/v1/experiences/main")
+      )
+        throw new HttpError(404, "Not found.");
       const input = await body(
         req,
         url.pathname === "/api/v1/attachments" ||

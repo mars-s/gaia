@@ -13,6 +13,7 @@ import {
 import type { ModelSelection } from "../../../packages/protocol/index.ts";
 import {
   createExperienceClient,
+  ExperienceRequestError,
   type ExperienceClient,
 } from "../../../packages/sdk/experiences.ts";
 import {
@@ -94,6 +95,7 @@ export function createExperienceController(
   let version = 0;
   let paused = false;
   let generation = 0;
+  let navigation = 0;
   let indexGeneration = 0;
   let proposalAttempt: { payload: string; requestId: string } | undefined;
   let streamGeneration = 0;
@@ -106,6 +108,10 @@ export function createExperienceController(
   };
   const controller = {
     profiles: [] as Experience[],
+    mainId: null as ExperienceId | null,
+    createdSetups: new Set<ExperienceId>(),
+    proposalErrors: new Map<ExperienceId, string>(),
+    proposalPending: new Set<ExperienceId>(),
     profile: undefined as ExperienceState | undefined,
     selected: undefined as Scope | undefined,
     error: "",
@@ -151,22 +157,130 @@ export function createExperienceController(
         }
       });
     },
-    async restoreSelection() {
+    async restoreSelection(canRestore: () => boolean = () => true) {
       if (paused || controller.profile || controller.selected) return false;
+      const token = generation;
+      const destination = navigation;
       try {
+        let main: Awaited<ReturnType<ExperienceClient["main"]>> | undefined;
+        try {
+          main = await client.main();
+        } catch (cause) {
+          if (!(
+            cause instanceof ExperienceRequestError && cause.status === 404
+          ))
+            return false;
+        }
+        if (
+          paused ||
+          token !== generation ||
+          destination !== navigation ||
+          !canRestore()
+        )
+          return false;
         const saved = SelectionPreference.safeParse(
           selectionPersistence.load(),
         );
+        if (main) {
+          controller.mainId = main.profileId;
+          if (!main.profileId) return false;
+          const scope =
+            saved.success && saved.data.selected?.profileId === main.profileId
+              ? saved.data.selected.scopeId
+              : undefined;
+          return await controller.selectProfile(
+            main.profileId,
+            scope,
+            canRestore,
+          );
+        }
         if (!saved.success || !saved.data.selected) return false;
         return await controller.selectProfile(
           saved.data.selected.profileId,
           saved.data.selected.scopeId,
+          canRestore,
         );
       } catch {
         return false;
       }
     },
+    async makeMain(id: ExperienceId | null) {
+      navigation++;
+      return perform(async (signal) => {
+        const value = await client.selectMain(id, signal);
+        if (!paused) controller.mainId = value.profileId;
+      });
+    },
+    async dismiss(proposal: Experience) {
+      return proposalAction(proposal, async (signal) => {
+        const value = await client.dismiss(proposal.id, signal);
+        indexGeneration++;
+        controller.profiles = controller.profiles.map((item) =>
+          item.id === value.id ? value : item,
+        );
+      });
+    },
+    async useSetup(
+      proposal: Experience,
+      canNavigate: () => boolean = () => true,
+    ) {
+      const token = ++generation;
+      const destination = ++navigation;
+      let opened = false;
+      await proposalAction(proposal, async (signal) => {
+        let value;
+        try {
+          value =
+            proposal.kind === "ready"
+              ? await client.state(proposal.id, signal)
+              : await client.confirm(proposal.id, proposal.revision, signal);
+        } catch (cause) {
+          if (cause instanceof ExperienceRequestError && cause.status === 409)
+            throw new Error("This setup changed. Look again.", { cause });
+          throw cause;
+        }
+        indexGeneration++;
+        controller.createdSetups.add(proposal.id);
+        const ready = { ...value.profile, proposal: proposal.proposal };
+        controller.profiles = controller.profiles.map((item) =>
+          item.id === proposal.id ? ready : item,
+        );
+        if (
+          paused ||
+          token !== generation ||
+          destination !== navigation ||
+          !canNavigate()
+        )
+          return;
+        try {
+          await client.selectMain(proposal.id, signal);
+        } catch (cause) {
+          throw new Error(
+            "Setup created. Making it main did not finish. Try again.",
+            { cause },
+          );
+        }
+        if (
+          paused ||
+          token !== generation ||
+          destination !== navigation ||
+          !canNavigate()
+        )
+          return;
+        controller.mainId = proposal.id;
+        controller.profile = value;
+        if (value.scopes[0]) {
+          controller.select({
+            profileId: proposal.id,
+            scopeId: value.scopes[0].id,
+          });
+          opened = true;
+        }
+      });
+      return opened;
+    },
     original() {
+      navigation++;
       controller.pause();
       paused = false;
       controller.profile = undefined;
@@ -175,7 +289,12 @@ export function createExperienceController(
       saveSelection(null);
       changed();
     },
-    async selectProfile(id: ExperienceId, restoredScope?: ScopeId) {
+    async selectProfile(
+      id: ExperienceId,
+      restoredScope?: ScopeId,
+      canNavigate: () => boolean = () => true,
+    ) {
+      navigation++;
       const token = ++generation;
       close?.();
       close = undefined;
@@ -189,7 +308,7 @@ export function createExperienceController(
       changed();
       try {
         const value = await client.state(id, request.signal);
-        if (paused || token !== generation) return false;
+        if (paused || token !== generation || !canNavigate()) return false;
         if (
           restoredScope &&
           (value.profile.kind !== "ready" ||
@@ -230,6 +349,7 @@ export function createExperienceController(
         )
       )
         return;
+      navigation++;
       close?.();
       const stream = ++streamGeneration;
       controller.selected = scope;
@@ -504,6 +624,27 @@ export function createExperienceController(
     },
     client,
   };
+  async function proposalAction(
+    proposal: Experience,
+    run: (signal: AbortSignal) => Promise<unknown>,
+  ) {
+    if (controller.proposalPending.has(proposal.id)) return false;
+    controller.proposalPending.add(proposal.id);
+    controller.proposalErrors.delete(proposal.id);
+    changed();
+    const result = await perform(async (signal) => {
+      try {
+        await run(signal);
+      } catch (cause) {
+        if (!signal.aborted)
+          controller.proposalErrors.set(proposal.id, errorText(cause));
+        throw cause;
+      }
+    });
+    controller.proposalPending.delete(proposal.id);
+    changed();
+    return result;
+  }
   async function receiveResponse(
     scope: Scope,
     signal: AbortSignal,

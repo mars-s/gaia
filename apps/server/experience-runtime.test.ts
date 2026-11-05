@@ -641,10 +641,10 @@ test(
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
     assert.deepEqual(JSON.parse(rawReceipt), {
-      status: "awaiting-review",
+      status: "awaiting owner review",
       title: "Proposed sessions",
       layout: "sessions",
-      conversations: { labels: ["First session"], count: 1 },
+      conversations: 1,
     });
     assert(!rawReceipt.includes("revision"));
     assert(!/[a-f0-9]{8}-[a-f0-9-]{27}/.test(rawReceipt));
@@ -652,6 +652,12 @@ test(
     assert.equal(index.profiles.length, 1);
     assert.equal(index.profiles[0].kind, "proposed");
     const proposal = index.profiles[0];
+    assert.equal(proposal.proposal.source.kind, "conversation");
+    const home = await (await f.request("state")).json();
+    assert.equal(
+      proposal.proposal.answerMessageId,
+      home.thread.messages.at(-1).id,
+    );
     assert.equal(proposal.revision, 1);
     assert.equal(proposal.plan.purpose, "Explicit fixture request");
     assert.equal((await f.state(proposal.id)).scopes.length, 0);

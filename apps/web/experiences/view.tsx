@@ -186,28 +186,28 @@ export function ExperienceConversation({
         className="flex min-h-0 min-w-0 flex-1 flex-col"
         aria-label={selected?.label ?? "Conversation"}
       >
-        <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-2 text-caption-1-regular text-text-secondary sm:px-8">
-          {layout === "bots" && <BotAvatar avatar={selected?.avatar} />}
-          <span className="truncate">
-            {layout === "bots"
-              ? selected?.label
-              : profile.profile.plan.assistantName}
-            {layout !== "single" && layout !== "bots"
-              ? ` · ${selected?.label}`
-              : ""}
-          </span>
-          {layout === "channels" && (
-            <span className="ml-auto">Shared memory, separate threads</span>
-          )}
-          {onProfiles && (
-            <button
-              className="quiet-link ml-auto shrink-0"
-              onClick={onProfiles}
-            >
-              Profiles
-            </button>
-          )}
-        </div>
+        {layout !== "single" && (
+          <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-2 text-caption-1-regular text-text-secondary sm:px-8">
+            {layout === "bots" && <BotAvatar avatar={selected?.avatar} />}
+            <span className="truncate">
+              {layout === "bots"
+                ? selected?.label
+                : profile.profile.plan.assistantName}
+              {layout !== "bots" ? ` · ${selected?.label}` : ""}
+            </span>
+            {layout === "channels" && (
+              <span className="ml-auto">Shared memory, separate threads</span>
+            )}
+            {onProfiles && (
+              <button
+                className="quiet-link ml-auto shrink-0"
+                onClick={onProfiles}
+              >
+                Setups
+              </button>
+            )}
+          </div>
+        )}
         <ScopeConversation
           key={experienceKey(scope)}
           controller={controller}

@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
 import {
   ExperienceCreate,
+  ExperienceMainSelect,
   ExperienceConfirm,
   ExperienceSend,
   ExperienceRetry,
@@ -41,6 +42,17 @@ export function createExperienceRoutes(
       if (req.method === "GET") return ok(await runtime.index());
       if (req.method === "POST")
         return ok(await runtime.create(parse(ExperienceCreate)), 201);
+    }
+    if (parts.length === 4 && parts[3] === "main") {
+      if (req.method === "GET") return ok(runtime.main());
+      if (req.method === "PUT")
+        return ok(
+          await runtime.selectMain(parse(ExperienceMainSelect).profileId),
+        );
+    }
+    if (parts.length === 5 && parts[4] === "dismiss" && req.method === "POST") {
+      parse(Empty);
+      return ok(await runtime.dismiss(parts[3]));
     }
     if (!ExperienceId.safeParse(parts[3]).success)
       throw new HttpError(404, "Unknown experience profile.");

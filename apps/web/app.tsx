@@ -1,3 +1,4 @@
+import { createMainRestore, createNavigationGuard } from "./main-navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { RiCloseLine, RiOpenaiFill, RiSettings3Line } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
@@ -26,12 +27,16 @@ import { homeScope, scopeKey } from "./workspace-controller";
 import { WorkspaceNavigation, WorkspaceProposalPanel } from "./workspace-panel";
 import { ProfileExperience } from "./experiences";
 import { createExperienceController } from "./experiences/controller";
-import { ExperienceProposalNotice } from "./experiences/proposal";
+import {
+  ExperienceProposalNotice,
+  proposalsAfterAnswer,
+} from "./experiences/proposal";
 
 export function App() {
   const [experiences] = useState(() => createExperienceController());
   useSyncExternalStore(experiences.subscribe, experiences.version);
-  const [experienceView, setExperienceView] = useState<
+  const [restoreMain] = useState(createMainRestore);
+  const [experienceView, updateExperienceView] = useState<
     "original" | "profiles" | "chat"
   >("original");
   const [legacyStore] = useState(() => createDraftStore(() => sessionStorage));
@@ -43,6 +48,27 @@ export function App() {
       },
     }),
   );
+  const [navigation] = useState(() =>
+    createNavigationGuard(() => {
+      const selected = controller.selected;
+      const draft = controller.session(selected).draft.read();
+      return JSON.stringify({
+        selected,
+        draft: draft.kind === "ready" ? draft.draft : draft,
+        safeMode: controller.safeMode,
+      });
+    }),
+  );
+  function setExperienceView(value: "original" | "profiles" | "chat") {
+    navigation.moved();
+    updateExperienceView(value);
+  }
+  function setAccountOpen(value: boolean) {
+    navigation.moved();
+    updateAccountOpen(value);
+  }
+  const draftReady =
+    controller.session(controller.selected).draft.read().kind === "ready";
   const version = useSyncExternalStore(
     controller.subscribe,
     controller.version,
@@ -69,7 +95,7 @@ export function App() {
   );
   const [authReply, setAuthReply] = useState("");
   const [browserError, setBrowserError] = useState("");
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [accountOpen, updateAccountOpen] = useState(false);
   const [updateWaiting, setUpdateWaiting] = useState(false);
   const [observeRelease] = useState(() =>
     createReleaseObserver(
@@ -104,21 +130,32 @@ export function App() {
     else experiences.resume();
   }, [connected, state?.runtime?.mode, controller, experiences]);
   useEffect(() => {
-    if (!connected || controller.safeMode || experienceView !== "original")
+    if (
+      !connected ||
+      controller.safeMode ||
+      experienceView !== "original" ||
+      accountOpen ||
+      !draftReady
+    )
       return;
-    let active = true;
-    void experiences.restoreSelection().then((restored) => {
-      if (active && restored) setExperienceView("chat");
-    });
-    return () => {
-      active = false;
-    };
+    return restoreMain(
+      experiences.restoreSelection,
+      navigation.capture(),
+      () => {
+        navigation.moved();
+        updateExperienceView("chat");
+      },
+    );
   }, [
     connected,
     state?.runtime?.mode,
     experienceView,
+    accountOpen,
+    draftReady,
     controller,
     experiences,
+    navigation,
+    restoreMain,
   ]);
   useEffect(() => {
     if (
@@ -215,10 +252,108 @@ export function App() {
       );
     }
   }
+  const setupCards = (answerId?: string) => {
+    const proposals = proposalsAfterAnswer(
+      experiences.profiles,
+      answerId,
+      experiences.createdSetups,
+    );
+    return (
+      <ExperienceProposalNotice
+        proposals={proposals}
+        disabled={offline}
+        errors={experiences.proposalErrors}
+        pending={experiences.proposalPending}
+        onUse={(p) => {
+          const canNavigate = navigation.capture();
+          void experiences.useSetup(p, canNavigate).then((opened) => {
+            if (opened && canNavigate()) setExperienceView("chat");
+          });
+        }}
+        onDismiss={(p) => {
+          void experiences.dismiss(p);
+        }}
+        onReview={(id) => {
+          navigation.moved();
+          const canNavigate = navigation.capture();
+          void experiences
+            .selectProfile(id, undefined, canNavigate)
+            .then((opened) => {
+              if (opened && canNavigate()) setExperienceView("chat");
+            });
+        }}
+      />
+    );
+  };
   return (
     <div className="app-shell flex h-dvh flex-col bg-background-full text-body-regular text-text-primary">
       <header className="app-bar flex shrink-0 items-center justify-between gap-4 px-4">
-        <span className="select-none text-body-medium">Gaia</span>
+        {connected && !controller.safeMode ? (
+          <details className="relative min-w-0">
+            <summary className="cursor-pointer truncate text-body-medium">
+              {experienceView === "chat"
+                ? (experiences.profile?.profile.plan.title ?? "Gaia")
+                : "Earlier chat"}
+            </summary>
+            <div
+              className="absolute left-0 z-20 flex max-h-96 w-64 max-w-[85vw] flex-col gap-2 overflow-y-auto rounded-xl border border-separator-border bg-background-full p-3 shadow-lg"
+              aria-label="Switch chat"
+            >
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={() => {
+                    experiences.original();
+                    setExperienceView("original");
+                  }}
+                >
+                  Earlier chat
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={() => void experiences.makeMain(null)}
+                >
+                  {experiences.mainId === null ? "Main chat" : "Make main"}
+                </Button>
+              </div>
+              {experiences.profiles
+                .filter((p) => p.kind === "ready")
+                .map((p) => (
+                  <div key={p.id} className="flex flex-wrap gap-2">
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={() => {
+                        navigation.moved();
+                        const canNavigate = navigation.capture();
+                        void experiences
+                          .selectProfile(p.id, undefined, canNavigate)
+                          .then((opened) => {
+                            if (opened && canNavigate())
+                              setExperienceView("chat");
+                          });
+                      }}
+                    >
+                      {p.plan.title}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      aria-label={`Make ${p.plan.title} main`}
+                      onClick={() => void experiences.makeMain(p.id)}
+                    >
+                      {experiences.mainId === p.id ? "Main chat" : "Make main"}
+                    </Button>
+                  </div>
+                ))}
+              {experiences.error && <p role="alert">{experiences.error}</p>}
+            </div>
+          </details>
+        ) : (
+          <span className="select-none text-body-medium">Gaia</span>
+        )}
         {connected && (
           <IconButton
             className="app-control border-transparent bg-transparent shadow-none"
@@ -268,9 +403,10 @@ export function App() {
                   setAccountOpen(false);
                 }}
               >
-                Profiles
+                Setups
               </Button>
             )}
+            <h2 className="text-body-medium">About you</h2>
             {profilePanel(true)}
             <ManagedSettings runtime={state?.runtime} />
             {error && (
@@ -414,7 +550,10 @@ export function App() {
             <WorkspaceNavigation
               state={controller.workspace.state}
               selected={scope}
-              onSelect={controller.select}
+              onSelect={(next) => {
+                navigation.moved();
+                controller.select(next);
+              }}
             />
           )}
           <div
@@ -448,7 +587,15 @@ export function App() {
                   </h1>
                 </div>
               ) : (
-                <Transcript key={scopeKey(scope)} thread={active.thread} />
+                <Transcript
+                  key={scopeKey(scope)}
+                  thread={active.thread}
+                  afterMessage={
+                    scope.kind === "home" && !controller.safeMode
+                      ? setupCards
+                      : undefined
+                  }
+                />
               )}
               {scope.kind === "home" && (
                 <>
@@ -460,16 +607,7 @@ export function App() {
                       state.thread.messages.length === 0)) && (
                     <div className="py-4">{profilePanel()}</div>
                   )}
-                  {!controller.safeMode && (
-                    <ExperienceProposalNotice
-                      proposals={experiences.profiles}
-                      disabled={offline}
-                      onReview={(id) => {
-                        setExperienceView("profiles");
-                        void experiences.selectProfile(id);
-                      }}
-                    />
-                  )}
+                  {!controller.safeMode && setupCards()}
                   {!controller.safeMode && (
                     <WorkspaceProposalPanel
                       state={controller.workspace.state}

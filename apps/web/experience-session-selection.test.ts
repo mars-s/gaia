@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { setTimeout } from "node:timers/promises";
 import { ExperienceScopeState } from "../../packages/protocol/experiences.ts";
-import { createExperienceClient } from "../../packages/sdk/experiences.ts";
+import {
+  ExperienceRequestError,
+  createExperienceClient,
+} from "../../packages/sdk/experiences.ts";
 import { experienceFixture, deferred } from "../server/testing/experiences.ts";
 import {
   createExperienceController,
@@ -34,6 +37,9 @@ function controllerFor(
       throw Error("Subscriptions are supplied by the test");
     },
   });
+  client.main = async () => {
+    throw new ExperienceRequestError(404, "Old server");
+  };
   client.subscribe = (_p, _s, receive) => {
     const stream = { receive, closed: false };
     streams.push(stream);
@@ -258,4 +264,122 @@ test("a model response arriving after pause and resume cannot overwrite current 
   });
   await tick();
   assert.equal(controller.entry(scope).state?.chat.modelId, "gpt-6.1-sol");
+});
+
+test("server main restores its saved session and null main opens Earlier chat", async (t) => {
+  const f = await experienceFixture(t);
+  const setup = await f.confirm("sessions");
+  const saved = preference({
+    version: 1,
+    selected: { profileId: setup.profile.id, scopeId: setup.scopes[1].id },
+  });
+  const { controller, client } = controllerFor(f, saved.persistence);
+  t.after(() => controller.pause());
+  client.main = async () => ({
+    version: 1,
+    profileId: setup.profile.id,
+    setAt: new Date().toISOString(),
+  });
+  assert.equal(await controller.restoreSelection(), true);
+  assert.equal(controller.selected?.scopeId, setup.scopes[1].id);
+  controller.original();
+  client.main = async () => ({
+    version: 1,
+    profileId: null,
+    setAt: new Date().toISOString(),
+  });
+  assert.equal(await controller.restoreSelection(), false);
+  assert.equal(controller.selected, undefined);
+});
+
+test("delayed main reads respect newer navigation and draft changes", async (t) => {
+  const f = await experienceFixture(t);
+  const setup = await f.confirm();
+  for (const action of ["navigation", "draft"]) {
+    const { controller, client } = controllerFor(f, preference().persistence);
+    const gate = deferred();
+    client.main = async () => {
+      await gate.promise;
+      return {
+        version: 1,
+        profileId: setup.profile.id,
+        setAt: new Date().toISOString(),
+      };
+    };
+    let untouched = true;
+    const pending = controller.restoreSelection(() => untouched);
+    if (action === "navigation") controller.original();
+    else untouched = false;
+    gate.resolve();
+    assert.equal(await pending, false);
+    assert.equal(controller.selected, undefined);
+    controller.pause();
+  }
+});
+
+test("inline use keeps successful confirmation recoverable after a main write failure", async (t) => {
+  const f = await experienceFixture(t);
+  const proposal = await f.propose();
+  const { controller, client } = controllerFor(f, preference().persistence);
+  t.after(() => controller.pause());
+  await controller.refresh();
+  let confirms = 0;
+  const confirm = client.confirm;
+  client.confirm = (...args) => {
+    confirms++;
+    return confirm(...args);
+  };
+  const selectMain = client.selectMain;
+  client.selectMain = async () => {
+    throw new Error("fixture disconnected");
+  };
+  assert.equal(await controller.useSetup(proposal), false);
+  assert.equal((await f.state(proposal.id)).scopes.length, 1);
+  assert.equal(controller.selected, undefined);
+  assert.match(controller.proposalErrors.get(proposal.id)!, /Setup created/);
+  assert(
+    controller.createdSetups.has(proposal.id),
+    "unanchored created card remains visible for retry",
+  );
+  client.selectMain = selectMain;
+  assert.equal(await controller.useSetup(controller.profiles[0]), true);
+  assert.equal(confirms, 1);
+  assert.deepEqual(controller.selected, {
+    profileId: proposal.id,
+    scopeId: (await f.state(proposal.id)).scopes[0].id,
+  });
+  assert.equal((await f.state(proposal.id)).scopes.length, 1);
+});
+
+test("delayed inline confirmation never overrides newer navigation or a draft", async (t) => {
+  const f = await experienceFixture(t);
+  for (const action of ["navigation", "draft"]) {
+    const proposal = await f.propose();
+    const { controller, client } = controllerFor(f, preference().persistence);
+    await controller.refresh();
+    const gate = deferred();
+    const confirm = client.confirm;
+    client.confirm = async (...args) => {
+      await gate.promise;
+      return confirm(args[0], args[1]);
+    };
+    let mainWrites = 0;
+    client.selectMain = async (id) => {
+      mainWrites++;
+      return { version: 1, profileId: id, setAt: new Date().toISOString() };
+    };
+    let untouched = true;
+    const pending = controller.useSetup(proposal, () => untouched);
+    if (action === "navigation") controller.original();
+    else untouched = false;
+    gate.resolve();
+    assert.equal(await pending, false);
+    assert.equal(mainWrites, 0);
+    assert.equal(controller.selected, undefined);
+    assert.equal(
+      controller.profiles.find((p) => p.id === proposal.id)?.kind,
+      "ready",
+    );
+    controller.pause();
+  }
 });
