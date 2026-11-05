@@ -465,9 +465,9 @@ export function App() {
           </section>
         </main>
       ) : !state || !connected ? (
-        <main className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 pb-12">
+        <main className="welcome-page grid min-h-0 flex-1 place-items-center overflow-y-auto px-4">
           <section
-            className="flex w-full max-w-xs flex-col gap-6"
+            className="welcome-composition"
             aria-labelledby="welcome-title"
           >
             {!state ? (
@@ -482,22 +482,26 @@ export function App() {
               </p>
             ) : connection?.kind === "connecting" ? (
               <>
-                <div className="flex flex-col gap-2">
-                  <h1 id="welcome-title" className="text-title-3-semibold">
-                    Finish in your browser
+                <div className="welcome-intro">
+                  <span className="gaia-mark" aria-hidden="true" />
+                  <h1 id="welcome-title" className="text-hero">
+                    Finish signing in
                   </h1>
                   <p className="text-text-secondary">
-                    Sign in to ChatGPT, then come back here.
+                    Sign in to ChatGPT in your browser, then come back here.
                   </p>
                 </div>
                 <Button
-                  className="self-start"
+                  className="welcome-button"
                   variant="secondary"
                   disabled={!connection.url}
                   onClick={() => void openBrowser()}
                 >
-                  Open browser
+                  Open browser again
                 </Button>
+                <p className="welcome-caption">
+                  Sign in with your ChatGPT plan. No API key needed.
+                </p>
                 {browserError && (
                   <p role="alert" className="text-text-error-primary">
                     {browserError}
@@ -539,17 +543,18 @@ export function App() {
               </>
             ) : (
               <>
-                <div className="flex flex-col gap-2">
-                  <h1 id="welcome-title" className="text-title-3-semibold">
+                <div className="welcome-intro">
+                  <span className="gaia-mark" aria-hidden="true" />
+                  <h1 id="welcome-title" className="text-hero">
                     Welcome to Gaia
                   </h1>
                   <p className="text-text-secondary">
-                    {connection?.kind === "disconnected"
-                      ? connection.message
-                      : "Connect your ChatGPT account to get started."}
+                    Gaia is an assistant that runs on your own machine. Your
+                    conversations and memory stay here.
                   </p>
                 </div>
                 <SocialButton
+                  className="welcome-button"
                   brand="custom"
                   config={{
                     label: "ChatGPT",
@@ -562,6 +567,11 @@ export function App() {
                 >
                   {pending ? "Connecting…" : "Continue with ChatGPT"}
                 </SocialButton>
+                <p className="welcome-caption">
+                  {connection?.kind === "disconnected" && connection.message
+                    ? connection.message
+                    : "Sign in with your ChatGPT plan. No API key needed."}
+                </p>
               </>
             )}
             {offline && state && (
