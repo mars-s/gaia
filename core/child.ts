@@ -7,6 +7,7 @@ import { selfChangeTools } from "./tools.ts";
 import { readState } from "./state.ts";
 import { control } from "./control-client.ts";
 import { webResource } from "./web.ts";
+import { QuiesceRequest, QuiesceReceipt } from "./quiescence.ts";
 import type { createChatServer, AuthService } from "../apps/server/server.ts";
 import type { createPi, ChatAdapter } from "../apps/server/pi.ts";
 const env = z
@@ -55,6 +56,7 @@ const runtime = () => ({
   selfModification: mode === "stable",
 });
 let mode = sandbox ? "probe" : (await readState(env.GAIA_DATA_DIR)).kind;
+let closing: Promise<void> | undefined;
 const origins = [
   `http://${env.GAIA_HOST}:${env.GAIA_PORT}`,
   `http://127.0.0.1:${env.GAIA_PORT}`,
@@ -75,10 +77,11 @@ const app = serverFactory({
   origins,
   runtime,
   allowWrite: async () =>
-    sandbox ||
-    ["stable", "checking", "safe"].includes(
-      (await readState(env.GAIA_DATA_DIR)).kind,
-    ),
+    !closing &&
+    (sandbox ||
+      ["stable", "checking", "safe"].includes(
+        (await readState(env.GAIA_DATA_DIR)).kind,
+      )),
 });
 const probe = serverFactory({
   db: await openDatabase(join(env.GAIA_GENERATION, "probe")),
@@ -127,9 +130,7 @@ app.server.on("request", async (req, res) => {
     }
     if (
       req.method === "POST" &&
-      mode !== "stable" &&
-      mode !== "checking" &&
-      mode !== "safe"
+      (closing || (mode !== "stable" && mode !== "checking" && mode !== "safe"))
     ) {
       res.setHeader("Retry-After", "2");
       return json(503, {
@@ -192,20 +193,43 @@ app.server.on("request", async (req, res) => {
 app.server.listen(env.GAIA_PORT, env.GAIA_HOST, () =>
   process.stdout.write(`Gaia child ${env.GAIA_RELEASE}\n`),
 );
-let closing = false;
-async function close() {
-  if (closing) return;
-  closing = true;
-  await app.close();
-  await probe.close();
-  await auth.close();
-  credentials.close();
-  process.exit(0);
+function close() {
+  return (closing ??= (async () => {
+    await app.close();
+    await probe.close();
+    await auth.close();
+    credentials.close();
+  })());
 }
-for (const signal of ["SIGINT", "SIGTERM"])
-  process.on(signal, () => {
-    void close();
-  });
-process.on("disconnect", () => {
-  void close();
+function exit() {
+  void close().then(
+    () => process.exit(0),
+    () => process.exit(1),
+  );
+}
+process.on("message", (value: unknown) => {
+  const parsed = QuiesceRequest.safeParse(value);
+  if (
+    !parsed.success ||
+    parsed.data.release !== env.GAIA_RELEASE ||
+    parsed.data.generation !== env.GAIA_GENERATION
+  )
+    return;
+  void (async () => {
+    await close();
+    const receipt = QuiesceReceipt.parse({
+      ...parsed.data,
+      kind: "gaia.quiesced",
+    });
+    await new Promise<void>((resolve, reject) => {
+      if (!process.send || !process.connected) {
+        reject(new Error("Supervisor disconnected before shutdown receipt."));
+        return;
+      }
+      process.send(receipt, (error) => (error ? reject(error) : resolve()));
+    });
+    process.exit(0);
+  })().catch(() => process.exit(1));
 });
+for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, exit);
+process.on("disconnect", exit);

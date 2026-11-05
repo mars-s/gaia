@@ -45,7 +45,7 @@ The pinned Pi extension exposes only `self_change`. Its `command` argument is a 
 
 ## Transaction and recovery
 
-The supervisor serialises staging, promotions and reversions. It records a journal before stopping the old child. The child and its SQLite handles close before a snapshot. The candidate gets a new data generation. The supervisor then atomically names the new release and generation and boots on the same public port.
+The supervisor serialises staging, promotions and reversions. It records a journal before stopping the old child. After the initiating Home reply finishes, a private IPC request closes admission and asks the child to close its application, probe, auth service and databases. The supervisor requires a receipt naming that exact release and generation, followed by an actual clean child close, before copying a snapshot. Missing acknowledgement, a foreign generation, a failed exit or a shutdown deadline rejects the switch and recovers the previous pair. A forced process kill is not a clean snapshot receipt. Profile runtimes and machine hosts must join their work before their application close promise resolves. The candidate gets a new data generation. The supervisor then atomically names the new release and generation and boots on the same public port.
 
 Health, a scripted public chat turn and a newly established public SSE stream must all pass. Chat runs in its own database and Pi conversation, outside the user's transcript. If ChatGPT is disconnected, the chat probe fails and the change rolls back. It is never counted as passed or silently skipped. Deterministic providers are available only with explicit test/probe process arguments and are labelled in health.
 

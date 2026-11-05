@@ -304,6 +304,51 @@ async function fixture(t: TestContext) {
         area,
         stats,
         stop,
+        async quiesce() {
+          const requestId = randomUUID();
+          const Receipt = z.object({
+            version: z.literal(1),
+            kind: z.literal("gaia.quiesced"),
+            requestId: z.literal(requestId),
+            release: z.literal(pair.release),
+            generation: z.literal(generation),
+          });
+          let receive: (value: unknown) => void = () => {};
+          const acknowledged = new Promise<z.infer<typeof Receipt>>(
+            (resolve, reject) => {
+              receive = (value) => {
+                const parsed = Receipt.safeParse(value);
+                if (parsed.success) resolve(parsed.data);
+              };
+              child.on("message", receive);
+              child.send(
+                {
+                  version: 1,
+                  kind: "gaia.quiesce",
+                  requestId,
+                  release: pair.release,
+                  generation,
+                },
+                (error) => {
+                  if (error) reject(error);
+                },
+              );
+            },
+          );
+          try {
+            const receipt = await within(
+              acknowledged,
+              3000,
+              "Managed child did not acknowledge whole-runtime shutdown.",
+            );
+            await within(exited, 5000, "Acknowledged child did not exit.");
+            assert.equal(child.exitCode, 0, logs);
+            await stop();
+            return receipt;
+          } finally {
+            child.off("message", receive);
+          }
+        },
         settled: (id?: string) =>
           until<Snapshot | AreaSnapshot>(
             id ? () => area(id) : home,
@@ -363,6 +408,46 @@ async function fixture(t: TestContext) {
     },
   };
 }
+
+test(
+  "installed child quiesce joins area work and closes stores before acknowledgement",
+  { timeout: 15000 },
+  async (t) => {
+    const f = await fixture(t);
+    const live = await f.start("stable");
+    const home = await live.privateHome();
+    const { first } = await live.confirm();
+    assert.equal(
+      (
+        await live.request(`areas/${first}/messages`, {
+          requestId: randomUUID(),
+          text: "SYNTHETIC_WAIT_FOR_ABORT",
+        })
+      ).status,
+      202,
+    );
+    await until(live.stats, (value) => value.callCount === 2);
+    assert.equal((await live.home()).thread.run.kind, "idle");
+    await live.quiesce();
+    const persisted = new DatabaseSync(join(live.generation, "gaia.sqlite"), {
+      readOnly: true,
+    });
+    try {
+      const saved = persisted
+        .prepare("SELECT value FROM chat WHERE id=1")
+        .get();
+      const thread = Snapshot.shape.thread.parse(
+        JSON.parse(String(saved?.value)),
+      );
+      assert.deepEqual(thread.messages, home.thread.messages);
+    } finally {
+      persisted.close();
+    }
+    const reopened = await inspect(join(live.generation, "pi.sqlite"));
+    assert.deepEqual(reopened.inspection.tasks, []);
+    assert.deepEqual(reopened.inspection.submissions, []);
+  },
+);
 
 test(
   "installed managed child enables genuine areas, keeps the isolated probe disabled and retains Home in safe mode",

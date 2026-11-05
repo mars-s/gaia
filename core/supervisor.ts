@@ -18,6 +18,7 @@ import { recipe } from "./recipe.ts";
 import { waitHealth } from "./sandbox.ts";
 import { compatible } from "./schema.ts";
 import { probes } from "./probes.ts";
+import { quiesce } from "./quiescence.ts";
 export interface Options {
   data: string;
   core: string;
@@ -27,6 +28,7 @@ export interface Options {
   testProvider: boolean;
   probeTimeout?: number;
   bootTimeout?: number;
+  quiesceTimeout?: number;
 }
 export class Supervisor {
   state!: State;
@@ -460,7 +462,24 @@ export class Supervisor {
         signal: AbortSignal.timeout(2000),
       });
       const value = await response.json();
-      if (value.thread.run.kind !== "running") return;
+      if (value.thread.run.kind !== "running") {
+        const child = this.child;
+        if (!child)
+          throw new Error("Managed child is missing before shutdown.");
+        await quiesce(
+          child,
+          {
+            release: this.state.active.release,
+            generation: join(
+              this.options.data,
+              "generations",
+              this.state.active.generation,
+            ),
+          },
+          this.options.quiesceTimeout,
+        );
+        return;
+      }
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     throw new Error("Current reply did not finish before deployment deadline");
