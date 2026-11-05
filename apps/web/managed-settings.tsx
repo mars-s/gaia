@@ -1,3 +1,4 @@
+import { RiRefreshLine } from "@remixicon/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/base/buttons/button";
 import type { Snapshot } from "../../packages/protocol/index.ts";
@@ -114,17 +115,17 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
     <section className="settings-section" aria-labelledby="changes-title">
       <div className="flex items-center justify-between gap-3">
         <h2 id="changes-title">Changes</h2>
-        <Button
-          variant="secondary"
-          size="small"
+        <button
+          className="quiet-action app-control"
+          aria-label="Check for changes"
           disabled={submitting}
           onClick={() => {
             setActionError("");
             setRefresh((value) => value + 1);
           }}
         >
-          Refresh
-        </Button>
+          <RiRefreshLine className="size-4" aria-hidden />
+        </button>
       </div>
       <p className="changes-caption">
         Updates Gaia has made to itself. You can undo applied updates here.

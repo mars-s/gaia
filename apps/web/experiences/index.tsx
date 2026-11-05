@@ -45,7 +45,7 @@ const layouts: Record<
   },
 };
 function SetupStatus({ main, current }: { main: boolean; current: boolean }) {
-  return <span className="setup-status">{main && <span className="setup-main-badge">Main</span>}{main && current && " · "}{current && "Current"}</span>;
+  return <span className="setup-status">{main && <span className="setup-status-badge">Main</span>}{current && <span className="setup-status-badge">Current</span>}</span>;
 }
 export function ProfileExperience({
   controller,

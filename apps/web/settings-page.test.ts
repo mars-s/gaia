@@ -62,3 +62,17 @@ test("Settings has an Account group, clear update copy and separated sections", 
   assert.match(read("./style.css"), /settings-section \+ .settings-section[^}]*border-top: 1px/);
   assert.match(read("./style.css"), /settings-section h2[^}]*var\(--text-headline-medium\)[^}]*font-weight: 600/);
 });
+
+test("Settings interview is secondary and change refresh is an accessible icon action", () => {
+  const html = renderToStaticMarkup(createElement(ProfilePanel, {
+    state: { kind: "new" }, account: true, failed: false, disabled: false,
+    onAction() {}, onRetry() {},
+  }));
+  assert.match(html, /secondary-action[^]*Start the short interview/);
+  assert.doesNotMatch(html, /primary-action/);
+  const changes = readFileSync(new URL("./managed-settings.tsx", import.meta.url), "utf8");
+  assert.match(changes, /aria-label="Check for changes"/);
+  assert.match(changes, /<RiRefreshLine/);
+  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+  assert.match(css, /settings-content[^}]*gap: 20px/);
+});

@@ -133,7 +133,7 @@ export function ProfilePanel({
                 : "Want me to fit Gaia around how you work? It takes a minute, and you can skip it."}
           </p>
           <Button
-            variant="primary"
+            variant="secondary"
             disabled={disabled}
             onClick={() => onAction("start")}
           >
