@@ -1,6 +1,7 @@
+import { SetupGlyph } from "./setup-glyph";
 import { Menu } from "@base-ui/react/menu";
 import { RiArrowDownSLine, RiCheckLine } from "@remixicon/react";
-import type { Experience } from "../../packages/protocol/experiences";
+import type { Experience, ExperienceLayout } from "../../packages/protocol/experiences";
 
 type Props = {
   profiles: Experience[];
@@ -20,9 +21,9 @@ export function ChatSwitcher({
   onManage,
 }: Props) {
   const ready = profiles.filter((profile) => profile.kind === "ready");
-  const rows = [
-    { id: null, name: "Original chat" },
-    ...ready.map((profile) => ({ id: profile.id, name: profile.plan.title })),
+  const rows: { id: Experience["id"] | null; name: string; layout: ExperienceLayout }[] = [
+    { id: null, name: "Original chat", layout: "single" satisfies ExperienceLayout },
+    ...ready.map((profile) => ({ id: profile.id, name: profile.plan.title, layout: profile.plan.layout })),
   ];
   return (
     <Menu.Root>
@@ -30,6 +31,7 @@ export function ChatSwitcher({
         className="quiet-action app-control chat-switcher-trigger text-body-medium"
         aria-label="Switch setup"
       >
+        <SetupGlyph layout={rows.find((row) => row.id === currentId)?.layout ?? "single"} />
         <span className="truncate">
           {rows.find((row) => row.id === currentId)?.name ?? "Original chat"}
         </span>
@@ -46,6 +48,7 @@ export function ChatSwitcher({
                   className="chat-switcher-row text-body-regular"
                   onClick={() => onSelect(row.id)}
                 >
+                  <SetupGlyph layout={row.layout} />
                   <span className="min-w-0 flex-1 truncate">{row.name}</span>
                   {row.id === mainId && (
                     <span className="chat-main-label text-body-2-regular">

@@ -1,4 +1,4 @@
-import { RiChat1Line, RiRobot2Line, RiHashtag, RiChatHistoryLine } from "@remixicon/react";
+import { SetupGlyph } from "../setup-glyph";
 import {
   useEffect,
   useRef,
@@ -44,11 +44,6 @@ const layouts: Record<
       "Separate conversations, memory and model settings. Start fresh with New session.",
   },
 };
-const layoutIcons = { single: RiChat1Line, bots: RiRobot2Line, channels: RiHashtag, sessions: RiChatHistoryLine };
-function LayoutGlyph({ layout }: { layout: ExperienceLayout }) {
-  const Icon = layoutIcons[layout];
-  return <Icon className="setup-layout-icon" aria-hidden="true" />;
-}
 function SetupStatus({ main, current }: { main: boolean; current: boolean }) {
   return <span className="setup-status">{main && <span className="setup-main-badge">Main</span>}{main && current && " · "}{current && "Current"}</span>;
 }
@@ -126,7 +121,7 @@ export function SetupSettings({
       <ul className="flex w-full min-w-0 flex-col divide-y divide-separator-border">
         <li className="setup-list-row">
           <div className="min-w-0 flex-1">
-            <p className="text-body-medium setup-name"><LayoutGlyph layout="single" />Original chat</p>{" "}
+            <p className="text-body-medium setup-name"><SetupGlyph layout="single" />Original chat</p>{" "}
             <p className="text-caption-1-regular text-text-secondary">
               One conversation
             </p>
@@ -160,7 +155,7 @@ export function SetupSettings({
           <li key={item.id} className="setup-list-row">
             <div className="min-w-0 flex-1">
               <p className="text-body-medium wrap-anywhere setup-name">
-                <LayoutGlyph layout={item.plan.layout} />{item.plan.title}
+                <SetupGlyph layout={item.plan.layout} />{item.plan.title}
               </p>{" "}
               <p className="text-caption-1-regular text-text-secondary">
                 {setupLayouts[item.plan.layout].label}

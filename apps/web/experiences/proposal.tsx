@@ -1,8 +1,9 @@
+import { SetupGlyph } from "../setup-glyph";
 import type {
   Experience,
   ExperienceId,
 } from "../../../packages/protocol/experiences.ts";
-import { RiCheckLine, RiHashtag } from "@remixicon/react";
+import { RiCheckLine } from "@remixicon/react";
 import { BotAvatar } from "./view";
 import { Button } from "../components/base/buttons/button";
 export const setupLayouts = {
@@ -103,14 +104,8 @@ export function ExperienceProposalNotice({
                   >
                     {proposal.plan.layout === "bots" ? (
                       <BotAvatar avatar={scope.avatar} />
-                    ) : proposal.plan.layout === "channels" ? (
-                      <span className="avatar-tile">
-                        <RiHashtag aria-hidden="true" className="size-4" />
-                      </span>
                     ) : (
-                      <span className="avatar-tile">
-                        <span className="gaia-mark" aria-hidden="true" />
-                      </span>
+                      <span className="avatar-tile"><SetupGlyph layout={proposal.plan.layout} /></span>
                     )}
                     <div className="setup-scope-copy min-w-0 flex-1">
                       <p className="shrink-0 text-body-medium">{scope.label}</p>

@@ -1,3 +1,4 @@
+import { SetupGlyph } from "../setup-glyph";
 import { useTranscriptFollow } from "../use-transcript-follow";
 import { EmptyChat } from "../empty-chat";
 import { AssistantHead } from "../assistant-head";
@@ -12,9 +13,7 @@ import {
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  RiHashtag,
   RiMenuLine,
-  RiChat1Line,
   RiAddLine,
 } from "@remixicon/react";
 import { Button } from "../components/base/buttons/button";
@@ -71,10 +70,8 @@ export function ExperienceConversation({
     <span className="scope-head">
       {layout === "bots" ? (
         <BotAvatar avatar={selected?.avatar} />
-      ) : layout === "channels" ? (
-        <RiHashtag className="size-4" aria-hidden />
       ) : (
-        <RiChat1Line className="size-4" aria-hidden />
+        <SetupGlyph layout={layout} />
       )}
       <span className="truncate">{selected?.label}</span>
     </span>
@@ -130,12 +127,7 @@ export function ExperienceConversation({
                 />
               </span>
             )}
-            {layout === "channels" && (
-              <RiHashtag className="size-4 shrink-0" aria-hidden />
-            )}
-            {layout === "sessions" && (
-              <RiChat1Line className="size-4 shrink-0" aria-hidden />
-            )}
+            {layout !== "bots" && <SetupGlyph layout={layout} />}
             <span className="truncate">{item.label}</span>
             {layout !== "bots" && (
               <span
