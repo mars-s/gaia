@@ -92,15 +92,11 @@ export function createExperienceTools(bindings: Bindings) {
     defineTool({
       name: "read_memory",
       description:
-        "Read explicit versioned facts in this scope's permitted namespace. No other transcripts are included.",
+        "Read the latest explicit facts in this scope's permitted namespace, including writes since admission. Returns an append-only array with provenance, not transcripts. Use the final record's revision (or 0 for an empty array) as expectedRevision. For repeated keys, the last record is current.",
       parameters: z.toJSONSchema(z.strictObject({})),
       async execute(_input, api) {
         const { state, job } = await owner(api);
-        return result(
-          bindings
-            .memory(state, job.public.scopeId)
-            .filter((f) => f.revision <= job.memoryRevision),
-        );
+        return result(bindings.memory(state, job.public.scopeId));
       },
     }),
     defineTool({
