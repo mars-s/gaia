@@ -110,17 +110,10 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
     }
   }
 
-  if (view.kind === "unavailable" && !runtime) return null;
-  if (view.kind === "loading" && !error && !safe) return null;
   return (
-    <section
-      className="flex w-full min-w-0 flex-col gap-4"
-      aria-labelledby="changes-title"
-    >
+    <section className="settings-section" aria-labelledby="changes-title">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="changes-title" className="text-body-medium">
-          Change history
-        </h2>
+        <h2 id="changes-title">Changes</h2>
         <Button
           variant="ghost"
           size="small"
@@ -133,6 +126,12 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
           Refresh
         </Button>
       </div>
+      {view.kind === "loading" && (
+        <p className="text-text-secondary">Loading changes…</p>
+      )}
+      {view.kind === "unavailable" && !runtime && (
+        <p className="text-text-secondary">No changes yet.</p>
+      )}
       {safe && (
         <p role="status" className="text-caption-1-regular text-text-secondary">
           Safe mode. Changes are disabled. You can still chat. Review the

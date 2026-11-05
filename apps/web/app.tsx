@@ -97,6 +97,14 @@ export function App() {
   const [authReply, setAuthReply] = useState("");
   const [browserError, setBrowserError] = useState("");
   const [accountOpen, updateAccountOpen] = useState(false);
+  useEffect(() => {
+    if (!accountOpen) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") updateAccountOpen(false);
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [accountOpen]);
   const [updateWaiting, setUpdateWaiting] = useState(false);
   const [observeRelease] = useState(() =>
     createReleaseObserver(
@@ -300,7 +308,9 @@ export function App() {
   return (
     <div className="app-shell flex h-dvh flex-col bg-background-full text-body-regular text-text-primary">
       <header className="app-bar flex shrink-0 items-center justify-between gap-4 px-4">
-        {connected && !controller.safeMode ? (
+        {accountOpen ? (
+          <span className="text-body-medium">Settings</span>
+        ) : connected && !controller.safeMode ? (
           <ChatSwitcher
             profiles={experiences.profiles}
             error={experiences.error}
@@ -334,9 +344,7 @@ export function App() {
           <IconButton
             className="app-control border-transparent bg-transparent shadow-none"
             icon={accountOpen ? RiCloseLine : RiSettings3Line}
-            aria-label={
-              accountOpen ? "Close account settings" : "Account settings"
-            }
+            aria-label={accountOpen ? "Close settings" : "Account settings"}
             aria-expanded={accountOpen}
             aria-controls="account-settings"
             onClick={() => setAccountOpen(!accountOpen)}
@@ -347,30 +355,41 @@ export function App() {
       {accountOpen && connected ? (
         <main
           id="account-settings"
-          className="grid min-h-0 flex-1 place-items-center overflow-y-auto p-6"
+          className="settings-page min-h-0 flex-1 overflow-y-auto p-6"
         >
-          <section
-            className="flex w-full max-w-lg flex-col items-start gap-6"
-            aria-labelledby="account-title"
-          >
+          <section className="settings-content" aria-labelledby="account-title">
             <div className="flex flex-col gap-2">
               <h1 id="account-title" className="text-title-3-semibold">
-                Account
+                Settings
               </h1>
-              <p className="text-text-secondary">ChatGPT is connected.</p>
             </div>
-            <Button
-              variant="secondary"
-              disabled={pending || running || offline}
-              onClick={() =>
-                void act("auth/connect").then((ok) => {
-                  if (ok) setAccountOpen(false);
-                })
-              }
+            <section className="settings-section" aria-labelledby="plan-title">
+              <h2 id="plan-title">Plan</h2>
+              <div className="settings-plan-row">
+                <span>ChatGPT</span>
+                <span className="text-text-secondary">Connected</span>
+                <Button
+                  variant="secondary"
+                  disabled={pending || running || offline}
+                  onClick={() =>
+                    void act("auth/connect").then((ok) => {
+                      if (ok) setAccountOpen(false);
+                    })
+                  }
+                >
+                  Reconnect
+                </Button>
+              </div>
+            </section>
+            <section
+              className="settings-section"
+              aria-labelledby="appearance-title"
             >
-              Reconnect ChatGPT
-            </Button>
-            <AppearancePicker />
+              <h2 id="appearance-title">Appearance</h2>
+              <div className="w-60 max-w-full">
+                <AppearancePicker />
+              </div>
+            </section>
             {!controller.safeMode && (
               <SetupSettings
                 controller={experiences}
@@ -392,8 +411,10 @@ export function App() {
                 }}
               />
             )}
-            <h2 className="text-body-medium">About you</h2>
-            {profilePanel(true)}
+            <section className="settings-section" aria-labelledby="about-title">
+              <h2 id="about-title">About you</h2>
+              {profilePanel(true)}
+            </section>
             <ManagedSettings runtime={state?.runtime} />
             {error && (
               <p role="alert" className="text-text-error-primary">

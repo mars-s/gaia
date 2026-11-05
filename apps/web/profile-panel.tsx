@@ -115,7 +115,7 @@ export function ProfilePanel({
           </Button>
         </>
       ) : null}
-      {state.kind !== "ready" && state.kind !== "skipped" && (
+      {!account && state.kind !== "ready" && state.kind !== "skipped" && (
         <Button
           className="quiet-action text-text-secondary"
           variant="ghost"

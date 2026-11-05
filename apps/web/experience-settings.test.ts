@@ -37,21 +37,23 @@ test("Settings rows separate names and layout text, identify exactly one main ch
   const rows = () =>
     [...render().matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((m) => m[1]);
   const text = (row: string) => row.replace(/<[^>]*>/g, "");
-  assert.match(text(rows()[1]), /Everyday Bots Separate Bots · Created/);
+  assert.match(text(rows()[1]), /Everyday Bots Separate Bots/);
   assert.match(
     text(rows()[2]),
     /Shared workspace One assistant with channels · Proposed/,
   );
   assert.match(text(rows()[3]), /My sessions Separate sessions · Hidden/);
-  assert.match(text(rows()[0]), /Original chat One conversation · Main chat/);
-  assert.equal((render().match(/Main chat/g) ?? []).length, 1);
+  assert.match(text(rows()[0]), /Original chat One conversationMainOpen now/);
+  assert.equal((render().match(/class="setup-badge">Main</g) ?? []).length, 1);
+  assert.doesNotMatch(render(), /Created/);
+  assert.match(rows()[0], /class="setup-badge">Open now/);
   assert.match(rows()[1], /Open/);
   assert.match(rows()[1], /Make main/);
   assert.match(rows()[2], /Review/);
   assert.doesNotMatch(rows()[2], /Make main/);
   controller.mainId = bots.id;
-  assert.equal((render().match(/Main chat/g) ?? []).length, 1);
-  assert.match(text(rows()[1]), /Separate Bots · Main chat/);
+  assert.equal((render().match(/class="setup-badge">Main</g) ?? []).length, 1);
+  assert.match(text(rows()[1]), /Separate BotsMain/);
   assert.doesNotMatch(rows()[1], /Make main/);
   assert.match(rows()[0], /Make main/);
   assert.doesNotMatch(

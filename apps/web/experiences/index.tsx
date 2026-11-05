@@ -69,7 +69,6 @@ export function SetupSettings({
   const [creating, setCreating] = useState(false);
   const [pending, setPending] = useState(false);
   const [reviewing, setReviewing] = useState<ExperienceId>();
-  const section = useRef<HTMLElement>(null);
   const active = useRef(true);
   useEffect(() => {
     active.current = true;
@@ -81,23 +80,10 @@ export function SetupSettings({
   const review = controller.profiles.find((item) => item.id === reviewing);
   return (
     <section
-      ref={section}
-      className="setup-settings flex w-full min-w-0 flex-col gap-3"
+      className="setup-settings settings-section"
       aria-labelledby="setups-title"
     >
-      <h2 id="setups-title" className="text-body-medium">
-        <button
-          className="quiet-link"
-          onClick={() =>
-            section.current?.scrollIntoView({
-              block: "start",
-              behavior: "smooth",
-            })
-          }
-        >
-          Setups
-        </button>
-      </h2>
+      <h2 id="setups-title">Setups</h2>
       {controller.error && (
         <p role="alert" className="text-text-error-primary">
           {controller.error}{" "}
@@ -114,8 +100,16 @@ export function SetupSettings({
           <div className="min-w-0 flex-1">
             <p className="text-body-medium">Original chat</p>{" "}
             <p className="text-caption-1-regular text-text-secondary">
-              One conversation{controller.mainId === null ? " · Main chat" : ""}
+              One conversation
             </p>
+          </div>
+          <div className="setup-badges">
+            {controller.mainId === null && (
+              <span className="setup-badge">Main</span>
+            )}
+            {!controller.profile && (
+              <span className="setup-badge">Open now</span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -130,8 +124,7 @@ export function SetupSettings({
             </Button>
             {controller.mainId !== null && (
               <Button
-                className="quiet-action text-text-secondary"
-                variant="ghost"
+                variant="secondary"
                 size="small"
                 onClick={() => void controller.makeMain(null)}
               >
@@ -148,15 +141,20 @@ export function SetupSettings({
               </p>{" "}
               <p className="text-caption-1-regular text-text-secondary">
                 {setupLayouts[item.plan.layout].label}
-                {" · "}
-                {controller.mainId === item.id
-                  ? "Main chat"
-                  : item.proposal?.dismissedAt || item.proposal?.supersededBy
-                    ? "Hidden"
-                    : item.kind === "proposed"
-                      ? "Proposed"
-                      : "Created"}
+                {item.proposal?.dismissedAt || item.proposal?.supersededBy
+                  ? " · Hidden"
+                  : item.kind === "proposed"
+                    ? " · Proposed"
+                    : ""}
               </p>
+            </div>
+            <div className="setup-badges">
+              {controller.mainId === item.id && (
+                <span className="setup-badge">Main</span>
+              )}
+              {controller.profile?.profile.id === item.id && (
+                <span className="setup-badge">Open now</span>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -186,8 +184,7 @@ export function SetupSettings({
               </Button>
               {item.kind === "ready" && controller.mainId !== item.id && (
                 <Button
-                  variant="ghost"
-                  className="quiet-action text-text-secondary"
+                  variant="secondary"
                   size="small"
                   disabled={pending}
                   onClick={() => void controller.makeMain(item.id)}
