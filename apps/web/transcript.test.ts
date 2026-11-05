@@ -146,5 +146,5 @@ test("failed reply notice belongs inside the transcript after its turn with reas
     html,
     /<button[^>]*border-border-button-default[^>]*>[\s\S]*?Try again[\s\S]*?<\/button>/,
   );
-  assert.equal((html.match(/Try again/g) ?? []).length, 1);
+  assert.equal((html.match(/>Try again</g) ?? []).length, 1);
 });

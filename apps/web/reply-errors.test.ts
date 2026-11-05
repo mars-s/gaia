@@ -6,10 +6,7 @@ import { replyError, ReplyNotice, OfflineNotice } from "./progress-row";
 
 test("known reply causes get one useful sentence and unknown failures stay plain", () => {
   for (const [cause, expected] of [
-    [
-      "Provider disconnected.",
-      "Connection lost.",
-    ],
+    ["Provider disconnected.", "Connection lost."],
     ["fetch failed", "Connection lost."],
     [
       "Authentication token expired",
@@ -48,4 +45,27 @@ test("offline notice keeps the draft reassurance and a separate status dot", () 
     html,
     /<span aria-hidden="true"><\/span>Offline. Reconnecting… Your draft is safe./,
   );
+});
+
+test("failure second paths offer Settings for unknown causes and reconnection advice for a lost connection", () => {
+  const unknown = renderToStaticMarkup(
+    createElement(ReplyNotice, {
+      message: replyError("unexpected"),
+      onSettings() {},
+    }),
+  );
+  assert.match(unknown, /If this keeps happening, check your plan in/);
+  assert.match(unknown, /class="quiet-link">Settings<\/button>/);
+  const offline = renderToStaticMarkup(
+    createElement(ReplyNotice, { message: replyError("fetch failed") }),
+  );
+  assert.match(offline, /Try again once you’re back online./);
+  for (const message of [
+    "Stopped.",
+    replyError("Model unavailable"),
+    replyError("401"),
+  ]) {
+    const html = renderToStaticMarkup(createElement(ReplyNotice, { message }));
+    assert.doesNotMatch(html, /failure-path/);
+  }
 });

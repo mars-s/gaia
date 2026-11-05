@@ -55,12 +55,14 @@ export function ProgressRow({
           {description}
         </span>
       )}
-      {active && seconds >= 3 && (
+      {active && seconds >= 1 && (
         <span
           className="progress-elapsed"
           aria-label={`${seconds} seconds elapsed`}
         >
-          {seconds}s
+          {seconds < 60
+            ? `${seconds}s`
+            : `${Math.floor(seconds / 60)}m ${seconds % 60}s`}
         </span>
       )}
       {children}
@@ -72,6 +74,7 @@ export function ReplyNotice({
   message,
   onRetry,
   disabled,
+  onSettings,
 }: {
   message: string;
   onSettings?: () => void;
@@ -80,7 +83,20 @@ export function ReplyNotice({
 }) {
   return (
     <div className="reply-notice" role="alert">
-      <ProgressRow active={false} description={message} error>
+      <ProgressRow active={false} error>
+        <span>
+          {message.includes("Settings") ? (
+            <>
+              {message.split("Settings")[0]}
+              <button className="quiet-link" onClick={onSettings}>
+                Settings
+              </button>
+              .
+            </>
+          ) : (
+            message
+          )}
+        </span>
         {onRetry && (
           <Button
             variant="secondary"
@@ -92,8 +108,31 @@ export function ReplyNotice({
           </Button>
         )}
       </ProgressRow>
+      <FailurePath message={message} onSettings={onSettings} />
     </div>
   );
+}
+
+export function FailurePath({
+  message,
+  onSettings,
+}: {
+  message: string;
+  onSettings?: () => void;
+}) {
+  if (message === "Gaia couldn’t finish that reply.")
+    return (
+      <p className="failure-path">
+        If this keeps happening, check your plan in{" "}
+        <button className="quiet-link" onClick={onSettings}>
+          Settings
+        </button>
+        .
+      </p>
+    );
+  if (message === "Connection lost.")
+    return <p className="failure-path">Try again once you’re back online.</p>;
+  return null;
 }
 
 export function replyError(message: string): string {

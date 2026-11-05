@@ -7,17 +7,17 @@ import { ProgressRow } from "./progress-row";
 import { Transcript, MessageMarkdown } from "./transcript";
 import type { Thread } from "../../packages/protocol/index.ts";
 
-test("elapsed time appears from three seconds, alongside real activity, and disappears on settlement", (t) => {
+test("elapsed time appears from one second, alongside real activity, and disappears on settlement", (t) => {
   const start = "2026-11-05T00:00:00Z";
-  for (const seconds of [0, 2, 3, 12]) {
+  for (const seconds of [0, 1, 2, 3, 12, 65]) {
     t.mock.method(Date, "now", () => Date.parse(start) + seconds * 1000);
     const html = renderToStaticMarkup(
       createElement(ProgressRow, { active: true, startedAt: start }),
     );
     assert.doesNotMatch(html, /Thinking|Running|Working/);
     assert.match(html, /working-indicator/);
-    if (seconds < 3) assert.doesNotMatch(html, /seconds elapsed/);
-    else assert.match(html, new RegExp(`${seconds} seconds elapsed`));
+    if (seconds < 1) assert.doesNotMatch(html, /seconds elapsed/);
+    else { assert.match(html, new RegExp(`${seconds} seconds elapsed`)); if (seconds === 1) assert.match(html, />1s</); }
   }
   const withActivity = renderToStaticMarkup(
     createElement(ProgressRow, {
@@ -27,7 +27,7 @@ test("elapsed time appears from three seconds, alongside real activity, and disa
     }),
   );
   assert.match(withActivity, /Checking the calendar/);
-  assert.match(withActivity, /12s/);
+  assert.match(withActivity, /1m 5s/);
   const settled = renderToStaticMarkup(
     createElement(ProgressRow, { active: false, startedAt: start }),
   );
@@ -141,7 +141,10 @@ test("copy actions have icons without Copy text and setup answers suppress their
 test("code copy floats above an observed overflow fade, with no empty header", async () => {
   const { readFileSync } = await import("node:fs");
   const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
-  const source = readFileSync(new URL("./transcript.tsx", import.meta.url), "utf8");
+  const source = readFileSync(
+    new URL("./transcript.tsx", import.meta.url),
+    "utf8",
+  );
   assert.match(source, /element.scrollWidth > element.clientWidth/);
   assert.match(source, /observer.observe\(element\)/);
   assert.match(css, /code-block > .copy-action.*top: 8px; right: 8px/);

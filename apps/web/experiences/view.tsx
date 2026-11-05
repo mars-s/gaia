@@ -2,7 +2,12 @@ import { EmptyChat } from "../empty-chat";
 import { AssistantHead } from "../assistant-head";
 import { Dialog } from "@base-ui/react/dialog";
 import { CopyButton } from "../copy-button";
-import { ProgressRow, replyError, OfflineNotice } from "../progress-row";
+import {
+  ProgressRow,
+  replyError,
+  OfflineNotice,
+  FailurePath,
+} from "../progress-row";
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
@@ -26,10 +31,12 @@ export function ExperienceConversation({
   controller,
   switcher,
   accountControl,
+  onSettings,
 }: {
   controller: ExperienceController;
   switcher?: ReactNode;
   accountControl?: ReactNode;
+  onSettings?: () => void;
 }) {
   const profile = controller.profile;
   const scope = controller.selected;
@@ -260,6 +267,7 @@ export function ExperienceConversation({
           aria-label={selected?.label ?? "Conversation"}
         >
           <ScopeConversation
+            onSettings={onSettings}
             key={experienceKey(scope)}
             controller={controller}
             scope={scope}
@@ -271,11 +279,13 @@ export function ExperienceConversation({
 }
 
 function ScopeConversation({
+  onSettings,
   controller,
   scope,
 }: {
   controller: ExperienceController;
   scope: Scope;
+  onSettings?: () => void;
 }) {
   const entry = controller.entry(scope);
   const state = entry.state;
@@ -445,6 +455,7 @@ function ScopeConversation({
                   </article>
                   {jobs.map((job) => (
                     <JobRows
+                      onSettings={onSettings}
                       key={job.id}
                       job={job}
                       controller={controller}
@@ -463,6 +474,7 @@ function ScopeConversation({
             )
             .map((job) => (
               <JobRows
+                onSettings={onSettings}
                 key={job.id}
                 job={job}
                 controller={controller}
@@ -619,6 +631,7 @@ export function createActivityAnnouncer(
 }
 
 function JobRows({
+  onSettings,
   job,
   controller,
   scope,
@@ -626,6 +639,7 @@ function JobRows({
   job: ExperienceJob;
   controller: ExperienceController;
   scope: Scope;
+  onSettings?: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
   const state = job.state;
@@ -740,6 +754,12 @@ function JobRows({
           </button>
         )}
       </ProgressRow>
+      {state.kind === "failed" && (
+        <FailurePath
+          message={replyError(state.message)}
+          onSettings={onSettings}
+        />
+      )}
       {confirm && (
         <RetryConfirmation
           uncertain={state.kind === "uncertain"}

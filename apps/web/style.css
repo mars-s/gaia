@@ -1302,3 +1302,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .message-images figcaption { display: none; }
 .setup-card > div:has(> .quiet-action) { align-items: center; }
 @media (max-width: 639px) { .model-trigger { grid-column: 2 / 4; justify-self: start; padding-left: 12px; max-width: 100%; } }
+
+.failure-path { margin-top: 4px; font-size: 12px; line-height: 16px; color: var(--color-ink-2); }
+.reply-error-icon { width: 24px; height: 24px; padding: 4px; }
+.reply-error { gap: 8px; font-size: 14px; line-height: 20px; }
+.reply-error button:not(.quiet-link) { margin-left: 4px; }
