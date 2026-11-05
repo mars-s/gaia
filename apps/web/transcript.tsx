@@ -1,3 +1,4 @@
+import { ProgressRow, ReplyNotice } from "./progress-row";
 import { useMemo, type ReactNode } from "react";
 import type { ThreadMessageLike } from "@assistant-ui/core";
 import {
@@ -89,8 +90,12 @@ async function readOnlyTranscript(): Promise<void> {
 export function Transcript({
   thread,
   afterMessage,
+  onRetry,
+  retryDisabled,
 }: {
   thread: Thread;
+  onRetry?: () => void;
+  retryDisabled?: boolean;
   afterMessage?: (id: string) => ReactNode;
 }) {
   const messages = useMemo(() => transcriptMessages(thread), [thread]);
@@ -126,29 +131,41 @@ export function Transcript({
                     components={{ Text: user ? PlainText : MessageMarkdown }}
                   />
                 ) : !user || !source?.attachments?.length ? (
-                  <span
+                  <div
                     className="text-text-secondary"
                     role={
                       message.status?.type === "running" ? "status" : undefined
                     }
                   >
                     {message.status?.type === "running" ? (
-                      <span className="job-avatar-pulse">
-                        <span className="gaia-mark" aria-hidden="true" />
-                      </span>
+                      <ProgressRow active />
                     ) : message.status?.type === "incomplete" &&
                       message.status.reason === "cancelled" ? (
                       "Reply stopped."
                     ) : (
                       "No reply received."
                     )}
-                  </span>
+                  </div>
                 ) : null}
                 {afterMessage?.(message.id)}
               </article>
             );
           }}
         </ThreadPrimitiveMessages>
+        {thread.run.kind === "error" && (
+          <ReplyNotice
+            message={`No reply came back. ${thread.run.message}`}
+            onRetry={onRetry}
+            disabled={retryDisabled}
+          />
+        )}
+        {thread.run.kind === "stopped" && onRetry && (
+          <ReplyNotice
+            message="Stopped."
+            onRetry={onRetry}
+            disabled={retryDisabled}
+          />
+        )}
       </div>
     </AssistantRuntimeProvider>
   );

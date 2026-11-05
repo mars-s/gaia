@@ -562,6 +562,14 @@ export function App() {
                 <Transcript
                   key={scopeKey(scope)}
                   thread={active.thread}
+                  onRetry={() => void controller.act(scope, "retry")}
+                  retryDisabled={
+                    pending ||
+                    offline ||
+                    running ||
+                    Boolean(controller.busyScope()) ||
+                    !controller.available(scope)
+                  }
                   afterMessage={
                     scope.kind === "home" && !controller.safeMode
                       ? setupCards
@@ -618,8 +626,8 @@ export function App() {
               </p>
             )}
             {offline && (
-              <p role="alert" className="text-text-error-primary">
-                Connection lost. Reconnecting… Your draft is here.
+              <p role="alert" className="chat-notice">
+                Offline. Reconnecting… Your draft is safe.
               </p>
             )}
             <Composer

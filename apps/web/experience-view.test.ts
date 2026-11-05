@@ -322,7 +322,8 @@ test("queued and running progress has only an avatar and exact-job Stop, without
         markup,
         layout === "bots" ? /src="\/bots\/bot-01.svg"/ : /class="gaia-mark"/,
       );
-      assert.match(markup, /disabled:bg-accent-500.*disabled:opacity-40/);
+      assert.match(markup, /composer-send[^"]*composer-stop/);
+      assert.match(markup, /aria-label="Stop reply"/);
       controller.pause();
     }
   }

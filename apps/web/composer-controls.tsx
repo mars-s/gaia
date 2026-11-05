@@ -100,6 +100,9 @@ export function ComposerControls({
       >
         <span className="min-w-0 wrap-anywhere">
           {item.name}
+          {item.name !== item.id && (
+            <span className="model-unavailable">{item.id}</span>
+          )}
           {unavailable && (
             <span className="model-unavailable">
               Not available now. Choose another model to send your message.
@@ -133,7 +136,7 @@ export function ComposerControls({
         </span>
         <RiArrowDownSLine className="size-4 shrink-0" aria-hidden />
       </AriaButton>
-      <Popover placement="top end" offset={12} className="model-popover">
+      <Popover placement="top end" offset={56} className="model-popover">
         <Dialog
           aria-label="Model and reasoning effort"
           className="model-dialog outline-none"
@@ -148,9 +151,6 @@ export function ComposerControls({
               ref={modelScroll}
               onScroll={updateEdges}
             >
-              <p className="model-heading text-caption-1-medium text-text-secondary">
-                Models
-              </p>
               <RadioGroup
                 aria-label="Model"
                 value={modelId}
@@ -181,7 +181,10 @@ export function ComposerControls({
                 {primary.map(row)}
                 {remaining.length > 0 && (
                   <details className="model-all" onToggle={updateEdges}>
-                    <summary>All models ({remaining.length})</summary>
+                    <summary>
+                      <RiArrowDownSLine className="size-4" aria-hidden />
+                      All models ({remaining.length})
+                    </summary>
                     {remaining.map(row)}
                   </details>
                 )}
@@ -298,7 +301,7 @@ export function ComposerActions({
         type="button"
         aria-label="Chat actions"
         isDisabled={disabled}
-        className="flex size-9 shrink-0 items-center justify-center self-end rounded-full bg-background-tertiary-hover text-text-primary transition-colors hover:bg-background-secondary-hover disabled:opacity-40"
+        className="flex size-9 shrink-0 items-center justify-center self-end rounded-full bg-transparent text-text-primary transition-colors hover:bg-background-secondary-hover disabled:opacity-40"
       >
         <RiAddLine className="size-5" aria-hidden />
       </DropdownTrigger>

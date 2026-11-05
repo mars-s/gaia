@@ -93,14 +93,53 @@ test("original chat shows an avatar while awaiting a reply and clears it on sett
     version: 1,
     id: "local",
     run: { kind: "running", id: "native-wait", operation: "reply" },
-    messages: [{ id: "pending", role: "assistant", text: "", createdAt: "2026-11-05T00:00:00Z" }],
+    messages: [
+      {
+        id: "pending",
+        role: "assistant",
+        text: "",
+        createdAt: "2026-11-05T00:00:00Z",
+      },
+    ],
   };
   const running = renderToStaticMarkup(createElement(Transcript, { thread }));
   assert.doesNotMatch(running, /Thinking|Running/);
   assert.match(running, /gaia-mark/);
-  const settled = renderToStaticMarkup(createElement(Transcript, {
-    thread: { ...thread, run: { kind: "idle" }, messages: [{ ...thread.messages[0]!, text: "All clear." }] },
-  }));
+  const settled = renderToStaticMarkup(
+    createElement(Transcript, {
+      thread: {
+        ...thread,
+        run: { kind: "idle" },
+        messages: [{ ...thread.messages[0]!, text: "All clear." }],
+      },
+    }),
+  );
   assert.match(settled, /All clear\./);
   assert.doesNotMatch(settled, /gaia-mark|role="status"/);
+});
+
+test("failed reply notice belongs inside the transcript after its turn with reason and secondary retry", () => {
+  const thread: Thread = {
+    version: 1,
+    id: "local",
+    run: { kind: "error", message: "Provider disconnected." },
+    messages: [
+      {
+        id: "turn",
+        role: "user",
+        text: "Check my plan",
+        createdAt: "2026-11-05T00:00:00Z",
+      },
+    ],
+  };
+  const html = renderToStaticMarkup(
+    createElement(Transcript, { thread, onRetry() {} }),
+  );
+  assert(html.indexOf("Check my plan") < html.indexOf('class="reply-notice"'));
+  assert.match(html, /No reply came back. Provider disconnected./);
+  assert.match(
+    html,
+    /<button[^>]*border-border-button-default[^>]*>[\s\S]*?Try again[\s\S]*?<\/button>/,
+  );
+  assert.equal((html.match(/Try again/g) ?? []).length, 1);
 });

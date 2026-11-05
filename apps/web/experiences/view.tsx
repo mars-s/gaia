@@ -1,15 +1,12 @@
+import { ProgressRow } from "../progress-row";
+import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState } from "react";
-import { RiArrowUpLine, RiHashtag, RiMenuLine } from "@remixicon/react";
+import { RiHashtag, RiMenuLine } from "@remixicon/react";
 import { Button } from "../components/base/buttons/button";
-import { IconButton } from "../components/base/buttons/icon-button";
-import { Textarea } from "../components/base/textarea/textarea";
-import { ComposerActions, ComposerControls } from "../composer-controls";
-import { DraftImages } from "../image-previews";
 import { MessageMarkdown } from "../transcript";
 import { cx } from "../utils/cx";
 import type { ExperienceJob } from "../../../packages/protocol/experiences.ts";
 import {
-  keyboardSend,
   jobActive,
   experienceKey,
   type ExperienceController,
@@ -249,15 +246,12 @@ function ScopeConversation({
   }, [state?.jobs]);
   const saved = entry.draft.read();
   const draft = saved.kind === "ready" ? saved.draft : undefined;
-  const input = useRef<HTMLTextAreaElement>(null);
-  const file = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const model = state?.chat.models.find(
     (item) => item.id === (entry.selection?.modelId ?? state.chat.modelId),
   );
   useEffect(() => {
-    input.current?.focus();
     return () => {
       entry.composing = false;
     };
@@ -386,7 +380,7 @@ function ScopeConversation({
         )}
         {entry.offline && (
           <p role="status" className="text-text-secondary">
-            Connection lost. Reconnecting… Your draft is here.
+            Offline. Reconnecting… Your draft is safe.
           </p>
         )}
         {saved.kind === "error" && (
@@ -423,120 +417,44 @@ function ScopeConversation({
               : "Choose an available model to send. Your draft and images are here."}
           </p>
         )}
-        <form
-          aria-label="Message assistant"
-          className="composer flex flex-col gap-2 rounded-[28px] bg-background-tertiary-default p-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            send();
-          }}
-          onPaste={(event) => {
-            const files = Array.from(event.clipboardData.files);
-            if (files.length) {
-              event.preventDefault();
-              void controller.addImages(scope, files);
-            }
-          }}
-          onDragOver={(event) => {
-            if (event.dataTransfer.types.includes("Files"))
-              event.preventDefault();
-          }}
-          onDrop={(event) => {
-            if (event.dataTransfer.files.length) {
-              event.preventDefault();
-              void controller.addImages(
-                scope,
-                Array.from(event.dataTransfer.files),
-              );
-            }
-          }}
-        >
-          {!!draft?.images.length && (
-            <DraftImages
-              images={draft.images}
-              onRemove={(id) =>
-                entry.draft.update((value) => ({
-                  ...value,
-                  images: value.images.filter((image) => image.id !== id),
-                }))
-              }
-            />
-          )}
-          <input
-            ref={file}
-            type="file"
-            className="hidden"
-            aria-label="Choose images"
-            accept="image/png,image/jpeg,image/webp"
-            multiple
-            onChange={(event) => {
-              void controller.addImages(
-                scope,
-                Array.from(event.target.files ?? []),
-              );
-              event.target.value = "";
-            }}
-          />
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
-            <ComposerActions
-              disabled={!state || entry.offline || entry.actions.has("compact")}
-              onAttach={
-                model?.capabilities?.images && draft
-                  ? () => file.current?.click()
-                  : undefined
-              }
-              onCompact={() => void controller.compact(scope)}
-            />
-            <Textarea
-              ref={input}
-              className="col-start-2 row-start-1 min-w-0"
-              fieldClassName="rounded-2xl bg-transparent ring-0 hover:ring-0 focus-within:ring-0"
-              aria-label="Message assistant"
-              autoResize
-              maxRows={8}
-              rows={1}
-              maxLength={32000}
-              value={draft?.text ?? ""}
-              isDisabled={!draft}
-              onChange={(text) =>
-                entry.draft.update((value) => ({ ...value, text }))
-              }
-              onCompositionStart={() => controller.compose(scope, true)}
-              onCompositionEnd={() => controller.compose(scope, false)}
-              onKeyDown={(event) => {
-                if (
-                  keyboardSend({
-                    key: event.key,
-                    shiftKey: event.shiftKey,
-                    isComposing: event.nativeEvent.isComposing,
-                    keyCode: event.keyCode,
-                  })
-                ) {
-                  event.preventDefault();
-                  send();
+        <SharedComposer
+          label="Message assistant"
+          placeholder="Message Gaia…"
+          draft={draft?.text ?? ""}
+          images={draft?.images ?? []}
+          ready={Boolean(draft)}
+          supportsImages={Boolean(model?.capabilities?.images)}
+          actionsDisabled={
+            !state || entry.offline || entry.actions.has("compact")
+          }
+          modelDisabled={entry.offline}
+          canSend={controller.canSend(scope)}
+          chat={state?.chat}
+          selection={entry.selection}
+          onSelect={(selection) => controller.selectModel(scope, selection)}
+          onChange={(text) =>
+            entry.draft.update((value) => ({ ...value, text }))
+          }
+          onRemove={(id) =>
+            entry.draft.update((value) => ({
+              ...value,
+              images: value.images.filter((image) => image.id !== id),
+            }))
+          }
+          onImages={(files) => void controller.addImages(scope, files)}
+          onCompose={(value) => controller.compose(scope, value)}
+          onCompact={() => void controller.compact(scope)}
+          onSend={send}
+          onStop={
+            state?.jobs.some(jobActive)
+              ? () => {
+                  for (const job of state.jobs.filter(jobActive))
+                    void controller.stop(scope, job);
                 }
-              }}
-              placeholder="Ask me anything…"
-            />
-            {state && (
-              <ComposerControls
-                chat={state.chat}
-                disabled={entry.offline}
-                selection={entry.selection}
-                onSelect={(selection) =>
-                  controller.selectModel(scope, selection)
-                }
-              />
-            )}
-            <IconButton
-              type="submit"
-              icon={RiArrowUpLine}
-              aria-label="Send message"
-              className="col-start-3 row-start-1 shrink-0 self-end rounded-full border-transparent bg-accent-500 text-text-white shadow-none hover:border-transparent hover:bg-accent-600 active:border-transparent active:bg-accent-700 disabled:border-transparent disabled:bg-accent-500 disabled:text-text-white disabled:opacity-40 sm:col-start-4"
-              disabled={!controller.canSend(scope)}
-            />
-          </div>
-        </form>
+              : undefined
+          }
+          stopDisabled={entry.offline}
+        />
         {state?.chat.compaction.kind !== "idle" &&
           state?.chat.compaction.message && (
             <p
@@ -649,32 +567,24 @@ function JobRows({
   return (
     <div className="job-progress flex min-w-0 flex-col gap-2 text-caption-1-regular text-text-secondary">
       {activities.map((activity) => (
-        <div key={activity.id} className="flex min-w-0 items-center gap-2">
-          {assistantAvatar}
-          <span className="min-w-0 truncate" title={activity.description}>
-            {activity.description}
-          </span>
-        </div>
+        <ProgressRow
+          key={activity.id}
+          active
+          avatar={assistantAvatar}
+          description={activity.description}
+        />
       ))}
-      <div className="flex min-w-0 items-center gap-2">
-        {!activities.length &&
-          (state.kind === "queued" ||
-            state.kind === "running" ||
-            state.kind === "stopping") && (
-            <span
-              className={cx(state.kind !== "stopping" && "job-avatar-pulse")}
-              aria-hidden="true"
-            >
-              {assistantAvatar}
-            </span>
-          )}
+      <ProgressRow
+        active={jobActive(job) && state.kind !== "stopping"}
+        avatar={activities.length ? null : assistantAvatar}
+      >
         {state.kind !== "queued" &&
           state.kind !== "running" &&
           state.kind !== "stopping" && (
             <span>
               {job.title} ·{" "}
               {state.kind === "failed" || state.kind === "uncertain"
-                ? state.message
+                ? `No reply came back. ${state.message}`
                 : state.kind === "interrupted"
                   ? "Interrupted. Not repeated automatically."
                   : "Stopped"}
@@ -691,7 +601,7 @@ function JobRows({
           </button>
         ) : (
           <button
-            className="quiet-link"
+            className="retry-button"
             disabled={entry.actions.has(job.id)}
             onClick={() =>
               state.kind === "uncertain" || job.dispatchedEffect
@@ -702,7 +612,7 @@ function JobRows({
             Try again
           </button>
         )}
-      </div>
+      </ProgressRow>
       {confirm && (
         <RetryConfirmation
           uncertain={state.kind === "uncertain"}
