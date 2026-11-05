@@ -15,7 +15,9 @@ import {
 import type { ChatAdapter } from "./pi.ts";
 import { openWorkspace } from "./workspace.ts";
 
-export type ConversationAdapter = Required<Omit<ChatAdapter, "workspace">>;
+export type ConversationAdapter = Required<
+  Omit<ChatAdapter, "workspace" | "experiences">
+>;
 type AreaInput = Omit<Parameters<ChatAdapter["run"]>[0], "owner" | "onText"> & {
   areaId: AreaId;
   addUser: boolean;

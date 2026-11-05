@@ -1,4 +1,15 @@
 import {
+  ExperiencePlan,
+  ExperienceCreate,
+} from "../../packages/protocol/experiences.ts";
+import { randomUUID } from "node:crypto";
+import { dirname } from "node:path";
+import {
+  createExperienceRuntime,
+  type ExperienceRuntime,
+  type ExperienceRuntimeOptions,
+} from "./experiences/runtime.ts";
+import {
   defineExtension,
   defineTool,
   section,
@@ -27,6 +38,7 @@ import {
 } from "../../packages/sdk/onboarding.ts";
 export interface ChatAdapter {
   workspace?: WorkspaceChat;
+  experiences?: ExperienceRuntime;
   imageLimits?(): ImageLimits;
   controls?(): Omit<Chat, "compaction">;
   configure?(modelId: string, thinkingLevel?: ThinkingLevel): Promise<void>;
@@ -47,7 +59,11 @@ export async function createPi(
   auth: ReturnType<typeof createAuth>,
   extensions: Extension[] = [],
   settings: Pick<HarnessSettings, "compaction"> = {},
-  options: { areasEnabled?: boolean } = {},
+  options: {
+    areasEnabled?: boolean;
+    experiencesEnabled?: boolean;
+    experiences?: Omit<ExperienceRuntimeOptions, "models">;
+  } = {},
 ): Promise<ChatAdapter> {
   const ctx = BACKGROUND_CONTEXT;
   const registry = createRegistry();
@@ -91,6 +107,34 @@ export async function createPi(
         ),
       ],
       tools: [
+        ...(options.experiencesEnabled === true
+          ? [
+              defineTool({
+                name: "propose_experience",
+                description:
+                  "Propose an isolated experience for exact revision review. Only the owner can confirm through the API. Never claims confirmation from typed agreement.",
+                parameters: z.toJSONSchema(ExperiencePlan),
+                replay: "unsafe",
+                async execute(input, api, context) {
+                  if (!experiences)
+                    throw new Error("Experiences are unavailable.");
+                  const requestId = await api.memo(
+                    "proposal-request",
+                    randomUUID(),
+                    context,
+                  );
+                  const proposal = await experiences.create(
+                    ExperienceCreate.parse({ requestId, plan: input }),
+                  );
+                  return {
+                    output: [
+                      { type: "text" as const, text: JSON.stringify(proposal) },
+                    ],
+                  };
+                },
+              }),
+            ]
+          : []),
         defineTool({
           name: "record_owner_answers",
           description:
@@ -168,8 +212,17 @@ export async function createPi(
     ctx,
   );
   workspaceTools.attach(workspace);
+  const experiences =
+    options.experiencesEnabled === true
+      ? await createExperienceRuntime(dirname(path), {
+          models: auth.models,
+          settings,
+          ...options.experiences,
+        })
+      : undefined;
   return {
     ...home,
+    experiences,
     workspace,
     async run(input) {
       if (current) throw new Error("A model run is already active.");
@@ -183,6 +236,7 @@ export async function createPi(
       }
     },
     async close() {
+      await experiences?.close();
       await harness.close(ctx);
     },
   };

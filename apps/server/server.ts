@@ -1,3 +1,4 @@
+import { createExperienceRoutes } from "./experience-http.ts";
 import { createServer, type IncomingMessage } from "node:http";
 import { DatabaseSync } from "node:sqlite";
 import { mkdir, chmod } from "node:fs/promises";
@@ -332,6 +333,10 @@ export function createChatServer({
       await active?.done.catch(() => {});
     },
   });
+  const experienceRoutes = createExperienceRoutes(
+    adapter.experiences,
+    () => auth.status().kind === "connected",
+  );
   const serverSockets = new Set<Socket>();
   const server = createServer(async (req, res) => {
     const json = (status: number, value: unknown) => {
@@ -361,6 +366,11 @@ export function createChatServer({
       if (req.method === "GET" && url.pathname === "/healthz")
         return json(200, { ok: true });
       if (req.method === "GET") {
+        const experience = await experienceRoutes(req, res, url.pathname);
+        if (experience) {
+          if ("stream" in experience) return;
+          return json(experience.status, experience.value);
+        }
         const result = workspaceRoutes.get(url.pathname);
         if (result) return json(result.status, result.value);
       }
@@ -417,7 +427,10 @@ export function createChatServer({
       const input = await body(
         req,
         url.pathname === "/api/v1/attachments" ||
-          /^\/api\/v1\/areas\/[^/]+\/attachments$/.test(url.pathname)
+          /^\/api\/v1\/areas\/[^/]+\/attachments$/.test(url.pathname) ||
+          /^\/api\/v1\/experiences\/[^/]+\/scopes\/[^/]+\/attachments$/.test(
+            url.pathname,
+          )
           ? Math.ceil(imageLimits.bytes / 3) * 4 + 4096
           : 140000,
       );
@@ -425,6 +438,11 @@ export function createChatServer({
       if (allowWrite && !(await allowWrite())) {
         res.setHeader("Retry-After", "2");
         throw new HttpError(503, "Gaia is checking a release. Retry shortly.");
+      }
+      const experience = await experienceRoutes(req, res, url.pathname, input);
+      if (experience) {
+        if ("stream" in experience) return;
+        return json(experience.status, experience.value);
       }
       rememberAreaRequests();
       const workspaceResult = await workspaceRoutes.post(
@@ -671,10 +689,23 @@ export function createChatServer({
   return {
     server,
     snapshot,
+    async busy() {
+      const experiences = await adapter.experiences?.busy();
+      return { legacy: Boolean(active), experiences };
+    },
+    async quiesce() {
+      closing = true;
+      const experiences = adapter.experiences?.quiesce();
+      active?.controller.abort();
+      await Promise.all([active?.done.catch(() => {}), experiences]);
+      return experiences;
+    },
     async close() {
       closing = true;
+      const experiences = adapter.experiences?.quiesce();
       active?.controller.abort();
       await active?.done.catch(() => {});
+      await experiences;
       for (const socket of serverSockets) socket.destroy();
       await new Promise<void>((resolve, reject) =>
         server.close((error) =>
