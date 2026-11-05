@@ -18,10 +18,8 @@ import {
 
 export function ExperienceConversation({
   controller,
-  onProfiles,
 }: {
   controller: ExperienceController;
-  onProfiles?: () => void;
 }) {
   const profile = controller.profile;
   const scope = controller.selected;
@@ -58,7 +56,8 @@ export function ExperienceConversation({
           <div className="px-4 sm:hidden">
             <Button
               ref={toggle}
-              variant="ghost"
+              variant="secondary"
+              className="quiet-action"
               size="small"
               onClick={() => setNavigation(!navigation)}
               aria-expanded={navigation}
@@ -72,7 +71,7 @@ export function ExperienceConversation({
             id="experience-navigation"
             aria-label={collection}
             className={cx(
-              "shrink-0 overflow-y-auto border-border-secondary p-3 sm:block sm:w-52 sm:border-r",
+              "experience-sidebar shrink-0 overflow-y-auto p-3 sm:block",
               navigation ? "block" : "hidden",
             )}
             onKeyDown={(event) => {
@@ -83,15 +82,18 @@ export function ExperienceConversation({
             }}
           >
             {layout === "channels" && (
-              <p className="px-3 py-2 text-body-medium">
+              <p className="px-3 py-2 text-headline-medium">
                 {profile.profile.plan.assistantName}
               </p>
             )}
             <div className="flex flex-col gap-1">
-              {profile.scopes.map((item) => (
+              {(layout === "sessions"
+                ? [...profile.scopes].reverse()
+                : profile.scopes
+              ).map((item) => (
                 <Button
                   key={item.id}
-                  variant="ghost"
+                  variant="secondary"
                   size="small"
                   className="experience-nav-row w-full justify-start"
                   aria-current={item.id === scope.scopeId ? "page" : undefined}
@@ -103,17 +105,35 @@ export function ExperienceConversation({
                     setNavigation(false);
                   }}
                 >
-                  {layout === "bots" && <BotAvatar avatar={item.avatar} />}
+                  {layout === "bots" && (
+                    <span className="sidebar-avatar">
+                      <BotAvatar avatar={item.avatar} />
+                      <span
+                        className="scope-work-dot"
+                        data-working={profile.jobs.some(
+                          (job) => job.scopeId === item.id && jobActive(job),
+                        )}
+                      />
+                    </span>
+                  )}
                   {layout === "channels" && (
                     <RiHashtag className="size-4 shrink-0" aria-hidden />
                   )}
                   <span className="truncate">{item.label}</span>
+                  {layout !== "bots" && (
+                    <span
+                      className="scope-work-dot"
+                      data-working={profile.jobs.some(
+                        (job) => job.scopeId === item.id && jobActive(job),
+                      )}
+                    />
+                  )}
                 </Button>
               ))}
             </div>
             <button
               type="button"
-              className="quiet-link mx-3 mt-4 text-caption-1-regular text-text-secondary disabled:cursor-not-allowed"
+              className="quiet-action mx-1 mt-4 disabled:cursor-not-allowed"
               disabled={creating}
               onClick={() => {
                 if (layout === "sessions") {
@@ -182,25 +202,15 @@ export function ExperienceConversation({
         aria-label={selected?.label ?? "Conversation"}
       >
         {layout !== "single" && (
-          <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-2 text-caption-1-regular text-text-secondary sm:px-8">
-            {layout === "bots" && <BotAvatar avatar={selected?.avatar} />}
+          <div className="reading-column scope-header text-body-medium">
+            {layout === "bots" ? (
+              <BotAvatar avatar={selected?.avatar} />
+            ) : (
+              <span className="gaia-mark" aria-hidden="true" />
+            )}
             <span className="truncate">
-              {layout === "bots"
-                ? selected?.label
-                : profile.profile.plan.assistantName}
-              {layout !== "bots" ? ` · ${selected?.label}` : ""}
+              {layout === "channels" ? `#${selected?.label}` : selected?.label}
             </span>
-            {layout === "channels" && (
-              <span className="ml-auto">Shared memory, separate threads</span>
-            )}
-            {onProfiles && (
-              <button
-                className="quiet-link ml-auto shrink-0"
-                onClick={onProfiles}
-              >
-                Setups
-              </button>
-            )}
           </div>
         )}
         <ScopeConversation
@@ -278,7 +288,7 @@ function ScopeConversation({
         }}
       >
         <div
-          className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8 sm:px-8"
+          className="reading-column message-list flex flex-col py-8"
           role="log"
           aria-live="off"
           aria-label="Conversation"
@@ -300,7 +310,11 @@ function ScopeConversation({
                     : job.messageId === message.id) && !job.parentId,
               );
               return (
-                <div key={message.id} className="flex min-w-0 flex-col gap-3">
+                <div
+                  key={message.id}
+                  data-role={message.role}
+                  className="flex min-w-0 flex-col gap-3"
+                >
                   <article
                     aria-label={
                       message.role === "user"
@@ -310,8 +324,8 @@ function ScopeConversation({
                     className={cx(
                       "message-text min-w-0 wrap-anywhere",
                       message.role === "user"
-                        ? "max-w-[88%] self-end rounded-3xl bg-background-secondary-default px-5 py-3"
-                        : "w-full max-w-[72ch]",
+                        ? "owner-bubble self-end"
+                        : "w-full",
                     )}
                   >
                     {message.attachments?.map((image) => (
@@ -364,7 +378,7 @@ function ScopeConversation({
           <div ref={bottom} />
         </div>
       </div>
-      <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-3 px-4 pt-3 pb-5 sm:px-8 sm:pb-8">
+      <div className="reading-column composer-column flex shrink-0 flex-col gap-3 pt-3">
         {(entry.error || controller.error) && (
           <p role="alert" className="text-text-error-primary">
             {entry.error || controller.error}
@@ -710,7 +724,11 @@ function JobRows({
 }
 export function BotAvatar({ avatar = "bot-00" }: { avatar?: string }) {
   const local = /^bot-0[0-7]$/.test(avatar) ? avatar : "bot-00";
-  return <img src={`/bots/${local}.svg`} alt="" className="size-7 shrink-0" />;
+  return (
+    <span className="avatar-tile">
+      <img src={`/bots/${local}.svg`} alt="" />
+    </span>
+  );
 }
 
 export function RetryConfirmation({

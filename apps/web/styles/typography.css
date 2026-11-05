@@ -255,3 +255,10 @@
   --text-caption-2-bold--letter-spacing: 0.2px;
   --text-caption-2-bold--font-weight: 700;
 }
+
+@theme {
+  --text-message: 0.9375rem;
+  --text-message--line-height: 1.5rem;
+  --text-message--font-weight: 400;
+  --text-message--letter-spacing: 0;
+}

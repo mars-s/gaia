@@ -115,10 +115,14 @@ test("four layouts share one chat with distinct navigation and memory semantics"
       assert.doesNotMatch(markup, /<nav|New Bot|New session|New channel/);
     if (layout === "bots") {
       assert.match(markup, /New Bot/);
+      assert.match(markup, /sidebar-avatar/);
+      assert.match(markup, /avatar-tile/);
+      assert.doesNotMatch(markup, /border-border-secondary|>Setups</);
       assert.match(markup, /\/bots\/bot-01.svg/);
     }
     if (layout === "channels") {
-      assert.match(markup, /Shared memory, separate threads/);
+      assert.doesNotMatch(markup, /Shared memory, separate threads/);
+      assert.match(markup, /scope-header/);
       assert.match(markup, /New channel/);
       assert.doesNotMatch(markup, /New Bot/);
     }
@@ -140,7 +144,10 @@ test("only the selected sidebar row carries the current state in every list layo
     };
     controller.profile.scopes.push(other);
     for (const selected of [parsed.scope, other]) {
-      controller.selected = { profileId: parsed.profileId, scopeId: selected.id };
+      controller.selected = {
+        profileId: parsed.profileId,
+        scopeId: selected.id,
+      };
       controller.receive(controller.selected, { ...parsed, scope: selected });
       const navigation = html().match(/<nav\b[^>]*>(.*?)<\/nav>/s)?.[1];
       assert(navigation);
@@ -157,7 +164,7 @@ test("only the selected sidebar row carries the current state in every list layo
       assert.doesNotMatch(navigation, /bg-background-secondary-default/);
       assert.match(
         navigation,
-        /class="quiet-link [^"]*"[^>]*>New (?:Bot|channel|session)<\/button>/,
+        /class="quiet-action [^"]*"[^>]*>New (?:Bot|channel|session)<\/button>/,
       );
     }
     controller.pause();
@@ -515,4 +522,15 @@ test("retry card renders exact copy and Cancel never confirms", () => {
     /This action may already have happened\. Trying again could repeat it\./,
   );
   assert.match(uncertain, />Repeat action</);
+});
+
+test("sidebar working dots reserve their slot and follow actual active jobs", () => {
+  const { controller, html } = fixture("bots");
+  assert(controller.profile);
+  assert.match(html(), /scope-work-dot[^>]+data-working="false"/);
+  controller.profile.jobs = [progressJob()];
+  assert.match(html(), /scope-work-dot[^>]+data-working="true"/);
+  controller.profile.jobs = [];
+  assert.match(html(), /scope-work-dot[^>]+data-working="false"/);
+  controller.pause();
 });

@@ -1241,3 +1241,79 @@
     display: none;
   }
 }
+
+:root {
+  --color-surface-page: var(--color-white);
+  --color-surface-raised: var(--color-white);
+  --color-surface-sunken: var(--color-neutral-100);
+  --color-surface-hover: var(--color-neutral-100);
+  --color-surface-selected: var(--color-neutral-200);
+  --color-line: var(--color-neutral-200);
+  --color-line-strong: var(--color-neutral-300);
+  --color-ink: var(--color-neutral-950);
+  --color-ink-2: var(--color-neutral-600);
+  --color-ink-3: var(--color-neutral-500);
+  --color-accent: var(--color-accent-500);
+  --color-accent-strong: var(--color-accent-600);
+  --color-accent-ink: var(--color-white);
+  --color-accent-soft: var(--color-accent-100);
+  --color-danger: var(--color-red-600);
+  --color-focus: var(--color-accent-500);
+  --color-danger-soft: var(--color-red-100);
+  --space-gutter-narrow: 16px;
+  --space-gutter: 24px;
+  --space-message-gap: 24px;
+  --space-turn-gap: 32px;
+  --space-bubble-x: 16px;
+  --space-bubble-y: 10px;
+  --space-composer-bottom: 24px;
+  --space-row-y: 8px;
+  --space-row-x: 10px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-bubble: 20px;
+  --radius-composer: 24px;
+  --radius-full: 9999px;
+  --shadow-level-0: none;
+  --shadow-level-1: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-level-2: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.1);
+  --shadow-level-3: 0 16px 48px rgb(0 0 0 / 0.18);
+  --backdrop: rgb(0 0 0 / 0.32);
+  --motion-hover: 150ms ease;
+  --motion-popover: 150ms ease-out;
+  --motion-exit: 120ms ease-in;
+  --motion-drawer: 240ms cubic-bezier(0.32, 0.72, 0, 1);
+  --motion-card: 200ms ease-out;
+  --motion-pulse: 1800ms ease-in-out infinite;
+  --motion-dot: 150ms ease;
+}
+
+.dark {
+  --color-surface-page: var(--color-neutral-925);
+  --color-surface-raised: var(--color-neutral-900);
+  --color-surface-sunken: var(--color-neutral-900);
+  --color-surface-hover: var(--color-neutral-800);
+  --color-surface-selected: var(--color-neutral-800);
+  --color-line: var(--color-neutral-800);
+  --color-line-strong: var(--color-neutral-700);
+  --color-ink: var(--color-neutral-50);
+  --color-ink-2: var(--color-neutral-400);
+  --color-ink-3: var(--color-neutral-500);
+  --color-accent: var(--color-accent-400);
+  --color-accent-strong: var(--color-accent-300);
+  --color-accent-ink: var(--color-neutral-950);
+  --color-accent-soft: var(--color-accent-950);
+  --color-danger: var(--color-red-400);
+  --color-focus: var(--color-accent-400);
+  --color-danger-soft: color-mix(
+    in oklab,
+    var(--color-red-400) 16%,
+    transparent
+  );
+  --shadow-level-1: none;
+  --shadow-level-2: 0 12px 32px rgb(0 0 0 / 0.55);
+  --shadow-level-3: 0 16px 48px rgb(0 0 0 / 0.65);
+  --backdrop: rgb(0 0 0 / 0.56);
+}

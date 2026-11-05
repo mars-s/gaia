@@ -37,14 +37,12 @@ export function ProfileExperience({
   onOpen,
   onBack,
   onSetup,
-  onManage,
 }: {
   controller: ExperienceController;
   manage: boolean;
   onOpen: () => void;
   onBack: () => void;
   onSetup?: () => void;
-  onManage?: () => void;
 }) {
   useSyncExternalStore(controller.subscribe, controller.version);
   const [creating, setCreating] = useState(false);
@@ -61,9 +59,7 @@ export function ProfileExperience({
   }, [controller, manage]);
   const profile = controller.profile?.profile;
   if (!manage && profile?.kind === "ready")
-    return (
-      <ExperienceConversation controller={controller} onProfiles={onManage} />
-    );
+    return <ExperienceConversation controller={controller} />;
   return (
     <main className="min-h-0 flex-1 overflow-y-auto p-6">
       <section className="mx-auto flex w-full max-w-lg flex-col items-start gap-6">

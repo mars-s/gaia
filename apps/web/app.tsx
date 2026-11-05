@@ -1,3 +1,4 @@
+import { ChatSwitcher } from "./chat-switcher";
 import { createMainRestore, createNavigationGuard } from "./main-navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { RiCloseLine, RiOpenaiFill, RiSettings3Line } from "@remixicon/react";
@@ -289,68 +290,30 @@ export function App() {
     <div className="app-shell flex h-dvh flex-col bg-background-full text-body-regular text-text-primary">
       <header className="app-bar flex shrink-0 items-center justify-between gap-4 px-4">
         {connected && !controller.safeMode ? (
-          <details className="relative min-w-0">
-            <summary className="cursor-pointer truncate text-body-medium">
-              {experienceView === "chat"
-                ? (experiences.profile?.profile.plan.title ?? "Gaia")
-                : "Earlier chat"}
-            </summary>
-            <div
-              className="absolute left-0 z-20 flex max-h-96 w-64 max-w-[85vw] flex-col gap-2 overflow-y-auto rounded-xl border border-separator-border bg-background-full p-3 shadow-lg"
-              aria-label="Switch chat"
-            >
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="ghost"
-                  size="small"
-                  onClick={() => {
-                    experiences.original();
-                    setExperienceView("original");
-                  }}
-                >
-                  Earlier chat
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="small"
-                  onClick={() => void experiences.makeMain(null)}
-                >
-                  {experiences.mainId === null ? "Main chat" : "Make main"}
-                </Button>
-              </div>
-              {experiences.profiles
-                .filter((p) => p.kind === "ready")
-                .map((p) => (
-                  <div key={p.id} className="flex flex-wrap gap-2">
-                    <Button
-                      variant="ghost"
-                      size="small"
-                      onClick={() => {
-                        navigation.moved();
-                        const canNavigate = navigation.capture();
-                        void experiences
-                          .selectProfile(p.id, undefined, canNavigate)
-                          .then((opened) => {
-                            if (opened && canNavigate())
-                              setExperienceView("chat");
-                          });
-                      }}
-                    >
-                      {p.plan.title}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="small"
-                      aria-label={`Make ${p.plan.title} main`}
-                      onClick={() => void experiences.makeMain(p.id)}
-                    >
-                      {experiences.mainId === p.id ? "Main chat" : "Make main"}
-                    </Button>
-                  </div>
-                ))}
-              {experiences.error && <p role="alert">{experiences.error}</p>}
-            </div>
-          </details>
+          <ChatSwitcher
+            profiles={experiences.profiles}
+            error={experiences.error}
+            currentId={
+              experienceView === "chat"
+                ? (experiences.profile?.profile.id ?? null)
+                : null
+            }
+            mainId={experiences.mainId}
+            onSelect={(id) => {
+              if (id === null) {
+                experiences.original();
+                setExperienceView("original");
+                return;
+              }
+              navigation.moved();
+              const canNavigate = navigation.capture();
+              void experiences
+                .selectProfile(id, undefined, canNavigate)
+                .then((opened) => {
+                  if (opened && canNavigate()) setExperienceView("chat");
+                });
+            }}
+          />
         ) : (
           <span className="select-none text-body-medium">Gaia</span>
         )}
@@ -533,7 +496,6 @@ export function App() {
           controller={experiences}
           manage={experienceView === "profiles"}
           onOpen={() => setExperienceView("chat")}
-          onManage={() => setExperienceView("profiles")}
           onBack={() => {
             experiences.original();
             setExperienceView("original");
@@ -567,7 +529,7 @@ export function App() {
             }}
           >
             <section
-              className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 sm:px-8"
+              className="reading-column flex min-h-full flex-col"
               role="log"
               aria-label={
                 scope.kind === "home"
@@ -627,7 +589,7 @@ export function App() {
               <div ref={bottom} />
             </section>
           </div>
-          <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-3 px-4 pt-3 pb-5 sm:px-8 sm:pb-8">
+          <div className="reading-column composer-column flex shrink-0 flex-col gap-3 pt-3">
             {state.runtime?.mode === "safe" && (
               <p
                 role="status"

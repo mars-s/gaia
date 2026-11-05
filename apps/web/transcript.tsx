@@ -104,7 +104,7 @@ export function Transcript({
   });
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div className="flex flex-col gap-8 py-8">
+      <div className="message-list flex flex-col py-8">
         <ThreadPrimitiveMessages>
           {({ message }) => {
             const source = byId.get(message.id);
@@ -112,11 +112,10 @@ export function Transcript({
             return (
               <article
                 aria-label={user ? "You" : "Gaia"}
+                data-role={user ? "user" : "assistant"}
                 className={cx(
                   "message-text min-w-0 wrap-anywhere",
-                  user
-                    ? "max-w-[88%] self-end rounded-3xl bg-background-secondary-default px-5 py-3"
-                    : "w-full max-w-[72ch] self-start",
+                  user ? "owner-bubble self-end" : "w-full self-start",
                 )}
               >
                 {source?.attachments?.length ? (
@@ -133,16 +132,16 @@ export function Transcript({
                       message.status?.type === "running" ? "status" : undefined
                     }
                   >
-                    {message.status?.type === "running"
-                      ? (
-                        <span className="job-avatar-pulse">
-                          <span className="gaia-mark" aria-hidden="true" />
-                        </span>
-                      )
-                      : message.status?.type === "incomplete" &&
-                          message.status.reason === "cancelled"
-                        ? "Reply stopped."
-                        : "No reply received."}
+                    {message.status?.type === "running" ? (
+                      <span className="job-avatar-pulse">
+                        <span className="gaia-mark" aria-hidden="true" />
+                      </span>
+                    ) : message.status?.type === "incomplete" &&
+                      message.status.reason === "cancelled" ? (
+                      "Reply stopped."
+                    ) : (
+                      "No reply received."
+                    )}
                   </span>
                 ) : null}
                 {afterMessage?.(message.id)}
