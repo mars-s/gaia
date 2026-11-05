@@ -1,3 +1,5 @@
+import type { Models } from "@earendil-works/pi-ai";
+import { effortLevels } from "../model-effort.ts";
 import { randomUUID } from "node:crypto";
 import { configure } from "@earendil-works/pi-durable";
 import {
@@ -19,6 +21,7 @@ export function createAdmission({
   memory,
   anchor,
   readOwner,
+  models,
 }: {
   id: ExperienceId;
   gate(): void;
@@ -27,6 +30,7 @@ export function createAdmission({
   memory(state: State, scopeId: string): State["memory"];
   anchor: ReturnType<typeof createJobTask>;
   readOwner?(): OwnerState | undefined;
+  models: Models;
 }) {
   function admission(job: StoredJob) {
     return {
@@ -81,6 +85,22 @@ export function createAdmission({
           state.jobs.filter((j) => j.public.parentId === parentId).length >= 8)
       )
         throw new HttpError(409, "Subordinate limit reached.");
+      const model = models
+        .getModels("openai-codex")
+        .find((model) => model.id === scope.chat.modelId);
+      if (!model)
+        throw new HttpError(
+          409,
+          "This model is not available now. Choose another model to send your message.",
+        );
+      if (
+        scope.chat.thinkingLevel !== undefined &&
+        !effortLevels(model).includes(scope.chat.thinkingLevel)
+      )
+        throw new HttpError(
+          409,
+          "This model no longer supports that effort. Choose another effort level.",
+        );
       const storedImages = await tx.doc(Images);
       const files = (input.attachments ?? []).map((fileId) => {
         const file = storedImages.images.find(
@@ -89,11 +109,7 @@ export function createAdmission({
         if (!file) throw new HttpError(404, "Unknown scoped image.");
         return file.attachment;
       });
-      if (
-        files.length &&
-        !scope.chat.models.find((m) => m.id === scope.chat.modelId)
-          ?.capabilities?.images
-      )
+      if (files.length && !model.input.includes("image"))
         throw new HttpError(409, "This model does not accept images.");
       const selectedMemory = memory(state, scopeId);
       const owner = readOwner?.();

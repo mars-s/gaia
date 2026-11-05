@@ -24,7 +24,7 @@ mock.method(tls, "connect", () => blocked("tls.connect"));
 
 const faux = fauxProvider({
   provider: "openai-codex",
-  models: [{ id: "gpt-6.1-sol" }],
+  models: [{ id: "gpt-6.1-sol", reasoning: true }],
   tokensPerSecond: 100000,
 });
 const contexts: { messages: TranscriptContext["messages"]; tools: string[] }[] =

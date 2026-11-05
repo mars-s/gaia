@@ -1,3 +1,4 @@
+import { modelMenu, readRecentModels, rememberModel } from "./recent-models.ts";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   RiAddLine,
@@ -49,6 +50,11 @@ export function ComposerControls({
 }) {
   const effortId = useId();
   const [open, setOpen] = useState(false);
+  const [menuSelection, setMenuSelection] = useState<string>();
+  const [recent, setRecent] = useState<string[]>([]);
+  const [edges, setEdges] = useState({ top: false, bottom: false });
+  const recentPicks = useRef<string[]>([]);
+  const modelScroll = useRef<HTMLDivElement>(null);
   const chosenModel = useRef<HTMLLabelElement>(null);
   const modelId = selection?.modelId ?? chat.modelId;
   const model = chat.models.find((model) => model.id === modelId);
@@ -56,18 +62,75 @@ export function ComposerControls({
   const selectedLevel = selection
     ? selection.thinkingLevel
     : chat.thinkingLevel;
+  const { primary, remaining } = modelMenu(
+    chat.models,
+    open ? (menuSelection ?? modelId) : modelId,
+    recent,
+  );
+  function updateEdges() {
+    const node = modelScroll.current;
+    if (node)
+      setEdges({
+        top: node.scrollTop > 1,
+        bottom: node.scrollTop + node.clientHeight < node.scrollHeight - 1,
+      });
+  }
   useEffect(() => {
-    if (open) chosenModel.current?.scrollIntoView({ block: "nearest" });
-  }, [open, modelId]);
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      chosenModel.current?.scrollIntoView({ block: "center" });
+      updateEdges();
+    });
+    const observer = new ResizeObserver(updateEdges);
+    if (modelScroll.current) observer.observe(modelScroll.current);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [open, modelId, chat.models.length]);
+  function row(item: (typeof primary)[number]) {
+    const unavailable = !chat.models.some((model) => model.id === item.id);
+    return (
+      <Radio
+        ref={item.id === modelId ? chosenModel : undefined}
+        key={item.id}
+        value={item.id}
+        isDisabled={unavailable}
+        className="model-option"
+      >
+        <span className="min-w-0 wrap-anywhere">
+          {item.name}
+          {unavailable && (
+            <span className="model-unavailable">
+              Not available now. Choose another model to send your message.
+            </span>
+          )}
+        </span>
+        <span className="model-radio" aria-hidden />
+      </Radio>
+    );
+  }
   return (
-    <DialogTrigger onOpenChange={setOpen}>
+    <DialogTrigger
+      onOpenChange={(next) => {
+        if (next) {
+          recentPicks.current = readRecentModels();
+          setRecent(recentPicks.current);
+          setMenuSelection(modelId);
+        }
+        setOpen(next);
+      }}
+    >
       <AriaButton
         type="button"
-        aria-label={`Model and reasoning effort, ${model?.name ?? modelId}${selectedLevel ? `, ${effortLabels[selectedLevel]}` : ""}`}
+        aria-label={`Model and reasoning effort, ${model?.name ?? modelId}${!model ? ", Not available now" : ""}${selectedLevel ? `, ${effortLabels[selectedLevel]}` : ""}`}
         isDisabled={disabled}
         className="model-trigger col-start-2 row-start-2 flex h-9 min-w-0 max-w-44 items-center justify-self-end gap-1 rounded-full px-2 text-caption-1-medium text-text-secondary outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring disabled:opacity-40 sm:col-start-3 sm:row-start-1"
       >
-        <span className="truncate">{model?.name ?? modelId}</span>
+        <span className="truncate">
+          {model?.name ?? modelId}
+          {!model && " · Not available now"}
+        </span>
         <RiArrowDownSLine className="size-4 shrink-0" aria-hidden />
       </AriaButton>
       <Popover placement="top end" offset={12} className="model-popover">
@@ -75,42 +138,59 @@ export function ComposerControls({
           aria-label="Model and reasoning effort"
           className="model-dialog outline-none"
         >
-          <p className="px-4 pt-3 pb-1 text-caption-1-medium text-text-secondary">
-            Models
-          </p>
-          <RadioGroup
-            aria-label="Model"
-            value={modelId}
-            onChange={(id) => {
-              const supported =
-                chat.models.find((item) => item.id === id)?.capabilities
-                  ?.thinkingLevels ?? [];
-              onSelect({
-                modelId: id,
-                thinkingLevel:
-                  selectedLevel && supported.includes(selectedLevel)
-                    ? selectedLevel
-                    : supported.includes("medium")
-                      ? "medium"
-                      : supported[0],
-              });
-            }}
-            isDisabled={disabled}
-            className="model-options"
+          <div
+            className="model-scroll-frame"
+            data-clipped-top={edges.top}
+            data-clipped-bottom={edges.bottom}
           >
-            {chat.models.map((model) => (
-              <Radio
-                ref={model.id === modelId ? chosenModel : undefined}
-                key={model.id}
-                value={model.id}
-                className="model-option"
+            <div
+              className="model-options"
+              ref={modelScroll}
+              onScroll={updateEdges}
+            >
+              <p className="model-heading text-caption-1-medium text-text-secondary">
+                Models
+              </p>
+              <RadioGroup
+                aria-label="Model"
+                value={modelId}
+                onChange={(id) => {
+                  const supported =
+                    chat.models.find((item) => item.id === id)?.capabilities
+                      ?.thinkingLevels ?? [];
+                  // Keep row order stable during arrow-key navigation. Refresh recents on the next opening.
+                  recentPicks.current = rememberModel(id, recentPicks.current);
+                  onSelect({
+                    modelId: id,
+                    thinkingLevel:
+                      selectedLevel && supported.includes(selectedLevel)
+                        ? selectedLevel
+                        : supported.includes("medium")
+                          ? "medium"
+                          : supported[0],
+                  });
+                }}
+                isDisabled={disabled}
+                className="model-radio-group"
               >
-                <span className="min-w-0 wrap-anywhere">{model.name}</span>
-                <span className="model-radio" aria-hidden />
-              </Radio>
-            ))}
-          </RadioGroup>
-          {levels.length > 1 && selectedLevel ? (
+                {chat.models.length > 6 && (
+                  <p className="model-section text-caption-1-medium text-text-secondary">
+                    Recent
+                  </p>
+                )}
+                {primary.map(row)}
+                {remaining.length > 0 && (
+                  <details className="model-all" onToggle={updateEdges}>
+                    <summary>All models ({remaining.length})</summary>
+                    {remaining.map(row)}
+                  </details>
+                )}
+              </RadioGroup>
+            </div>
+          </div>
+          {levels.length > 1 &&
+          selectedLevel &&
+          levels.includes(selectedLevel) ? (
             <div className="effort-controls">
               <label htmlFor={effortId} className="text-body-medium">
                 <span className="text-text-secondary">Effort </span>

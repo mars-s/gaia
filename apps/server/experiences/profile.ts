@@ -126,6 +126,7 @@ export async function openProfile(
     memory,
     anchor,
     readOwner: options.readOwner,
+    models: options.models,
   });
   const tools = createExperienceTools({
     read,
@@ -206,6 +207,17 @@ export async function openProfile(
               partialText: job.partialText,
             };
   });
+  function liveModels() {
+    return options.models.getModels("openai-codex").map((model) => ({
+      id: model.id,
+      name: model.name,
+      contextWindow: model.contextWindow,
+      capabilities: {
+        images: model.input.includes("image"),
+        thinkingLevels: effortLevels(model),
+      },
+    }));
+  }
   async function addScope(
     state: State,
     tx: Tx,
@@ -235,15 +247,8 @@ export async function openProfile(
       },
       conversationId: conversation.id,
       chat: {
-        models: options.models.getModels("openai-codex").map((model) => ({
-          id: model.id,
-          name: model.name,
-          contextWindow: model.contextWindow,
-          capabilities: {
-            images: model.input.includes("image"),
-            thinkingLevels: effortLevels(model),
-          },
-        })),
+        // Old GOOD requires this cache. Active reads and validation use Pi's live catalogue.
+        models: liveModels(),
         modelId: "gpt-6.1-sol",
         thinkingLevel: "high",
         compaction: { kind: "idle" },
@@ -312,7 +317,7 @@ export async function openProfile(
       jobs: state.jobs
         .filter((j) => j.public.scopeId === scopeId)
         .map((j) => j.public),
-      chat: scope.chat,
+      chat: { ...scope.chat, models: liveModels() },
       memoryRevision: memory(state, scopeId).at(-1)?.revision ?? 0,
     });
   }
@@ -414,11 +419,15 @@ export async function openProfile(
         gate();
         const state = await read();
         const scope = scopeIn(state, scopeId);
-        if (!scope.chat.models.some((model) => model.id === input.modelId))
-          throw new HttpError(400, "Unknown OpenAI model.");
+        const models = liveModels();
+        if (!models.some((model) => model.id === input.modelId))
+          throw new HttpError(
+            400,
+            "This model is not available now. Choose another model.",
+          );
         if (
           input.thinkingLevel !== undefined &&
-          !scope.chat.models
+          !models
             .find((model) => model.id === input.modelId)
             ?.capabilities?.thinkingLevels.includes(input.thinkingLevel)
         )
