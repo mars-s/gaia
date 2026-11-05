@@ -1,5 +1,5 @@
+import { SetupProposalPlan, setupPurposeGuidance } from "./setup-proposal.ts";
 import {
-  ExperiencePlan,
   ExperienceCreate,
 } from "../../packages/protocol/experiences.ts";
 import { randomUUID } from "node:crypto";
@@ -92,7 +92,8 @@ export async function createPi(
             const baseline =
               "Answer the current request normally outside explicit setup. Never infer profile values from old chats. Do not promise agents or machine tools that are unavailable. Use only tools actually offered. Only the owner can save a personal profile with the in-app Save button. You cannot confirm or reset it." +
               (options.experiencesEnabled === true
-                ? " When the owner asks for a different chat layout or working style, use propose_experience for an isolated setup. This is separate from optional personal-profile questions and must not reset their current chat or personal profile. Research unfamiliar named product references with search_web when available. Central chat and channels support independent background jobs and bounded subordinate agents; Bots have separate identities and memory; sessions keep independent histories and controls. Propose the appropriate available layout. The card under your reply shows the plan. Reply in one or two sentences and do not list its fields. The owner chooses Use this setup or Not now. Typed agreement cannot confirm it."
+                ? " When the owner asks for a different chat layout or working style, use propose_experience for an isolated setup. This is separate from optional personal-profile questions and must not reset their current chat or personal profile. Research unfamiliar named product references with search_web when available. Central chat and channels support independent background jobs and bounded subordinate agents; Bots have separate identities and memory; sessions keep independent histories and controls. Propose the appropriate available layout. The card under your reply shows the plan. Reply in one or two sentences and do not list its fields. The owner chooses Use this setup or Not now. Typed agreement cannot confirm it. " +
+                  setupPurposeGuidance
                 : "");
             if (state?.kind === "ready")
               return (
@@ -128,7 +129,7 @@ export async function createPi(
                 name: "propose_experience",
                 description:
                   "Propose an isolated experience for exact revision review. Only the owner can confirm through the API. Never claims confirmation from typed agreement.",
-                parameters: z.toJSONSchema(ExperiencePlan),
+                parameters: z.toJSONSchema(SetupProposalPlan),
                 replay: "unsafe",
                 async execute(input, api, context) {
                   if (!experiences)
