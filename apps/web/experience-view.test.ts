@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   ExperienceState,
   ExperienceScopeState,
+  ScopeId,
   type ExperienceLayout,
 } from "../../packages/protocol/experiences.ts";
 import { ExperienceConversation } from "./experiences/view";
@@ -156,4 +157,47 @@ test("independent real activity descriptions disappear on completion", () => {
     /Checking fixture|Stop Check fixture|Trying again could repeat/,
   );
   controller.pause();
+});
+
+test("one assistant keeps the same activity avatar across channels and sessions", () => {
+  for (const layout of ["channels", "sessions"] as const) {
+    const { controller, parsed, html } = fixture(layout);
+    assert(controller.profile);
+    controller.profile.scopes.unshift({
+      ...parsed.scope,
+      id: ScopeId.parse("33333333-3333-4333-8333-333333333333"),
+      avatar: "bot-02",
+    });
+    parsed.jobs = ExperienceScopeState.shape.jobs.parse([
+      {
+        id: crypto.randomUUID(),
+        profileId: pid,
+        scopeId: sid,
+        requestId: crypto.randomUUID(),
+        messageId: "input",
+        answerId: "ack",
+        title: "Shared assistant activity",
+        contextRevision: 0,
+        state: {
+          kind: "running",
+          startedAt: "now",
+          activity: [
+            {
+              id: "activity",
+              callId: "call",
+              description: "Checking this conversation",
+              kind: "other",
+            },
+          ],
+        },
+      },
+    ]);
+    parsed.revision++;
+    assert(controller.selected);
+    controller.receive(controller.selected, { ...parsed });
+    const markup = html();
+    assert.match(markup, /src="\/bots\/bot-02.svg"/);
+    assert.doesNotMatch(markup, /src="\/bots\/bot-01.svg"/);
+    controller.pause();
+  }
 });

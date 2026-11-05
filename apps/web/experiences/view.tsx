@@ -528,9 +528,11 @@ function JobRows({
   const [confirm, setConfirm] = useState(false);
   const state = job.state;
   const entry = controller.entry(scope);
-  const avatar = controller.profile?.scopes.find(
-    (item) => item.id === job.scopeId,
-  )?.avatar;
+  const profile = controller.profile;
+  const avatar =
+    profile?.profile.plan.layout === "bots"
+      ? profile.scopes.find((item) => item.id === job.scopeId)?.avatar
+      : profile?.scopes[0]?.avatar;
   const activities =
     state.kind === "running" || state.kind === "stopping" ? state.activity : [];
   if (state.kind === "completed")

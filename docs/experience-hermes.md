@@ -14,7 +14,7 @@ The controller stores `{ version: 1, selected: { profileId, scopeId } }` in `gai
 
 `original()` cancels outstanding controller requests, invalidates selection generations, closes the subscription and clears the selected profile and scope. The Profiles screen calls it for Original chat and Set up in chat. A delayed restoration cannot replace later Original chat or profile navigation. Scoped model, compaction and job response delivery also checks its request's abort signal, including after pause and resume.
 
-The parent must add the initial view restoration hook in `apps/web/app.tsx`. This file remains outside this worker's edit scope. Add this effect after the existing effects that pause or resume the experience controller. React Strict Mode can restart the effect safely because newer selection requests invalidate older ones.
+The initial view restoration hook is integrated in `apps/web/app.tsx`, after the effects that pause or resume the experience controller. React Strict Mode can restart it safely because newer selection requests invalidate older ones. The effect below records the client integration.
 
 ```tsx
 useEffect(() => {
@@ -33,7 +33,7 @@ Any additional top-level Original chat navigation must call `experiences.origina
 
 `apps/web/experience-session-selection.test.ts` drives the existing headless controller with real public HTTP profile reads and model changes. Subscription callbacks are controlled by the test so retired callbacks can be delivered deliberately. Tests cover exact-pair restoration, separate drafts, scoped model and effort controls, Original chat preference, malformed and unavailable selections, denied storage, and late navigation responses. The pause and resume regression failed before the request-abort fence, reporting `second` instead of `gpt-6.1-sol`, then passed after the fix.
 
-This worker does not claim browser reload acceptance until the parent adds the app hook and checks the rendered client. The fixture covers absent profile and scope UUIDs because the public API has no deletion route. No owner store, credentials, protected core, auth, native app or managed launcher is edited.
+Controller tests do not prove native reload acceptance. The root acceptance run verifies that surface separately. The fixture covers absent profile and scope UUIDs because the public API has no deletion route. No owner store, credentials, protected core, auth, native app or managed launcher is edited.
 
 ## Verification
 
