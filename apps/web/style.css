@@ -449,7 +449,7 @@ body {
   border-right: 1px solid var(--color-line);
   background: var(--color-surface-page);
 }
-.experience-nav-row {
+.experience-nav-row.secondary-action {
   min-height: 36px;
   width: 100%;
   justify-content: flex-start;
@@ -457,6 +457,7 @@ body {
   border-radius: var(--radius-sm);
   padding: var(--space-row-y) var(--space-row-x);
   background: transparent;
+  background-image: none;
   color: var(--color-ink);
   box-shadow: none;
   font-weight: 400;
@@ -472,10 +473,10 @@ body {
   width: 100%;
   padding: 0;
 }
-.experience-nav-row:hover {
+.experience-nav-row.secondary-action:hover {
   background: var(--color-surface-hover);
 }
-.experience-nav-row[aria-current="page"] {
+.experience-nav-row.secondary-action[aria-current="page"] {
   background: var(--color-surface-selected);
   font-weight: 500;
 }

@@ -186,3 +186,11 @@ test("following survives delayed card and image layout without pulling back a re
   assert.match(theme, /--color-link: var\(--color-accent-700\)/);
   assert.match(theme, /--color-link: var\(--color-accent-300\)/);
  });
+
+test("sidebar rows override the shared secondary fill in both themes and tint only interaction or selection", () => {
+  assert.match(css, /experience-nav-row.secondary-action \{[^}]*background: transparent;\s*background-image: none/);
+  assert.match(css, /experience-nav-row.secondary-action:hover \{\s*background: var\(--color-surface-hover\)/);
+  assert.match(css, /experience-nav-row.secondary-action\[aria-current="page"\] \{\s*background: var\(--color-surface-selected\)/);
+  assert.doesNotMatch(css, /\.dark \.experience-nav-row/);
+  assert.match(css, /experience-nav-row:focus-visible/);
+});
