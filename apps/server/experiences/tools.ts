@@ -42,6 +42,23 @@ export function createExperienceTools(bindings: Bindings) {
   });
   const tools = [
     defineTool({
+      name: "list_scopes",
+      description:
+        "Discover destination scopes in this profile by ID, label, purpose and avatar. Does not include transcripts or memory.",
+      parameters: z.toJSONSchema(z.strictObject({})),
+      async execute(_input, api) {
+        const { state } = await owner(api);
+        return result(
+          state.scopes.map(({ public: scope }) => ({
+            id: scope.id,
+            label: scope.label,
+            purpose: scope.purpose,
+            avatar: scope.avatar,
+          })),
+        );
+      },
+    }),
+    defineTool({
       name: "remember_fact",
       description:
         "Store an explicit fact with source job and scope provenance. Use expectedRevision from read_memory.",

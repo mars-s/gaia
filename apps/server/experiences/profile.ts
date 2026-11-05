@@ -37,6 +37,7 @@ import { ProfileDoc, State, Scope, terminal, now } from "./state.ts";
 import { Capacity } from "./capacity.ts";
 import { createExperienceTools } from "./tools.ts";
 import { trackedExtension } from "./external.ts";
+import { defaultAvatar } from "./avatars.ts";
 
 export type ProfileOptions = {
   models: Models;
@@ -219,6 +220,12 @@ export async function openProfile(
     const scope = {
       public: {
         ...plan,
+        avatar:
+          plan.avatar ??
+          defaultAvatar([
+            ...state.scopes.map((scope) => scope.public.avatar),
+            ...(state.profile?.plan.scopes.map((scope) => scope.avatar) ?? []),
+          ]),
         id: ScopeId.parse(randomUUID()),
         profileId: id,
         createdAt: now(),
