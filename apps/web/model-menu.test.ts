@@ -195,7 +195,7 @@ test("trigger effort reflects supported, fixed, unsupported and unavailable sele
         },
       }),
     );
-    assert.match(html, new RegExp(` · ${text}`));
+    assert.match(html, new RegExp(`model-trigger-effort">· ${text}`));
     assert.match(html, /GPT-6.1 Sol/);
   }
   assert.equal(

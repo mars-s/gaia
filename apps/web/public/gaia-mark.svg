@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
   <!-- Gaia in-house artwork. Copyright 2026 Gaia contributors. SPDX-License-Identifier: Apache-2.0 -->
-  <circle cx="14" cy="14" r="14" fill="white"/>
-  <circle cx="21" cy="7" r="3" fill="black"/>
+  <circle cx="14" cy="14" r="14" fill="#fa29a0"/>
+  <circle cx="21" cy="7" r="3" fill="white"/>
 </svg>

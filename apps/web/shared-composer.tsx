@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RiArrowUpLine, RiStopFill } from "@remixicon/react";
 import { IconButton } from "./components/base/buttons/icon-button";
 import { Textarea } from "./components/base/textarea/textarea";
@@ -60,6 +60,24 @@ export function SharedComposer({
   onSelect,
   onSend,
 }: ComposerProps) {
+  const composerElement = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    const column = composerElement.current?.parentElement;
+    const holder = column?.parentElement;
+    if (!column || !holder) return;
+    const measure = () =>
+      holder.style.setProperty(
+        "--composer-height",
+        `${column.getBoundingClientRect().height}px`,
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(column);
+    return () => {
+      observer.disconnect();
+      holder.style.removeProperty("--composer-height");
+    };
+  }, []);
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
   const file = useRef<HTMLInputElement>(null);
@@ -68,6 +86,7 @@ export function SharedComposer({
   }
   return (
     <form
+      ref={composerElement}
       className={cx(
         "composer flex flex-col gap-2 p-2",
         dragging && "composer-dragging",

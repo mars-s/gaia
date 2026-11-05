@@ -84,7 +84,7 @@ export function ExperienceConversation({
       }}
     >
       <div
-        className="sidebar-switcher"
+        className="sidebar-switcher drawer-switcher"
         onClick={(event) => {
           if (
             event.target instanceof Element &&
@@ -220,7 +220,9 @@ export function ExperienceConversation({
           layout !== "single" && "has-side",
         )}
       >
-        {layout !== "single" && <div className="app-bar-side" />}
+        {layout !== "single" && (
+          <div className="app-bar-side sidebar-header">{switcher}</div>
+        )}
         <div className="app-bar-column reading-column">
           <div className="flex min-w-0 items-center gap-2">
             {layout !== "single" && (
@@ -322,7 +324,7 @@ function ScopeConversation({
         {announcement}
       </div>
       <div
-        className="min-h-0 flex-1 overflow-y-auto"
+        className="conversation-scroll min-h-0 flex-1 overflow-y-auto"
         onScroll={(event) => {
           const el = event.currentTarget;
           follow.current =
@@ -508,7 +510,13 @@ function ScopeConversation({
         )}
         <SharedComposer
           label="Message assistant"
-          placeholder="Message Gaia…"
+          placeholder={
+            controller.profile?.profile.plan.layout === "bots"
+              ? `Message ${state?.scope.label ?? "Home"}…`
+              : controller.profile?.profile.plan.layout === "channels"
+                ? `Message #${state?.scope.label ?? "Home"}…`
+                : `Message ${controller.profile?.profile.plan.assistantName ?? "Gaia"}…`
+          }
           draft={draft?.text ?? ""}
           images={draft?.images ?? []}
           ready={Boolean(draft)}

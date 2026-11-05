@@ -165,3 +165,17 @@ export function ExperienceProposalNotice({
     </section>
   );
 }
+
+export function interviewOfferAllowed(
+  proposals: Experience[],
+  latestAnswerId?: string,
+): boolean {
+  return !proposals.some(
+    (item) =>
+      (item.kind === "proposed" &&
+        !item.proposal?.dismissedAt &&
+        !item.proposal?.supersededBy) ||
+      (Boolean(latestAnswerId) &&
+        item.proposal?.answerMessageId === latestAnswerId),
+  );
+}

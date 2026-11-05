@@ -33,6 +33,7 @@ import { createExperienceController } from "./experiences/controller";
 import {
   ExperienceProposalNotice,
   proposalsAfterAnswer,
+  interviewOfferAllowed,
 } from "./experiences/proposal";
 
 export function App() {
@@ -377,10 +378,12 @@ export function App() {
   return (
     <div className="app-shell flex h-dvh flex-col bg-background-full text-body-regular text-text-primary">
       {!setupShell && (
-        <header className="app-bar flex shrink-0 items-center">
+        <header
+          className={`app-bar flex shrink-0 items-center${accountOpen ? " settings-bar" : ""}`}
+        >
           <div className="app-bar-column reading-column">
             {accountOpen ? (
-              <span className="text-body-medium">Settings</span>
+              <span className="settings-title">Settings</span>
             ) : connected && !controller.safeMode ? (
               setupSwitcher
             ) : (
@@ -611,7 +614,7 @@ export function App() {
             />
           )}
           <div
-            className="min-h-0 flex-1 overflow-y-auto"
+            className="conversation-scroll min-h-0 flex-1 overflow-y-auto"
             ref={transcript}
             onScroll={() => {
               const el = transcript.current;
@@ -662,6 +665,12 @@ export function App() {
                     profile.kind === "interview" ||
                     profile.kind === "proposed" ||
                     (profile.kind === "new" &&
+                      interviewOfferAllowed(
+                        experiences.profiles,
+                        active?.thread.messages.findLast(
+                          (m) => m.role === "assistant",
+                        )?.id,
+                      ) &&
                       active?.thread.run.kind === "idle" &&
                       active.thread.messages.some(
                         (message) =>

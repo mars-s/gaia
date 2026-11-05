@@ -484,7 +484,7 @@ export function ComposerControls({
           {loading ? "Loading models…" : name}
         </span>
         {levelText && (
-          <span className="model-trigger-effort"> · {levelText}</span>
+          <span className="model-trigger-effort">· {levelText}</span>
         )}
         <RiArrowDownSLine className="size-4 shrink-0" aria-hidden />
       </AriaButton>

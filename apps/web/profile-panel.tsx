@@ -37,6 +37,30 @@ export function ProfilePanel({
       </div>
     );
   if (!state) return null;
+  if (!account && state.kind === "new")
+    return (
+      <section
+        aria-label="About you"
+        className="setup-card interview-offer rounded-xl border border-separator-border p-5"
+      >
+        <p>
+          Want me to fit Gaia around how you work? It takes a minute, and you
+          can skip it.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button disabled={disabled} onClick={() => onAction("start")}>
+            Set up
+          </Button>
+          <button
+            className="quiet-action"
+            disabled={skipDisabled}
+            onClick={() => onAction("skip")}
+          >
+            Not now
+          </button>
+        </div>
+      </section>
+    );
   const details =
     state.kind === "proposed" || state.kind === "ready"
       ? state.profile
