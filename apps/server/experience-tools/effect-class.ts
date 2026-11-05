@@ -14,6 +14,6 @@ export function defineClassifiedTool(
   return tool;
 }
 
-export function effectClassOf(tool: Tool): EffectClass {
-  return classes.get(tool) ?? "effect";
+export function effectClassOf(tool: Tool): EffectClass | undefined {
+  return classes.get(tool);
 }

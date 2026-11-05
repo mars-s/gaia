@@ -48,6 +48,31 @@ function alive(pid: number) {
     return false;
   }
 }
+test("failed started-process evidence still cancels and joins the owned process", async (t) => {
+  if (!(await canSignalOwnedChild()))
+    return t.skip(
+      "Protected candidate sandbox denies signalling owned processes.",
+    );
+  let pid: number | undefined;
+  await assert.rejects(
+    runGuardedProcess({
+      executable: process.execPath,
+      args: ["-e", "setInterval(() => {}, 100)"],
+      cwd: tmpdir(),
+      signal: new AbortController().signal,
+      timeoutMs: 3000,
+      maxBytes: 1000,
+      onStarted(startedPid) {
+        pid = startedPid;
+        throw new Error("Owned evidence failure");
+      },
+    }),
+    (error: unknown) =>
+      error instanceof NativeProcessFailure && error.lifetime === "joined",
+  );
+  assert(pid);
+  assert.equal(alive(pid), false);
+});
 test("guarded argv preserves Unicode, exit status, environment and output bounds", async (t) => {
   if (!(await canSignalOwnedChild()))
     return t.skip(

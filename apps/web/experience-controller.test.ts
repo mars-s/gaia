@@ -531,3 +531,59 @@ test("pause closes the selected stream and resume replaces it without clearing t
   else assert.fail("Draft unavailable");
   controller.pause();
 });
+
+test("started effects require confirmation and only flagged jobs send repeatEffects", async () => {
+  const requests: unknown[] = [];
+  const { controller } = harness({
+    retry: async (_p, _j, input) => {
+      requests.push(input);
+      return {
+        profileId: pid,
+        scopeId: sid,
+        messageId: "user",
+        jobId: jid,
+        state: job.state,
+      };
+    },
+  });
+  const completed: ExperienceJob = {
+    ...job,
+    dispatchedEffect: true,
+    state: {
+      kind: "completed",
+      finishedAt: "now",
+      text: "Done",
+      citations: [],
+    },
+  };
+  await controller.retry(scope, completed);
+  await controller.retry(scope, completed, true);
+  assert.equal(requests.length, 0);
+  await controller.retry(scope, completed, false, true);
+  assert.deepEqual(Object.keys(requests[0]!).sort(), [
+    "repeatEffects",
+    "requestId",
+  ]);
+  const uncertain: ExperienceJob = {
+    ...completed,
+    state: {
+      kind: "uncertain",
+      interruptedAt: "now",
+      partialText: "",
+      message: "Review",
+      invocationIds: ["one"],
+    },
+  };
+  await controller.retry(scope, uncertain, false, true);
+  assert.equal(requests.length, 1);
+  await controller.retry(scope, uncertain, true, true);
+  assert.deepEqual(Object.keys(requests[1]!).sort(), [
+    "repeatUncertain",
+    "requestId",
+  ]);
+  const legacy = { ...completed };
+  delete legacy.dispatchedEffect;
+  await controller.retry(scope, legacy, false, true);
+  assert.deepEqual(Object.keys(requests[2]!), ["requestId"]);
+  controller.pause();
+});

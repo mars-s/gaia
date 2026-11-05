@@ -683,7 +683,7 @@ function JobRows({
             className="quiet-link"
             disabled={entry.actions.has(job.id)}
             onClick={() =>
-              state.kind === "uncertain"
+              state.kind === "uncertain" || job.dispatchedEffect
                 ? setConfirm(true)
                 : void controller.retry(scope, job)
             }
@@ -693,24 +693,20 @@ function JobRows({
         )}
       </div>
       {confirm && (
-        <div role="alert" className="flex flex-wrap items-center gap-3">
-          <p>
-            This action may already have happened. Trying again could repeat it.
-          </p>
-          <button
-            className="quiet-link"
-            disabled={entry.actions.has(job.id)}
-            onClick={() => {
-              setConfirm(false);
-              void controller.retry(scope, job, true);
-            }}
-          >
-            Repeat action
-          </button>
-          <button className="quiet-link" onClick={() => setConfirm(false)}>
-            Cancel
-          </button>
-        </div>
+        <RetryConfirmation
+          uncertain={state.kind === "uncertain"}
+          disabled={entry.actions.has(job.id)}
+          onConfirm={() => {
+            setConfirm(false);
+            void controller.retry(
+              scope,
+              job,
+              state.kind === "uncertain",
+              state.kind !== "uncertain",
+            );
+          }}
+          onCancel={() => setConfirm(false)}
+        />
       )}
     </div>
   );
@@ -718,4 +714,32 @@ function JobRows({
 export function BotAvatar({ avatar = "bot-00" }: { avatar?: string }) {
   const local = /^bot-0[0-7]$/.test(avatar) ? avatar : "bot-00";
   return <img src={`/bots/${local}.svg`} alt="" className="size-7 shrink-0" />;
+}
+
+export function RetryConfirmation({
+  uncertain,
+  disabled,
+  onConfirm,
+  onCancel,
+}: {
+  uncertain: boolean;
+  disabled: boolean;
+  onConfirm(): void;
+  onCancel(): void;
+}) {
+  return (
+    <div role="alert" className="flex flex-wrap items-center gap-3">
+      <p>
+        {uncertain
+          ? "This action may already have happened. Trying again could repeat it."
+          : "Gaia already started an action in this attempt. Trying again runs the whole request again, so that action may happen twice."}
+      </p>
+      <button className="quiet-link" disabled={disabled} onClick={onConfirm}>
+        {uncertain ? "Repeat action" : "Run it again"}
+      </button>
+      <button className="quiet-link" onClick={onCancel}>
+        Cancel
+      </button>
+    </div>
+  );
 }

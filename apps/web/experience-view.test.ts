@@ -10,6 +10,7 @@ import {
 } from "../../packages/protocol/experiences.ts";
 import {
   ExperienceConversation,
+  RetryConfirmation,
   createActivityAnnouncer,
 } from "./experiences/view";
 import { createExperienceController } from "./experiences/controller";
@@ -416,4 +417,45 @@ test("pending Stop keeps its exact-job accessible name without exposing progress
     /PRIVATE OWNER PROMPT|Stopping/,
   );
   controller.pause();
+});
+
+test("retry card renders exact copy and Cancel never confirms", () => {
+  let confirmed = 0,
+    cancelled = 0;
+  const card = RetryConfirmation({
+    uncertain: false,
+    disabled: false,
+    onConfirm: () => {
+      confirmed++;
+    },
+    onCancel: () => {
+      cancelled++;
+    },
+  });
+  const markup = renderToStaticMarkup(card);
+  assert.match(
+    markup,
+    /Gaia already started an action in this attempt\. Trying again runs the whole request again, so that action may happen twice\./,
+  );
+  assert.match(markup, />Run it again</);
+  assert.match(markup, />Cancel</);
+  const children = card.props.children;
+  children[2].props.onClick();
+  assert.equal(cancelled, 1);
+  assert.equal(confirmed, 0);
+  children[1].props.onClick();
+  assert.equal(confirmed, 1);
+  const uncertain = renderToStaticMarkup(
+    RetryConfirmation({
+      uncertain: true,
+      disabled: false,
+      onConfirm: () => {},
+      onCancel: () => {},
+    }),
+  );
+  assert.match(
+    uncertain,
+    /This action may already have happened\. Trying again could repeat it\./,
+  );
+  assert.match(uncertain, />Repeat action</);
 });

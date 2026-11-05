@@ -10,7 +10,11 @@ import type { Context } from "@earendil-works/chord";
 import { z } from "zod";
 import { defineClassifiedTool } from "./effect-class.ts";
 import { DesktopLease } from "./lease.ts";
-import { NativeProcessFailure, runGuardedProcess } from "./process.ts";
+import {
+  NativeProcessFailure,
+  ProcessResult,
+  runGuardedProcess,
+} from "./process.ts";
 import { searchWeb } from "./search.ts";
 
 const Binding = z.object({
@@ -37,6 +41,23 @@ const Receipt = z.object({
   message: z.string().optional(),
 });
 export type ToolReceipt = z.infer<typeof Receipt>;
+type ReceiptEvidence = Pick<
+  ToolReceipt,
+  "state" | "effectClass" | "dispatched"
+>;
+const dispatchObservers = new WeakMap<ToolExecutionApi, () => Promise<void>>();
+export function observeEffectDispatch(
+  api: ToolExecutionApi,
+  observer: () => Promise<void>,
+) {
+  dispatchObservers.set(api, observer);
+  return () => dispatchObservers.delete(api);
+}
+const resultReceipts = new WeakMap<ToolExecutionResult, ReceiptEvidence>();
+export function receiptEvidence(result: ToolExecutionResult) {
+  return resultReceipts.get(result);
+}
+
 export class ToolInvocationFailure extends Error {
   constructor(readonly receipt: ToolReceipt) {
     super(receipt.message ?? "Tool invocation failed.");
@@ -240,13 +261,21 @@ export async function createExperienceToolHost(
         signal.throwIfAborted();
         dispatched = true;
         intent.dispatched = true;
+        if (intent.effectClass === "effect") {
+          await persist(key, intent);
+        }
       });
+      const processReason = nativeReason(result);
+      if (processReason === "spawn_error") intent.dispatched = false;
       const receipt: ToolReceipt = {
         ...intent,
         state:
-          dispatched &&
+          intent.dispatched &&
           tool !== "search_web" &&
-          (signal.aborted || nativeInterrupted(result))
+          (signal.aborted ||
+            processReason === "timeout" ||
+            processReason === "cancelled" ||
+            processReason === "owner_lost")
             ? "unknown"
             : signal.aborted
               ? "cancelled"
@@ -261,6 +290,11 @@ export async function createExperienceToolHost(
           "The process group joined, but its external effect may already have occurred. Review before repeating.";
       await persist(key, receipt);
       if (receipt.state === "unknown") throw new ToolInvocationFailure(receipt);
+      resultReceipts.set(result, {
+        state: receipt.state,
+        effectClass: receipt.effectClass,
+        dispatched: receipt.dispatched,
+      });
       return result;
     } catch (error) {
       if (error instanceof ToolInvocationFailure) throw error;
@@ -362,6 +396,7 @@ export async function createExperienceToolHost(
                   ...args,
                   signal,
                   maxBytes: 48000,
+                  onStarted: () => dispatchObservers.get(api)?.(),
                 });
                 return {
                   output: [{ type: "text", text: JSON.stringify(result) }],
@@ -399,6 +434,7 @@ export async function createExperienceToolHost(
                     executable: options.desktopExecutable ?? "agent-desktop",
                     signal,
                     maxBytes: 12000000,
+                    onStarted: () => dispatchObservers.get(api)?.(),
                   });
                   const output: NonNullable<ToolExecutionResult["output"]> = [];
                   let envelope: unknown;
@@ -497,20 +533,11 @@ export function findDesktopImage(
   }
 }
 
-function nativeInterrupted(result: ToolExecutionResult) {
+function nativeReason(result: ToolExecutionResult) {
   const details = z
     .object({
-      processReason: z.enum([
-        "exited",
-        "timeout",
-        "cancelled",
-        "owner_lost",
-        "spawn_error",
-      ]),
+      processReason: ProcessResult.shape.reason,
     })
     .safeParse(result.details);
-  return (
-    details.success &&
-    ["timeout", "cancelled", "owner_lost"].includes(details.data.processReason)
-  );
+  return details.success ? details.data.processReason : undefined;
 }

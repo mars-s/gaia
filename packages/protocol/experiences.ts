@@ -117,6 +117,7 @@ export const ExperienceJob = z.object({
   messageId: z.string(),
   answerId: z.string(),
   parentId: JobId.optional(),
+  dispatchedEffect: z.literal(true).optional(),
   title: Label,
   contextRevision: z.number().int().nonnegative(),
   state: JobState,
@@ -184,6 +185,7 @@ export const ExperienceRetry = z
   .object({
     requestId: z.string().uuid(),
     repeatUncertain: z.literal(true).optional(),
+    repeatEffects: z.literal(true).optional(),
   })
   .strict();
 export const ExperienceSelection = ModelSelection;

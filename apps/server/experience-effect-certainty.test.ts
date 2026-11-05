@@ -90,6 +90,7 @@ for (const tool of ["mac_shell", "agent_desktop"] as const) {
         const job = await f.settled(profile, admitted.jobId);
         assert.throws(() => process.kill(pid, 0), { code: "ESRCH" });
         assert.equal(job.state.kind, "uncertain");
+        assert.equal(job.dispatchedEffect, true);
         const [name] = await readdir(receipts);
         const receipt = JSON.parse(
           await readFile(join(receipts, name), "utf8"),
@@ -103,6 +104,12 @@ for (const tool of ["mac_shell", "agent_desktop"] as const) {
           { requestId: crypto.randomUUID() },
         );
         assert.equal(retry.status, 409, await retry.text());
+        const effectsOnly = await f.request(
+          `experiences/${profile}/jobs/${admitted.jobId}/retry`,
+          { requestId: crypto.randomUUID(), repeatEffects: true },
+        );
+        assert.equal(effectsOnly.status, 409);
+        assert.match(await effectsOnly.text(), /repeatUncertain/);
         assert.equal(
           (await readFile(marker, "utf8")).trim().split("\n").length,
           1,
@@ -173,7 +180,7 @@ test(
 );
 
 test(
-  "probe: a completed effect followed by provider failure can repeat on ordinary retry",
+  "a completed effect followed by provider failure needs acknowledgement before retry",
   { timeout: 15000 },
   async (t) => {
     if (!(await canSignalOwnedChild()))
@@ -220,15 +227,33 @@ test(
       ),
     ]);
     const job = await f.send(s.profile.id, s.scopes[0].id, "Write fixture");
-    assert.equal(
-      (await f.settled(s.profile.id, job.jobId)).state.kind,
-      "failed",
+    const failed = await f.settled(s.profile.id, job.jobId);
+    assert.equal(failed.state.kind, "failed");
+    assert.equal(failed.dispatchedEffect, true);
+    const runtime = await f.pi.experiences!.resolve(s.profile.id);
+    const stored = (await runtime!.read()).jobs.find(
+      (j) => j.public.id === job.jobId,
+    )!;
+    const evidence = JSON.parse(stored.receipts[0].result).hostReceipt;
+    assert.deepEqual(evidence, {
+      state: "completed",
+      effectClass: "effect",
+      dispatched: true,
+    });
+    const denied = await f.request(
+      `experiences/${s.profile.id}/jobs/${job.jobId}/retry`,
+      { requestId: crypto.randomUUID() },
+    );
+    assert.equal(denied.status, 409);
+    assert.match(
+      await denied.text(),
+      /Confirm repeatEffects before running a started action again/,
     );
     assert.equal(await readFile(marker, "utf8"), "once\n");
     f.faux.setResponses([effect(), fauxAssistantMessage("Retry finished")]);
     const retry = await f.request(
       `experiences/${s.profile.id}/jobs/${job.jobId}/retry`,
-      { requestId: crypto.randomUUID() },
+      { requestId: crypto.randomUUID(), repeatEffects: true },
     );
     assert.equal(retry.status, 202, await retry.clone().text());
     await f.settled(s.profile.id, (await retry.json()).jobId);
@@ -293,7 +318,17 @@ test(
     await eventually(async () => host.activeInvocationCount === 2);
     await host.quiesce();
     await f.settled(s.profile.id, first.jobId);
-    await f.settled(s.profile.id, second.jobId);
+    const cancelled = await f.settled(s.profile.id, second.jobId);
+    assert.equal(cancelled.dispatchedEffect, undefined);
+    f.faux.setResponses([
+      fauxAssistantMessage("Queued retry without dispatch"),
+    ]);
+    const retry = await f.request(
+      `experiences/${s.profile.id}/jobs/${second.jobId}/retry`,
+      { requestId: crypto.randomUUID() },
+    );
+    assert.equal(retry.status, 202);
+    await f.settled(s.profile.id, (await retry.json()).jobId);
     const queued = host
       .receipts()
       .find((receipt) => receipt.identity.jobId === second.jobId);

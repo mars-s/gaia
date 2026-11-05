@@ -436,11 +436,18 @@ export function createExperienceController(
         );
       });
     },
-    async retry(scope: Scope, job: ExperienceJob, repeatUncertain = false) {
+    async retry(
+      scope: Scope,
+      job: ExperienceJob,
+      repeatUncertain = false,
+      repeatEffects = false,
+    ) {
       if (
         job.profileId !== scope.profileId ||
         job.scopeId !== scope.scopeId ||
-        (job.state.kind === "uncertain" && !repeatUncertain)
+        (job.state.kind === "uncertain"
+          ? !repeatUncertain
+          : job.dispatchedEffect && !repeatEffects)
       )
         return;
       await action(scope, job.id, async (signal) => {
@@ -449,7 +456,14 @@ export function createExperienceController(
           job.id,
           {
             requestId: crypto.randomUUID(),
-            ...(repeatUncertain ? { repeatUncertain: true } : {}),
+            ...(job.state.kind === "uncertain" && repeatUncertain
+              ? { repeatUncertain: true }
+              : {}),
+            ...(job.state.kind !== "uncertain" &&
+            job.dispatchedEffect &&
+            repeatEffects
+              ? { repeatEffects: true }
+              : {}),
           },
           signal,
         );

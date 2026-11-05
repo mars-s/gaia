@@ -395,6 +395,15 @@ export async function openProfile(
           409,
           "Acknowledge repeatUncertain before repeating effects.",
         );
+      if (
+        job.public.state.kind !== "uncertain" &&
+        job.public.dispatchedEffect &&
+        !input.repeatEffects
+      )
+        throw new HttpError(
+          409,
+          "Confirm repeatEffects before running a started action again.",
+        );
       return send(job.public.scopeId, {
         ...job.input,
         requestId: input.requestId,

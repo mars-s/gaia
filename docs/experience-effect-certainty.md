@@ -20,7 +20,7 @@ Owner Stop and server quiesce happened to produce uncertain jobs in the initial 
 
 ## Compatibility and scope
 
-Only optional JSON receipt fields, `effectClass` and `dispatched`, were added. Existing receipts without them parse unchanged. Old intents remain unknown unless explicitly classified read-only. No SQL tables, profile document schemas, registry task versions, protocol shapes, GOOD manifests, recovery code, auth code or dependencies changed. The existing legacy receipt/restart and managed schema/recovery tests remain in the full suite. Terminal records already written by an older release are not retrospectively reclassified.
+The cancellation prerequisite added optional JSON receipt fields, `effectClass` and `dispatched`. Existing receipts without them parse unchanged. Old intents remain unknown unless explicitly classified read-only. No SQL tables, profile document schemas, registry task versions, GOOD manifests, recovery code, auth code or dependencies changed. The existing legacy receipt/restart and managed schema/recovery tests remain in the full suite. Terminal records already written by an older release are not retrospectively reclassified.
 
 The jobs.ts edit is confined to settlement. It does not change onText, activity extraction or projection. The Agent Desktop executable in the tests is an owned Node fixture that writes a scratch file and waits. It proves the host's desktop lease, dispatch, receipt and join paths, not acceptance of a real desktop application. Hosted search uses the actual installed search wrapper and Pi runtime with a controlled provider response, without external network or credentials.
 
@@ -32,21 +32,36 @@ The original focused batch passed 20 tests, including guardian-loss joined fallb
 
 The first full-suite attempt was stopped after nested candidate checks exposed missing sandbox guards in the new fixtures. Its owned temporary processes were cleaned up and the guards added before rerunning verification.
 
-## Founder decision: retry after a known completed effect
+## Shipped founder retry policy
 
-The separate provider-failure probe deliberately completes a real scratch-file append, then returns a provider error. The job is `failed` with a completed native receipt. Ordinary retry returns HTTP 202 without `repeatUncertain`, creates a fresh worker, and can execute the append again. The observed file changes from `once\n` to `once\nonce\n`.
+Every terminal attempt that started a potentially effectful action requires explicit acknowledgement before the whole request runs again. Completed, failed, stopped and interrupted jobs keep their actual states. Known completed actions are never relabelled unknown. Uncertain jobs still require `repeatUncertain: true`, with priority over the new guard. `repeatEffects` alone cannot bypass uncertainty.
 
-This is a known completed effect being repeated, not an unknown cancellation outcome. The current change preserves that existing policy. Opus and the master thread need to decide whether all failed jobs containing completed effects need an acknowledgement, or whether retry should resume after the known receipt. Either choice is broader than this safety fix and needs explicit product behaviour and acceptance tests. Do not advertise ordinary retry as deduplicating completed effects.
+The native host exposes the final receipt's state, effect class and dispatch bit through a WeakMap keyed by the returned result. The external wrapper stores this small `hostReceipt` summary alongside the single result body. It sets optional `job.public.dispatchedEffect: true` in the same transaction as that receipt. There is no second screenshot or output body for successful calls. Unclassified extensions conservatively set the flag on entry to execute. Trusted host evidence, rather than tool names, argv, model descriptions or output text, determines native dispatch. Pre-dispatch rejection and queued desktop cancellation do not set the flag.
 
-## Final verification and remaining limit
+A trusted host dispatch observer also commits the flag before execution can be aborted. This closes the Stop race where Pi can settle an aborted worker before the final result reaches the wrapper. It adds no result body or extra receipt row. The final receipt transaction also marks all ancestors. Parent replay can delegate again, so the parent must require acknowledgement even if only its child started an action. Propagation precedes parent settlement and survives reopen. Stop, child joins, unknown receipts and the further-dispatch barrier keep their existing behaviour.
 
-Before the implementation commit:
+For a non-uncertain flagged job, ordinary retry returns HTTP 409 with `Confirm repeatEffects before running a started action again.` The client opens this confirmation after Try again:
 
-- `npm ci` provisioned this checkout from the exact lockfile. Dependency declarations and lockfile were unchanged.
-- `npm run typecheck`, `npm run typecheck:desktop`, `npm run lint`, `npm run build`, `npm run check:protocol` and `git diff --check` passed. Lint was rerun separately after an earlier concurrent scratch-directory cleanup race.
-- `npx tsx --test apps/server/experience-effect-certainty.test.ts apps/server/experience-tools.test.ts apps/server/experience-host-integration.test.ts` passed all 22 tests, with no skips or cancellations. This final batch includes all 15 new certainty cases.
-- `npm test` completed unsuccessfully: 268 tests, 255 passed, 10 failed, 2 cancelled and 1 skipped, in 833 seconds. The deliberate sandbox-boot and public-health rejection subtests reported `Integration deadline exceeded`. The managed integration parent reached its 600,000 ms timeout. Reconnect and subsequent cases then reported cancellation or that their parent had finished. This does not establish that the failures are unrelated to this change.
+> Gaia already started an action in this attempt. Trying again runs the whole request again, so that action may happen twice.
 
-The isolated managed fixture's history showed the sandbox-boot attempt still `checking` after build, and the public-health attempt still `checking` with `Health probe deadline exceeded`. Other entries proved real source promotion, exact revert, scripted-chat rollback and schema-change rejection in the same run. Protected code was not changed to bypass these failures. The full log is `/tmp/gaia-effect-final-test.log`, and the final focused log is `/tmp/gaia-effect-final-focused.log` on this machine.
+Run it again sends `repeatEffects: true`. Cancel closes the card without sending a request. The existing uncertain copy and Repeat action button remain. Retry creates a new worker for the whole request. Gaia does not resume or deduplicate earlier attempts.
 
-The safety fix has direct passing lifecycle evidence. Full managed compatibility is not verified by this run. The master thread should rerun the managed integration proof in isolation, investigate any persistent deadline failure, and complete full verification before considering owner activation. No activation, deployment, push, PR or merge was performed.
+## Additive compatibility and rollback
+
+`ExperienceJob.dispatchedEffect` and `ExperienceRetry.repeatEffects` are optional literal `true` fields. Retry remains strict. Old jobs without the flag retain their existing behaviour. The new client sends `repeatEffects` only for flagged, non-uncertain jobs. An old server never emits that flag, so its strict retry schema receives no unsupported field. No SQL change, profile document version bump, task version change, dependency change or protected core change is needed.
+
+Rollback to an older server can strip or ignore the new flag. That loses the repeat guard and restores the earlier retry behaviour. This loss is accepted by the founder policy. No deduplication or resume guarantee is claimed in either direction.
+
+## Verification scope
+
+The focused certainty and repeat tests use actual HTTP, Pi Durable, a faux subscription provider, real owned processes and scratch files. They cover completed append then provider failure, exit 1, completed answers, Stop during a later model turn, read-only failure and Stop, host rejection before spawn, queued desktop cancellation, uncertain priority, legacy parsing and durable child-to-parent propagation. The append/provider failure case proves one write before acknowledgement and exactly two after acknowledged replay. Controller and rendered confirmation tests cover the exact wording, request flags, uncertain priority and Cancel.
+
+The original 22 cancellation/process/desktop proofs are retained. The full managed suite is intentionally left to the coordinating parent to run serially. Focused tests do not replace that proof. Native light/dark acceptance at 320 and 1000 pixels also remains with the parent. No live provider, owner data, OAuth, native application, push, PR or deployment was used.
+
+Final validation for the founder policy passed both typechecks, lint, build, protocol conformance and `git diff --check`. The focused certainty/repeat/host/controller/view batch passed 55 tests. `npm run test:experiences` passed 106 tests. Both test runs had no failures, cancellations or skips. Logs are `/tmp/gaia-founder-focused-final.log`, `/tmp/gaia-founder-experiences-final.log` and `/tmp/gaia-founder-build-final.log`. Build retained the existing bundler warnings about ignored use-client directives, source maps and large chunks.
+
+An earlier focused run was stopped because the parent-propagation fixture observed the durable dispatch flag before its scratch file existed, then blocked cleanup on an unreleased provider gate. The fixture now waits for both evidence points and releases the gate before cleanup. The final runs above include that correction. No full `npm test` or managed integration run was started by this implementation worker.
+
+## Parent review: actual process start
+
+An additional owned-executable regression exposed a false positive: an enabled host attempting a missing executable had marked the job as a started action. Native start observation now waits for the guardian to report an actual process PID. A known `spawn_error` receipt records `dispatched: false`, so ordinary retry remains available. Intent uncertainty after owner or guardian loss remains conservative. Settlement joins the started-evidence write. If that write fails, the process is cancelled and joined and its external result remains unknown. The guardian implementation is unchanged. The new missing-executable regression failed before this correction and passed afterwards, alongside a real-process failure test for the evidence callback.

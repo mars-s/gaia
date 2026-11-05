@@ -84,6 +84,7 @@ export function runGuardedProcess(input: {
   signal: AbortSignal;
   timeoutMs: number;
   maxBytes: number;
+  onStarted?(pid: number): void | Promise<void>;
 }): Promise<ProcessResult> {
   input.signal.throwIfAborted();
   return new Promise((resolve, reject) => {
@@ -106,6 +107,8 @@ export function runGuardedProcess(input: {
     let result: ProcessResult | undefined;
     let processGroup: number | undefined;
     let failure: Error | undefined;
+    let startedWork = Promise.resolve();
+    let observationFailed = false;
     let forced: ReturnType<typeof setTimeout> | undefined;
     const deadline = setTimeout(
       () => guardian.kill("SIGKILL"),
@@ -128,7 +131,16 @@ export function runGuardedProcess(input: {
           pid: z.number().int().positive(),
         })
         .safeParse(message);
-      if (started.success) processGroup = started.data.pid;
+      if (started.success && processGroup === undefined) {
+        processGroup = started.data.pid;
+        const observe = input.onStarted;
+        startedWork = Promise.resolve()
+          .then(() => observe?.(started.data.pid))
+          .catch(() => {
+            observationFailed = true;
+            cancel();
+          });
+      }
       const parsed = z
         .object({ type: z.literal("result"), result: ProcessResult })
         .safeParse(message);
@@ -138,6 +150,7 @@ export function runGuardedProcess(input: {
       failure = error;
     });
     guardian.on("close", async (code, signal) => {
+      await startedWork;
       const errorDetail = diagnosticBytes.match(
         /gaia-guardian-error code=[A-Za-z0-9_]{1,64} syscall=[A-Za-z0-9_]{1,64}/,
       )?.[0];
@@ -151,7 +164,17 @@ export function runGuardedProcess(input: {
       clearTimeout(deadline);
       clearTimeout(forced);
       input.signal.removeEventListener("abort", cancel);
-      if (result) return resolve(result);
+      if (result) {
+        if (observationFailed)
+          reject(
+            new NativeProcessFailure(
+              "joined",
+              "The native process joined, but started-process evidence could not be saved.",
+            ),
+          );
+        else resolve(result);
+        return;
+      }
       if (!processGroup) {
         reject(
           new NativeProcessFailure(
@@ -183,6 +206,7 @@ export function runGuardedProcess(input: {
         type: "start",
         ...input,
         signal: undefined,
+        onStarted: undefined,
         env: localMachineEnvironment(),
       },
       sendFailed,
