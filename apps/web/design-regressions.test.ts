@@ -87,3 +87,18 @@ test("proposal descriptions share fixed grid columns and model separator has no 
     /model-trigger-effort">· \{levelText\}/,
   );
 });
+
+test("dark bubbles and disabled send discs use the stronger selected surface", () => {
+  assert.match(css, /\.dark .owner-bubble \{ background: var\(--color-surface-selected\)/);
+  assert.match(css, /\.composer-send:disabled \{\s*background: var\(--color-surface-selected\)/);
+});
+test("attachments expose the filename below a 72px image in a 96px chip", () => {
+  assert.match(read("./image-previews.tsx"), /<figcaption>/);
+  assert.match(css, /draft-images .image-thumbnail \{ width: 96px; height: auto/);
+  assert.match(css, /width: 72px; height: 72px; border-radius: 12px/);
+  assert.match(css, /text-overflow: ellipsis; white-space: nowrap; text-align: center/);
+});
+test("narrow model chip shares the textarea edge and proposal actions share a baseline", () => {
+  assert.match(css, /model-trigger \{ grid-column: 2 \/ 4; justify-self: start; padding-left: 12px/);
+  assert.match(css, /setup-card > div:has\(> .quiet-action\) \{ align-items: center/);
+});

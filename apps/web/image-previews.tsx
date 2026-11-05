@@ -43,7 +43,7 @@ function Thumbnail({
           <RiCloseLine className="size-4" aria-hidden />
         </button>
       )}
-      <figcaption className="sr-only">
+      <figcaption>
         {name}
         {failed ? ", preview unavailable" : ""}
       </figcaption>

@@ -697,7 +697,7 @@ a:focus-visible {
   color: var(--color-accent-ink);
 }
 .composer-send:disabled {
-  background: var(--color-surface-sunken);
+  background: var(--color-surface-selected);
   color: var(--color-ink-3);
   opacity: 1;
 }
@@ -1293,3 +1293,12 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
     grid-template-columns: 64px minmax(0, 1fr);
   }
 }
+
+.dark .owner-bubble { background: var(--color-surface-selected); }
+.draft-images .image-thumbnail { width: 96px; height: auto; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.draft-images .image-thumbnail img, .draft-images .image-unavailable { width: 72px; height: 72px; border-radius: 12px; background: var(--color-surface-sunken); object-fit: cover; }
+.draft-images .remove-image { right: 16px; }
+.image-thumbnail figcaption { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: 12px; line-height: 16px; color: var(--color-ink-2); }
+.message-images figcaption { display: none; }
+.setup-card > div:has(> .quiet-action) { align-items: center; }
+@media (max-width: 639px) { .model-trigger { grid-column: 2 / 4; justify-self: start; padding-left: 12px; max-width: 100%; } }
