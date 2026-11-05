@@ -346,7 +346,7 @@ export function ComposerControls({
           <div className="model-sheet-header">
             <span>Model and effort</span>
             <AriaButton
-              className="quiet-link model-done"
+              className="quiet-action model-done"
               onPress={() => setOpen(false)}
             >
               Done
@@ -369,7 +369,7 @@ export function ComposerControls({
                 {query && (
                   <AriaButton
                     aria-label="Clear search"
-                    className="model-search-clear quiet-link"
+                    className="quiet-action model-search-clear"
                     onPress={() => {
                       setQuery("");
                       search.current?.focus();

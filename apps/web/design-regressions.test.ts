@@ -145,3 +145,21 @@ test("all conversation shells reveal a 24px top fade and header rule only after 
   assert.match(css, /message-list \{ padding-bottom: 12px/);
   assert.match(read("./app.tsx"), /className="interview-slot"/);
 });
+
+test("secondary labels remain readable and errors reserve colour for the icon", () => {
+  assert.match(css, /model-trigger:disabled \{\s*opacity: 1/);
+  assert.match(css, /model-trigger\[data-loading="true"\] \{ color: var\(--color-ink-2\)/);
+  assert.match(css, /reply-error \{ color: var\(--color-ink\)/);
+  assert.match(css, /reply-error-icon \{ color: var\(--color-danger\)/);
+  assert.match(css, /model-scrim[^}]*color-mix\(in srgb, var\(--color-ink\) 14%, transparent\)/);
+});
+test("Bot art is clipped to one shared tile radius and welcome lines are balanced", () => {
+  assert.match(css, /avatar-tile, .assistant-head .avatar-tile[^}]*border-radius: var\(--radius-sm\); overflow: hidden/);
+  assert.match(css, /avatar-tile img \{ border-radius: inherit/);
+  assert.match(css, /welcome-intro p \{ text-wrap: balance/);
+});
+test("composer focus has a single accent edge and both actions share the same fill and shape", () => {
+  assert.match(css, /composer:focus-within[^}]*border-color: var\(--color-accent\);\s*box-shadow: none/);
+  assert.match(css, /composer-stop \{\s*background: var\(--color-accent\)/);
+  assert.match(css, /primary-action, .secondary-action, .quiet-action[^}]*border-radius: var\(--radius-sm\);\s*background-image: none/);
+});

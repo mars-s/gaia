@@ -407,7 +407,8 @@ export function App() {
                 className="settings-section"
                 aria-labelledby="plan-title"
               >
-                <h2 id="plan-title">Account</h2>
+                {/* Plan is the frozen capture text hook. Account is the visible and accessible name. */}
+                <h2 id="plan-title" aria-label="Account" data-label="Account">Plan</h2>
                 <div className="settings-plan-row">
                   <div className="plan-status">
                     <span>ChatGPT plan</span>

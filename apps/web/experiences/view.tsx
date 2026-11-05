@@ -103,10 +103,7 @@ export function ExperienceConversation({
         {switcher}
       </div>
       <div className="flex flex-col gap-1">
-        {(layout === "sessions"
-          ? [...profile.scopes].reverse()
-          : profile.scopes
-        ).map((item) => (
+        {profile.scopes.map((item) => (
           <Button
             key={item.id}
             variant="secondary"

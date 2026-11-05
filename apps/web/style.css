@@ -292,7 +292,7 @@ body {
 }
 
 .model-option[data-disabled] {
-  opacity: 0.5;
+  opacity: 1;
   cursor: default;
 }
 
@@ -826,7 +826,7 @@ a:focus-visible {
   transform: rotate(180deg);
 }
 .model-trigger:disabled {
-  opacity: 0.4;
+  opacity: 1;
 }
 .model-trigger:focus-visible,
 .model-all-toggle:focus-visible,
@@ -1052,7 +1052,7 @@ a:focus-visible {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: var(--backdrop);
+  background: color-mix(in srgb, var(--color-ink) 14%, transparent);
   display: flex;
   align-items: flex-end;
   transition: opacity var(--motion-drawer);
@@ -1147,8 +1147,8 @@ a:focus-visible {
 .working-indicator i:nth-child(3) { animation-delay: 400ms; }
 @keyframes work-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .working-indicator i { animation: none; } }
-.reply-error { color: var(--color-danger); }
-.reply-error-icon { width: 20px; height: 20px; flex-shrink: 0; }
+.reply-error { color: var(--color-ink); }
+.reply-error-icon { color: var(--color-danger); width: 20px; height: 20px; flex-shrink: 0; }
 .reply-error .truncate { white-space: normal; overflow: visible; }
 .offline-notice { display: flex; gap: 8px; align-items: center; }
 .offline-notice > span { width: 6px; height: 6px; border-radius: var(--radius-full); background: var(--color-ink-3); flex-shrink: 0; }
@@ -1204,7 +1204,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .welcome-composition { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .welcome-intro { display: flex; flex-direction: column; align-items: center; }
 .welcome-intro .gaia-mark { width: 40px; height: 40px; margin-bottom: 16px; }
-.welcome-intro p { max-width: 36ch; margin-top: 8px; font-size: 15px; line-height: 24px; color: var(--color-ink-2); }
+.welcome-intro p { text-wrap: balance; max-width: 36ch; margin-top: 8px; font-size: 15px; line-height: 24px; color: var(--color-ink-2); }
 .welcome-composition .welcome-button { width: 100%; max-width: 320px; height: 44px; margin-top: 24px; background: var(--color-surface-raised); border: 1px solid var(--color-line); color: var(--color-ink); box-shadow: none; }
 .welcome-caption { margin-top: 12px; font-size: 12px; line-height: 16px; color: var(--color-ink-2); }
 .welcome-composition .auth-help { margin-top: 12px; }
@@ -1340,3 +1340,10 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .settings-section > section { width: 100%; }
 .settings-section > section > button.primary-action { align-self: flex-end; }
 @media (max-width: 480px) { .setup-list-row > div:last-child { justify-self: end; } }
+
+.avatar-tile, .assistant-head .avatar-tile { border-radius: var(--radius-sm); overflow: hidden; }
+.avatar-tile img { border-radius: inherit; }
+.model-trigger[data-loading="true"] { color: var(--color-ink-2); }
+
+.settings-section #plan-title { font-size: 0; }
+.settings-section #plan-title::after { content: attr(data-label); font-size: var(--text-headline-medium); }

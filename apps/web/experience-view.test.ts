@@ -567,3 +567,17 @@ test("assistant turns use the scope identity and owner turns have no head", () =
   controller.pause();
  }
 });
+
+test("sessions keep creation order when selection moves between rows", () => {
+  const { controller, html } = fixture("sessions");
+  const profile = controller.profile!;
+  const first = profile.scopes[0];
+  profile.scopes = [first, { ...first, id: ScopeId.parse("33333333-3333-4333-8333-333333333333"), label: "Study" }, { ...first, id: ScopeId.parse("44444444-4444-4444-8444-444444444444"), label: "Work" }];
+  for (const scope of profile.scopes) {
+    controller.selected = { profileId: profile.profile.id, scopeId: scope.id };
+    const nav = html().match(/<nav[\s\S]*?<\/nav>/)?.[0] ?? "";
+    assert(nav.indexOf(">Main<") < nav.indexOf(">Study<"));
+    assert(nav.indexOf(">Study<") < nav.indexOf(">Work<"));
+  }
+  controller.pause();
+});

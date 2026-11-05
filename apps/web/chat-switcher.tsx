@@ -27,7 +27,7 @@ export function ChatSwitcher({
   return (
     <Menu.Root>
       <Menu.Trigger
-        className="app-control chat-switcher-trigger text-body-medium"
+        className="quiet-action app-control chat-switcher-trigger text-body-medium"
         aria-label="Switch setup"
       >
         <span className="truncate">
