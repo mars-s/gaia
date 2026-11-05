@@ -323,6 +323,43 @@ test(
       JSON.stringify(await root.entries({}, 100, undefined, ctx)),
       /image\/png/,
     );
+    await writeFile(
+      desktopExecutable,
+      `#!${process.execPath}\nconsole.log('Usage: agent-desktop <command>');`,
+    );
+    for (const [command, expected] of [
+      ["help", "completed"],
+      ["snapshot", "failed"],
+    ]) {
+      const callId = `plain-${command}`;
+      faux.setResponses([
+        fauxAssistantMessage(
+          [
+            fauxToolCall(
+              "agent_desktop",
+              {
+                activity: "Reading desktop command guidance",
+                args: [command],
+                cwd: dir,
+              },
+              { id: callId },
+            ),
+          ],
+          { stopReason: "toolUse" },
+        ),
+        fauxAssistantMessage("Inspected command guidance"),
+      ]);
+      await root.submit(
+        { type: "input", content: "Inspect plain desktop output" },
+        ctx,
+      );
+      await root.waitForIdle(ctx);
+      assert.equal(
+        host.receipts().find((receipt) => receipt.identity.callId === callId)
+          ?.state,
+        expected,
+      );
+    }
     const marker = join(dir, "quiesce-started");
     faux.setResponses([
       fauxAssistantMessage(

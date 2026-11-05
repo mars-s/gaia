@@ -379,6 +379,10 @@ export async function createExperienceToolHost(
                   const parsed = z
                     .object({ ok: z.boolean(), data: z.unknown().optional() })
                     .safeParse(envelope);
+                  const helpRequested =
+                    args.args[0] === "help" ||
+                    args.args.includes("--help") ||
+                    args.args.includes("-h");
                   const image = findDesktopImage(
                     parsed.success ? parsed.data.data : undefined,
                   );
@@ -401,8 +405,7 @@ export async function createExperienceToolHost(
                     isError:
                       result.code !== 0 ||
                       result.reason !== "exited" ||
-                      !parsed.success ||
-                      !parsed.data.ok,
+                      (parsed.success ? !parsed.data.ok : !helpRequested),
                     details: {
                       description: args.activity,
                       stage: signal.aborted ? "cancelled" : "settled",
