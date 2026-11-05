@@ -399,7 +399,7 @@ test(
     assert.equal(
       host.receipts().find((receipt) => receipt.identity.callId === "quiesce-1")
         ?.state,
-      "cancelled",
+      "unknown",
     );
     assert.equal(host.capabilities().search, false);
   },

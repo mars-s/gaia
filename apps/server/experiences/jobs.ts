@@ -64,6 +64,32 @@ async function settle(tx: Tx, jobId: string, outcome: ExperienceJob["state"]) {
   const state = State.parse(doc);
   const job = jobIn(state, jobId);
   if (terminal(job.public)) return;
+  // Use the transaction's current evidence, including receipts written during abort.
+  if (job.invocations.length) outcome = uncertain(job);
+  else if (
+    (outcome.kind === "completed" || outcome.kind === "failed") &&
+    job.receipts.some(
+      (receipt) =>
+        z
+          .object({
+            details: z.object({
+              receipt: z.object({
+                effectClass: z.literal("read"),
+                state: z.literal("cancelled"),
+              }),
+            }),
+          })
+          .safeParse(JSON.parse(receipt.result)).success,
+    )
+  )
+    outcome =
+      job.public.state.kind === "stopping"
+        ? { kind: "stopped", finishedAt: now(), partialText: job.partialText }
+        : {
+            kind: "interrupted",
+            interruptedAt: now(),
+            partialText: job.partialText,
+          };
   if (outcome.kind === "completed" && job.public.state.kind === "stopping")
     outcome = {
       kind: "stopped",

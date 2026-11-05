@@ -225,7 +225,7 @@ test(
     const receipt = JSON.parse(
       await readFile(join(dir, "receipts", name), "utf8"),
     );
-    assert.equal(receipt.state, "cancelled");
+    assert.equal(receipt.state, "unknown");
     assert.equal(receipt.result.details.stage, "cancelled");
   },
 );

@@ -3,12 +3,12 @@ import { mkdir, open, readFile, rename, readdir } from "node:fs/promises";
 import { join, isAbsolute } from "node:path";
 import {
   defineExtension,
-  defineTool,
   type ToolExecutionApi,
   type ToolExecutionResult,
 } from "@earendil-works/pi-durable";
 import type { Context } from "@earendil-works/chord";
 import { z } from "zod";
+import { defineClassifiedTool } from "./effect-class.ts";
 import { DesktopLease } from "./lease.ts";
 import { NativeProcessFailure, runGuardedProcess } from "./process.ts";
 import { searchWeb } from "./search.ts";
@@ -31,6 +31,8 @@ const Receipt = z.object({
   description: z.string(),
   state: z.enum(["intent", "completed", "failed", "cancelled", "unknown"]),
   at: z.string(),
+  effectClass: z.enum(["read", "effect"]).optional(),
+  dispatched: z.boolean().optional(),
   result: z.json().optional(),
   message: z.string().optional(),
 });
@@ -128,10 +130,12 @@ export async function createExperienceToolHost(
     if (receipt.state === "intent")
       await persist(key, {
         ...receipt,
-        state: "unknown",
+        state: receipt.effectClass === "read" ? "cancelled" : "unknown",
         at: new Date().toISOString(),
         message:
-          "Owner stopped before settlement. External outcome is unknown. Do not replay automatically.",
+          receipt.effectClass === "read"
+            ? "Read-only invocation interrupted before settlement. It can be retried."
+            : "Owner stopped before settlement. External outcome is unknown. Do not replay automatically.",
       });
   }
   function capabilities() {
@@ -155,6 +159,18 @@ export async function createExperienceToolHost(
       throw new Error("Tool generation expired.");
     if (!(machine ? capabilities().machine : capabilities().search))
       throw new Error("Tool host is disabled.");
+    if (
+      machine &&
+      [...receipts.values()].some(
+        (receipt) =>
+          receipt.identity.jobId === binding.jobId &&
+          receipt.state === "unknown" &&
+          receipt.effectClass !== "read",
+      )
+    )
+      throw new Error(
+        "Review the unknown effect before dispatching further machine tools for this job.",
+      );
   }
   async function invoke(
     binding: ToolBinding,
@@ -194,6 +210,8 @@ export async function createExperienceToolHost(
       tool,
       description,
       state: "intent",
+      effectClass: tool === "search_web" ? "read" : "effect",
+      dispatched: false,
       at: new Date().toISOString(),
     };
     let dispatched = false;
@@ -221,19 +239,31 @@ export async function createExperienceToolHost(
         check(binding, tool !== "search_web");
         signal.throwIfAborted();
         dispatched = true;
+        intent.dispatched = true;
       });
-      await persist(key, {
+      const receipt: ToolReceipt = {
         ...intent,
-        state: signal.aborted
-          ? "cancelled"
-          : result.isError
-            ? "failed"
-            : "completed",
+        state:
+          dispatched &&
+          tool !== "search_web" &&
+          (signal.aborted || nativeInterrupted(result))
+            ? "unknown"
+            : signal.aborted
+              ? "cancelled"
+              : result.isError
+                ? "failed"
+                : "completed",
         at: new Date().toISOString(),
         result: z.json().parse(result),
-      });
+      };
+      if (receipt.state === "unknown")
+        receipt.message =
+          "The process group joined, but its external effect may already have occurred. Review before repeating.";
+      await persist(key, receipt);
+      if (receipt.state === "unknown") throw new ToolInvocationFailure(receipt);
       return result;
     } catch (error) {
+      if (error instanceof ToolInvocationFailure) throw error;
       if (
         error instanceof NativeProcessFailure &&
         error.lifetime === "unjoined"
@@ -263,7 +293,7 @@ export async function createExperienceToolHost(
     return defineExtension({
       name: `gaia-experience-tools-${binding.jobId}`,
       tools: [
-        defineTool({
+        defineClassifiedTool("read", {
           name: "search_web",
           description:
             "Search the live web using the calling Codex subscription model. Returns verified hosted search evidence and clickable source citations.",
@@ -312,7 +342,7 @@ export async function createExperienceToolHost(
             );
           },
         }),
-        defineTool({
+        defineClassifiedTool("effect", {
           name: "mac_shell",
           description:
             "Run an unrestricted owner-level executable with structured argv and an absolute per-call cwd. For shell syntax explicitly invoke /bin/zsh with -c. Output is bounded; cancellation joins the process group.",
@@ -339,13 +369,14 @@ export async function createExperienceToolHost(
                   details: {
                     description: args.activity,
                     stage: signal.aborted ? "cancelled" : "settled",
+                    processReason: result.reason,
                   },
                 };
               },
             );
           },
         }),
-        defineTool({
+        defineClassifiedTool("effect", {
           name: "agent_desktop",
           description:
             "Use Agent Desktop with structured CLI arguments under the shared desktop lease. Read help and snapshot first. For screenshot omit PATH to return model-visible PNG. All profiles share one cursor. Never automatically repeat an uncertain action.",
@@ -409,6 +440,7 @@ export async function createExperienceToolHost(
                     details: {
                       description: args.activity,
                       stage: signal.aborted ? "cancelled" : "settled",
+                      processReason: result.reason,
                     },
                   };
                 }),
@@ -463,4 +495,22 @@ export function findDesktopImage(
     const found = findDesktopImage(child, depth + 1);
     if (found) return found;
   }
+}
+
+function nativeInterrupted(result: ToolExecutionResult) {
+  const details = z
+    .object({
+      processReason: z.enum([
+        "exited",
+        "timeout",
+        "cancelled",
+        "owner_lost",
+        "spawn_error",
+      ]),
+    })
+    .safeParse(result.details);
+  return (
+    details.success &&
+    ["timeout", "cancelled", "owner_lost"].includes(details.data.processReason)
+  );
 }
