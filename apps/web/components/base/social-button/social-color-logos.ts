@@ -2,9 +2,9 @@
  * Full-colour brand marks, for `color="color"`.
  *
  * Copied verbatim from SVG Logos (https://github.com/gilbarbara/logos), the
- * set behind Iconify's `logos`, which is CC0 1.0 like Simple Icons and so is
+ * set behind Iconify’s `logos`, which is CC0 1.0 like Simple Icons and so is
  * safe to redistribute inside an installed component. These are the real
- * multi-path marks — Google's four-colour G, Slack's four-colour hash — so
+ * multi-path marks — Google’s four-colour G, Slack’s four-colour hash — so
  * unlike the monochrome glyphs in `social-providers.ts` they carry their own
  * fills and ignore `currentColor`.
  *

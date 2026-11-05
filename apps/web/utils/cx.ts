@@ -48,7 +48,7 @@ export const cx = twMerge;
 
 /**
  * Identity helper that gives the Tailwind IntelliSense extension a hook for
- * sorting classes inside style objects (the extension doesn't sort inside
+ * sorting classes inside style objects (the extension doesn’t sort inside
  * plain object literals otherwise).
  */
 export function sortCx<

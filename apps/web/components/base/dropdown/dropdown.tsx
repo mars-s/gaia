@@ -19,17 +19,17 @@ import { useDismissOnOutsidePress, useTriggerToggle } from "@/utils/use-dismiss-
 
 /**
  * Dropdown — the BoardUI popover-menu recipe as composable primitives, built
- * on React Aria's DialogTrigger/Popover. Unlike Select (which picks a value
+ * on React Aria’s DialogTrigger/Popover. Unlike Select (which picks a value
  * into a trigger), Dropdown is a free-form menu surface: grouped rows of
  * actions, headers, footers, whatever the panel needs.
  *
- * The same recipe powers the dashboard sidebar's team/account menus and the
- * AI chat template's add/model/folder menus:
+ * The same recipe powers the dashboard sidebar’s team/account menus and the
+ * AI chat template’s add/model/folder menus:
  *
  * - Panel: white, 1px border/button/default, radius 16, p 10, shadow/dropdown.
  * - Appear animation: 150ms fade + scale-95 + 2px blur in and out.
  * - Rows: rounded-2lg, background/secondary/hover on hover and on the selected
- *   row, body-medium labels, 4px apart (the panel's flex column carries a
+ *   row, body-medium labels, 4px apart (the panel’s flex column carries a
  *   gap-1, the same rhythm as the Select listbox).
  *
  * Composition:
@@ -68,7 +68,7 @@ export interface DropdownProps {
 }
 
 /**
- * The popover is `isNonModal`: react-aria's modal scroll lock puts
+ * The popover is `isNonModal`: react-aria’s modal scroll lock puts
  * `overflow: hidden` on <html>, which collapses the page scroll position and
  * visibly yanks sticky layout (e.g. the docs sidebar) whenever a menu opens.
  * Non-modal skips the lock, but react-aria hard-couples outside-press
@@ -151,7 +151,7 @@ export function DropdownPopover({
       )}
     >
       {/* gap-1 keeps bare DropdownItems 4px apart, the same rhythm as the
-          Select listbox; DropdownDivider's margins are sized to absorb it. */}
+          Select listbox; DropdownDivider’s margins are sized to absorb it. */}
       <AriaDialog aria-label={ariaLabel} className={cx("flex flex-col gap-1 outline-none", dialogClassName)}>
         {children}
       </AriaDialog>
@@ -172,7 +172,7 @@ export function DropdownGroup({ label, className, children }: DropdownGroupProps
   return (
     // pt-1 is spacing for the group LABEL — a label-less group must not
     // carry it, or its first row floats 4px lower than the panel padding
-    // implies (visible as extra space above the first item's hover pill).
+    // implies (visible as extra space above the first item’s hover pill).
     <div className={cx("flex w-full flex-col gap-1.5", label && "pt-1", className)}>
       {label && <span className="ps-2 text-body-medium text-text-secondary">{label}</span>}
       <div className="flex w-full flex-col gap-1">{children}</div>
@@ -210,8 +210,8 @@ export function DropdownItem({ selected, onSelect, className, children }: Dropdo
   );
 }
 
-/** Full-bleed 1px divider between groups (bleeds through the panel's p-2.5).
- *  my-1.5 + the dialog's gap-1 on both sides = the original 10px breathing room. */
+/** Full-bleed 1px divider between groups (bleeds through the panel’s p-2.5).
+ *  my-1.5 + the dialog’s gap-1 on both sides = the original 10px breathing room. */
 export function DropdownDivider({ className }: { className?: string }) {
   return <div className={cx("-mx-2.5 my-1.5 h-px shrink-0 bg-border-button-default", className)} />;
 }

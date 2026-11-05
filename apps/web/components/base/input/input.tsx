@@ -35,7 +35,7 @@ import { cx, sortCx } from "@/utils/cx";
  *                 classes can flow from the composer down into InputBase
  *                 without prop drilling.
  *   Input       — opinionated composition: TextField → Label → InputBase
- *                 → HintText, or React Aria's FieldError for `errorMessage`
+ *                 → HintText, or React Aria’s FieldError for `errorMessage`
  *                 while the field is invalid. The component most consumers use.
  *
  * Why React Aria:
@@ -67,7 +67,7 @@ export interface TextFieldContextValue {
 }
 
 /**
- * Shared by every field that wants Input's shell — `Textarea` reads the same
+ * Shared by every field that wants Input’s shell — `Textarea` reads the same
  * size and class overrides out of it, so a composed form stays consistent.
  */
 export const TextFieldContext = createContext<TextFieldContextValue>({});
@@ -130,7 +130,7 @@ export interface InputBaseProps extends Omit<
   /** Custom element rendered in the leading slot (Phone basic uses this). */
   leadingAddon?: ReactNode;
   /** Custom element rendered in the trailing slot, in place of
-   *  `trailingIcon` (ComboBox's toggle button uses this). */
+   *  `trailingIcon` (ComboBox’s toggle button uses this). */
   trailingAddon?: ReactNode;
   /** Class for the field shell. */
   fieldClassName?: string;
@@ -176,7 +176,7 @@ const inputStyles = sortCx({
   icon: "size-5 shrink-0",
 });
 
-/** The field shell's state for a render-prop className. */
+/** The field shell’s state for a render-prop className. */
 export interface InputFieldState {
   isFocusWithin: boolean;
   isHovered: boolean;
@@ -185,8 +185,8 @@ export interface InputFieldState {
 }
 
 /**
- * The field shell's classes for a state. InputBase uses it, and so do fields
- * whose editable part isn't an <input> (Time Field's segments).
+ * The field shell’s classes for a state. InputBase uses it, and so do fields
+ * whose editable part isn’t an <input> (Time Field’s segments).
  */
 export function inputFieldClassName(
   { isFocusWithin, isHovered, isDisabled, isInvalid }: InputFieldState,
@@ -251,7 +251,7 @@ export function InputBase({
           <AriaInput
             ref={ref}
             {...inputProps}
-            // Align to the field's start even when email/URL values use LTR.
+            // Align to the field’s start even when email/URL values use LTR.
             className={cx(
               inputStyles.input,
               direction === "rtl" ? "pr-1 text-right" : "pl-1 text-left",
@@ -290,9 +290,9 @@ export interface InputProps
   label?: ReactNode;
   hint?: ReactNode;
   /**
-   * Shown in place of `hint` while the field is invalid, through React Aria's
+   * Shown in place of `hint` while the field is invalid, through React Aria’s
    * FieldError: the error-message slot the input is described by. Pass a
-   * function to render from the validation result, e.g. the browser's own
+   * function to render from the validation result, e.g. the browser’s own
    * message under the default native validation.
    */
   errorMessage?: AriaFieldErrorProps["children"];
@@ -324,8 +324,8 @@ export function Input({
     <TextField
       {...textFieldProps}
       className={className}
-      // Don't clobber an explicit aria-label; fall back to the placeholder
-      // only for unlabelled fields that don't provide one.
+      // Don’t clobber an explicit aria-label; fall back to the placeholder
+      // only for unlabelled fields that don’t provide one.
       aria-label={
         textFieldProps["aria-label"] ??
         (!label && typeof placeholder === "string" ? placeholder : undefined)

@@ -92,7 +92,7 @@ export function MessageMarkdown({ text }: { text: string }) {
 }
 
 async function readOnlyTranscript(): Promise<void> {
-  throw new Error("Send messages using Gaia's composer.");
+  throw new Error("Send messages using Gaia’s composer.");
 }
 
 export function Transcript({

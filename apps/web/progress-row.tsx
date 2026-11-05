@@ -113,8 +113,8 @@ export function replyError(message: string): string {
       message,
     )
   )
-    return "That model isn't available now. Choose another to send.";
-  return "Gaia couldn't finish that reply.";
+    return "That model isn’t available now. Choose another to send.";
+  return "Gaia couldn’t finish that reply.";
 }
 
 export function OfflineNotice() {

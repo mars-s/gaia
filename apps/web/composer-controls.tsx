@@ -47,7 +47,7 @@ export function contextCount(count: number) {
 }
 export function modelFacts(model: Model, images: boolean) {
   if (!model.capabilities) return undefined;
-  return `${model.capabilities.images ? "Reads images" : images ? "Can't read your images" : "Text only"} · ${contextCount(model.contextWindow)} context`;
+  return `${model.capabilities.images ? "Reads images" : images ? "Can’t read your images" : "Text only"} · ${contextCount(model.contextWindow)} context`;
 }
 export function modelChoiceFacts(
   model: Model,
@@ -589,7 +589,7 @@ export function EffortControls({
           </div>
           {!valid && (
             <p className="effort-caption">
-              {model.name} doesn't offer the last level you used.
+              {model.name} doesn’t offer the last level you used.
             </p>
           )}
         </>

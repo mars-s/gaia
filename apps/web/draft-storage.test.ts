@@ -121,7 +121,7 @@ test("IndexedDB migrates local Home references, isolates area bytes and saves te
   assert.deepEqual(
     await home.load(),
     old,
-    "Removing an area image keeps Home's identical UUID and bytes.",
+    "Removing an area image keeps Home’s identical UUID and bytes.",
   );
   const removed = await imageKeys();
   assert(!removed.includes(`area:synthetic:${old.images[0].id}`));

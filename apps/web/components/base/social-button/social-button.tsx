@@ -27,7 +27,7 @@ import {
  * Three appearances. `colorful` (default) fills with the brand colour and
  * puts a white glyph on it. `black` is the same shape in high-contrast solid
  * black. `white` is the outlined treatment, and the one that shows each
- * provider's real multi-colour mark, which is what most sign-in screens use.
+ * provider’s real multi-colour mark, which is what most sign-in screens use.
  *
  * One rounding, deliberately: a sign-in stack reads as a set, and mixing pill
  * and square corners across providers is noise rather than expression.
@@ -95,7 +95,7 @@ const styles = sortCx({
     "outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-border-focus-ring",
     "disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60",
   ].join(" "),
-  // Heights, radii and glyph sizes are the base Button's medium and small to
+  // Heights, radii and glyph sizes are the base Button’s medium and small to
   // the pixel, so a social button can sit in a form beside a Button without
   // a half-step in the rhythm. The fixed width is the one addition: a column
   // of providers should line up without a wrapper doing the work, and
@@ -108,7 +108,7 @@ const styles = sortCx({
     medium: "size-9 w-9 rounded-2lg px-0",
     small: "size-8 w-8 rounded-lg px-0",
   },
-  // A touch under the base Button's icon sizes (20/18): a brand mark is
+  // A touch under the base Button’s icon sizes (20/18): a brand mark is
   // denser than a line icon and reads heavier at the same box.
   glyph: {
     medium: "size-[18px] shrink-0",
@@ -116,13 +116,13 @@ const styles = sortCx({
   },
   appearance: {
     // The same recipe as `bg-button-primary`: a 180deg gradient from the
-    // brand colour into a darker stop, with the system's own button shadow.
-    // A flat fill read as a foreign control next to BoardUI's own buttons.
+    // brand colour into a darker stop, with the system’s own button shadow.
+    // A flat fill read as a foreign control next to BoardUI’s own buttons.
     // The gradient itself is set inline, since it is per-brand.
     colorful: "text-white shadow-xs",
     black:
       "bg-neutral-950 text-white shadow-xs hover:bg-neutral-800 active:bg-neutral-900",
-    // Matches the system's secondary button, so it sits in a form beside the
+    // Matches the system’s secondary button, so it sits in a form beside the
     // rest of BoardUI without looking like a different family.
     white: [
       "bg-background-primary-default text-text-primary",
@@ -212,7 +212,7 @@ export function SocialButton({
   // A brand whose colour is a system token (Google) hands the fill straight
   // to `bg-button-primary`, so it is the primary button, gradient, hover and
   // active included, rather than an approximation of it. Every other brand
-  // gets that gradient's shape derived from its own colour: down in
+  // gets that gradient’s shape derived from its own colour: down in
   // lightness and up slightly in chroma, which is what blue-500 → blue-600
   // does. Mixing toward black instead would wash the second stop out.
   const systemFill = appearance === "colorful" && fill.startsWith("var(");

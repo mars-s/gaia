@@ -84,7 +84,7 @@ const textareaStyles = sortCx({
     "transition-[background-color,box-shadow,color] duration-[var(--input-transition-ms)] ease",
   ].join(" "),
 
-  // Matches Input's insets, so a stacked input and textarea share one edge:
+  // Matches Input’s insets, so a stacked input and textarea share one edge:
   // 8px shell + 4px on the control = 12px to the text (10px at `small`).
   fieldSize: {
     medium: "p-2",
@@ -277,7 +277,7 @@ export function Textarea({
   onChange,
   ...textFieldProps
 }: TextareaProps) {
-  // The counter needs the value, and React Aria's render props don't carry it.
+  // The counter needs the value, and React Aria’s render props don’t carry it.
   // Controlled fields read straight from the prop; uncontrolled ones keep the
   // length here so a keystroke re-renders the counter and nothing else.
   const [typedLength, setTypedLength] = useState(
@@ -295,8 +295,8 @@ export function Textarea({
         onChange?.(next);
       }}
       className={className}
-      // Don't clobber an explicit aria-label; fall back to the placeholder
-      // only for unlabelled fields that don't provide one.
+      // Don’t clobber an explicit aria-label; fall back to the placeholder
+      // only for unlabelled fields that don’t provide one.
       aria-label={
         textFieldProps["aria-label"] ??
         (!label && typeof placeholder === "string" ? placeholder : undefined)

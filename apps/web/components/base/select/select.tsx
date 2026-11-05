@@ -43,9 +43,9 @@ import { useDismissOnOutsidePress, useTriggerToggle } from "@/utils/use-dismiss-
  *
  * Item content is free-form: pass a `StatusDot` + text for status selects.
  *
- * `label` renders Input's field label above the trigger through React Aria's
+ * `label` renders Input’s field label above the trigger through React Aria’s
  * Label, which names the select for assistive technology. Without it, pass
- * `aria-label` (or `aria-labelledby`) instead. `placeholder` is React Aria's:
+ * `aria-label` (or `aria-labelledby`) instead. `placeholder` is React Aria’s:
  * the trigger shows it until something is selected.
  */
 
@@ -55,7 +55,7 @@ const SelectSizeContext = createContext<SelectSize>("md");
 
 export interface SelectProps<T extends object>
   extends Omit<AriaSelectProps<T>, "children"> {
-  /** Visible label above the trigger; React Aria wires it as the select's accessible name. */
+  /** Visible label above the trigger; React Aria wires it as the select’s accessible name. */
   label?: ReactNode;
   /** Trigger width. Defaults to hug content; the menu uses the shared 266px width. */
   className?: string;
@@ -66,8 +66,8 @@ export interface SelectProps<T extends object>
   size?: SelectSize;
   children: ReactNode;
   items?: Iterable<T>;
-  /** Customise the trigger's rendered value (e.g. a compact flag + dial code).
-   *  Falls back to the selected item's own content when omitted. */
+  /** Customise the trigger’s rendered value (e.g. a compact flag + dial code).
+   *  Falls back to the selected item’s own content when omitted. */
   renderValue?: ReactNode | ((values: AriaSelectValueRenderProps<T>) => ReactNode);
   ref?: Ref<HTMLDivElement>;
 }
@@ -84,11 +84,11 @@ export function Select<T extends object>({
   ref,
   ...props
 }: SelectProps<T>) {
-  // The popover is `isNonModal`: react-aria's modal scroll lock puts
-  // `overflow: hidden` on <html>, which — with this app's `h-full` root —
+  // The popover is `isNonModal`: react-aria’s modal scroll lock puts
+  // `overflow: hidden` on <html>, which — with this app’s `h-full` root —
   // collapses the page scroll position and visibly yanks the sticky
   // sidebar upward every time a select opens. Non-modal skips the lock,
-  // but also disables react-aria's outside-press dismissal (`isDismissable`
+  // but also disables react-aria’s outside-press dismissal (`isDismissable`
   // is hard-coupled to `!isNonModal` in usePopover), so open state is
   // controlled here and dismissal restored manually — the same fix as the
   // date-picker family (see utils/use-dismiss-on-outside-press.ts).

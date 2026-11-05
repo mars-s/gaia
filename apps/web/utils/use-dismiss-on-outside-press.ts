@@ -4,12 +4,12 @@ import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 
 /**
- * React Aria's `Popover` couples "non-modal" with "not dismissable on
+ * React Aria’s `Popover` couples "non-modal" with "not dismissable on
  * outside interaction" — `isNonModal` (which we set to avoid the scroll
  * lock / focus trap that comes with a modal popover) also silently disables
  * its built-in outside-click-to-close behavior. This restores just that
  * piece manually: closes when a pointerdown lands outside every given ref
- * (typically the trigger + the popover's own content).
+ * (typically the trigger + the popover’s own content).
  */
 export function useDismissOnOutsidePress(
   isOpen: boolean,
@@ -37,7 +37,7 @@ export function useDismissOnOutsidePress(
  * the same press, so the popover never actually closes.
  *
  * This watches for a pointerdown on the trigger while open and swallows the
- * spurious reopen that follows. Wire the returned guard into the component's
+ * spurious reopen that follows. Wire the returned guard into the component’s
  * `onOpenChange`:
  *
  *   const allowOpenChange = useTriggerToggle(isOpen, triggerRef);

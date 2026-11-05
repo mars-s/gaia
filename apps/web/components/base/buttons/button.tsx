@@ -27,20 +27,20 @@ import { directionalIconClass } from "@/utils/directional-icon";
  *   text style          Body 1/Medium             Body 1/Medium            Caption 1/Semibold
  *   icon-only square    36×36 (content-derived)   32×32 (forced size)      24×24 (forced size)
  *
- * `xs` is the smallest tier — first needed for the calendar template's
+ * `xs` is the smallest tier — first needed for the calendar template’s
  * event-details modal ("Join" / edit-icon buttons, node 3920:10954), which
  * scales every dimension down by the same ~0.667 factor from Figma; the
  * table above rounds those to clean pixel values rather than reproducing
  * the fractional source numbers.
  *
  * Icons are rendered by the component itself via the `leadingIcon` /
- * `trailingIcon` props so the consumer can't pass the wrong size. Pass
+ * `trailingIcon` props so the consumer can’t pass the wrong size. Pass
  * a Remix Icon component reference (`RiAddLine`, not `<RiAddLine />`).
  *
  * For icon-only buttons:
  *   <Button iconOnly leadingIcon={RiAddLine} aria-label="Add" />
  *
- * The HTML `type` prop is preserved; Figma's "Type" enum is renamed to
+ * The HTML `type` prop is preserved; Figma’s "Type" enum is renamed to
  * `variant` to avoid the clash.
  */
 
@@ -99,7 +99,7 @@ const styles = sortCx({
   //   Small  → Figma forces 32×32 even though 8+18+8=34, so we hard-set size-8
   //            and zero the padding; the inner flex centers the 18px icon.
   //   Xs     → forces 24×24, content-centered — used for the calendar
-  //            template's edit-icon buttons (timezone/participants/reminder).
+  //            template’s edit-icon buttons (timezone/participants/reminder).
   iconOnlySize: {
     medium: "", // base size already produces 36×36 with a 20px icon
     small: "size-8 p-0", // hard 32×32, content-centered

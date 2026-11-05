@@ -21,15 +21,15 @@ test("known reply causes get one useful sentence and unknown failures stay plain
     ],
     [
       "Model unavailable",
-      "That model isn't available now. Choose another to send.",
+      "That model isn’t available now. Choose another to send.",
     ],
     [
       "Unknown model: old",
-      "That model isn't available now. Choose another to send.",
+      "That model isn’t available now. Choose another to send.",
     ],
     [
       "The reply could not finish. Try again when ready.",
-      "Gaia couldn't finish that reply.",
+      "Gaia couldn’t finish that reply.",
     ],
   ]) {
     assert.equal(replyError(cause), expected);

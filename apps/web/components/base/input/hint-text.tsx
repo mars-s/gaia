@@ -13,7 +13,7 @@ import { cx } from "@/utils/cx";
  * Visuals come from Figma:
  *   - Inter Medium 12/16, letter-spacing 0.15px
  *   - color text/secondary (default) or text/error-primary (invalid)
- *   - 1px top padding to align with the field's bottom edge
+ *   - 1px top padding to align with the field’s bottom edge
  */
 
 export interface HintTextProps extends AriaTextProps {
@@ -22,7 +22,7 @@ export interface HintTextProps extends AriaTextProps {
   ref?: Ref<HTMLElement>;
 }
 
-/** HintText's classes. Input's `errorMessage` reuses the invalid look. */
+/** HintText’s classes. Input’s `errorMessage` reuses the invalid look. */
 export function hintTextClassName(isInvalid: boolean, className?: string) {
   return cx(
     "pt-px text-caption-1-medium text-text-secondary",

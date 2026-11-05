@@ -150,7 +150,7 @@ test("model facts include only supported facts and explain image incompatibility
   assert.equal(modelFacts(model, false), "Text only · 500k context");
   assert.equal(
     modelFacts(model, true),
-    "Can't read your images · 500k context",
+    "Can’t read your images · 500k context",
   );
   assert.equal(
     modelFacts({ id: "legacy", name: "Legacy", contextWindow: 1 }, false),
@@ -302,7 +302,7 @@ test("model facts disappear for identical choices, differ when useful and always
   const text = { ...sol, capabilities: { ...sol.capabilities, images: false } };
   assert.equal(
     modelChoiceFacts(text, [text], true),
-    "Can't read your images · 500k context",
+    "Can’t read your images · 500k context",
   );
   assert.equal(
     modelChoiceFacts(sol, [sol, text], false),
