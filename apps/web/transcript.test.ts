@@ -87,3 +87,20 @@ test("assistant-ui renders retained messages from the server with separate attem
   assert(html.includes("Reply stopped."));
   assert.equal((html.match(/<article/g) ?? []).length, 3);
 });
+
+test("original chat shows an avatar while awaiting a reply and clears it on settlement", () => {
+  const thread: Thread = {
+    version: 1,
+    id: "local",
+    run: { kind: "running", id: "native-wait", operation: "reply" },
+    messages: [{ id: "pending", role: "assistant", text: "", createdAt: "2026-11-05T00:00:00Z" }],
+  };
+  const running = renderToStaticMarkup(createElement(Transcript, { thread }));
+  assert.doesNotMatch(running, /Thinking|Running/);
+  assert.match(running, /gaia-mark/);
+  const settled = renderToStaticMarkup(createElement(Transcript, {
+    thread: { ...thread, run: { kind: "idle" }, messages: [{ ...thread.messages[0]!, text: "All clear." }] },
+  }));
+  assert.match(settled, /All clear\./);
+  assert.doesNotMatch(settled, /gaia-mark|role="status"/);
+});

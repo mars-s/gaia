@@ -134,7 +134,11 @@ export function Transcript({
                     }
                   >
                     {message.status?.type === "running"
-                      ? "Thinking…"
+                      ? (
+                        <span className="job-avatar-pulse">
+                          <span className="gaia-mark" aria-hidden="true" />
+                        </span>
+                      )
                       : message.status?.type === "incomplete" &&
                           message.status.reason === "cancelled"
                         ? "Reply stopped."
