@@ -22,6 +22,10 @@ import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite
 import { z } from "zod";
 import type { ImageContent } from "@earendil-works/pi-ai";
 import type { createAuth } from "./auth.ts";
+import {
+  createExperienceToolHost,
+  type ExperienceToolHostOptions,
+} from "./experience-tools/index.ts";
 import { openRecoveredHarness } from "./workspace-recovery.ts";
 import { type ImageLimits } from "@earendil-works/pi-durable/tools";
 import type { Attachment } from "../../packages/protocol/attachments.ts";
@@ -63,9 +67,13 @@ export async function createPi(
     areasEnabled?: boolean;
     experiencesEnabled?: boolean;
     experiences?: Omit<ExperienceRuntimeOptions, "models">;
+    tools?: ExperienceToolHostOptions;
   } = {},
 ): Promise<ChatAdapter> {
   const ctx = BACKGROUND_CONTEXT;
+  const toolHost = options.tools
+    ? await createExperienceToolHost(options.tools)
+    : undefined;
   const registry = createRegistry();
   let current: { owner: OwnerCapability; signal: AbortSignal } | undefined;
   registry.install(
@@ -187,6 +195,7 @@ export async function createPi(
   const workspaceTools = createWorkspaceTools(options.areasEnabled === true);
   registry.install(workspaceTools.extension);
   for (const extension of extensions) registry.install(extension);
+  const homeExtensions = [...registry.snapshot().installed()];
   const { harness } = await openRecoveredHarness(
     await openNodeSqliteStorage(path),
     {
@@ -212,12 +221,35 @@ export async function createPi(
     ctx,
   );
   workspaceTools.attach(workspace);
+  function experienceCapabilities() {
+    const configured =
+      typeof options.experiences?.capabilities === "function"
+        ? options.experiences.capabilities()
+        : options.experiences?.capabilities;
+    return {
+      ...configured,
+      ...toolHost?.capabilities(),
+      selfModification: configured?.selfModification ?? false,
+    };
+  }
   const experiences =
     options.experiencesEnabled === true
       ? await createExperienceRuntime(dirname(path), {
           models: auth.models,
           settings,
           ...options.experiences,
+          capabilities: experienceCapabilities,
+          extensionsForJob: async (binding) => [
+            ...((await options.experiences?.extensionsForJob?.(binding)) ?? []),
+            ...(toolHost && options.tools
+              ? [
+                  toolHost.extension({
+                    ...binding,
+                    generation: options.tools.generation,
+                  }),
+                ]
+              : []),
+          ],
         })
       : undefined;
   return {
@@ -229,13 +261,35 @@ export async function createPi(
       current = input.owner
         ? { owner: input.owner, signal: input.signal }
         : undefined;
+      const machineExtension =
+        toolHost && options.tools
+          ? toolHost.extension({
+              profileId: "00000000-0000-4000-8000-000000000001",
+              scopeId: "00000000-0000-4000-8000-000000000002",
+              jobId: input.requestId,
+              conversationId: root.id,
+              generation: options.tools.generation,
+            })
+          : undefined;
       try {
+        if (machineExtension) {
+          registry.install(machineExtension);
+          await root.configure(
+            { extensions: [...homeExtensions, machineExtension] },
+            ctx,
+          );
+        }
         await workspaceTools.runHome(input, () => home.run(input));
       } finally {
         current = undefined;
+        if (machineExtension) {
+          await root.configure({ extensions: homeExtensions }, ctx);
+          registry.uninstall(machineExtension);
+        }
       }
     },
     async close() {
+      await Promise.all([experiences?.quiesce(), toolHost?.quiesce()]);
       await experiences?.close();
       await harness.close(ctx);
     },

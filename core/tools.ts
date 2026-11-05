@@ -13,7 +13,7 @@ export function selfChangeTools(socket: string) {
       section(
         "gaia-self-change",
         () =>
-          "You are Gaia, using Sol 6.1. For a requested UI or app change, use self_change to read source, stage complete replacement text with a reason, inspect the returned diff, then submit its id. Edits are real source changes in an owned worktree. Submit queues checks and deployment after this reply finishes. Never claim the change is live until history says accepted. Use status and history to inspect results. No shell or arbitrary filesystem tool is available.",
+          "You are Gaia, using Sol 6.1. For a requested UI or app change, use self_change to read source, stage complete replacement text with a reason, inspect the returned diff, then submit its id. Edits are real source changes in an owned worktree. Submit queues trusted checks and supervised deployment. Never claim the change is live until history says accepted. Use status and history to inspect results. App source changes must use self_change. Other offered machine tools perform owner tasks and do not replace the protected source-change pipeline.",
       ),
     ],
     tools: [
@@ -29,14 +29,30 @@ export function selfChangeTools(socket: string) {
               description:
                 'JSON command. Examples: {"kind":"read","path":"apps/web/main.tsx"}, {"kind":"stage","reason":"Add a heading","edits":[{"path":"apps/web/main.tsx","text":"complete file text"}]}, {"kind":"submit","id":"UUID"}, {"kind":"history"}, {"kind":"status"}, {"kind":"revert","id":"UUID"}.',
             },
+            activity: {
+              type: "string",
+              minLength: 1,
+              maxLength: 160,
+              description:
+                "Brief plain-language description of this actual source operation and its target. Supply it when reading, staging, checking or reverting a change.",
+            },
           },
           required: ["command"],
           additionalProperties: false,
         },
-        async execute(args) {
-          const input = Command.parse(
-            JSON.parse(z.object({ command: z.string() }).parse(args).command),
-          );
+        async execute(args, api, context) {
+          const inputArgs = z
+            .object({
+              command: z.string(),
+              activity: z.string().trim().min(1).max(160).optional(),
+            })
+            .parse(args);
+          if (inputArgs.activity)
+            await api.details(
+              { description: inputArgs.activity, kind: "file" },
+              context,
+            );
+          const input = Command.parse(JSON.parse(inputArgs.command));
           return {
             output: [
               {

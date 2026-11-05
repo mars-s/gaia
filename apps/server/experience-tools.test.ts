@@ -278,7 +278,11 @@ test(
     ]);
     await root.submit({ type: "input", content: "Gate fixture" }, ctx);
     await root.waitForIdle(ctx);
-    assert.equal(host.receipts().length, 1);
+    assert.equal(host.receipts().length, 2);
+    assert.equal(
+      host.receipts().find((item) => item.identity.callId === "call-2")?.state,
+      "failed",
+    );
     assert.equal(host.capabilities().machine, false);
     enabled = true;
     faux.setResponses([
@@ -290,7 +294,7 @@ test(
     ]);
     await root.submit({ type: "input", content: "Replay fixture" }, ctx);
     await root.waitForIdle(ctx);
-    assert.equal(host.receipts().length, 1);
+    assert.equal(host.receipts().length, 2);
     faux.setResponses([
       fauxAssistantMessage(
         [
@@ -310,7 +314,7 @@ test(
     ]);
     await root.submit({ type: "input", content: "Screenshot fixture" }, ctx);
     await root.waitForIdle(ctx);
-    assert.equal(host.receipts().length, 2);
+    assert.equal(host.receipts().length, 3);
     const imageReceipt = host
       .receipts()
       .find((item) => item.tool === "agent_desktop");

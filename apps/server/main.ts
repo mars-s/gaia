@@ -20,7 +20,22 @@ const db = await openDatabase(dataDir);
 const auth = createAuth(db);
 await auth.initialise();
 const piPath = join(dataDir, "pi.sqlite");
-const adapter = await createPi(piPath, auth);
+let closing = false;
+const adapter = await createPi(
+  piPath,
+  auth,
+  [],
+  {},
+  {
+    experiencesEnabled: true,
+    tools: {
+      receiptDirectory: join(dataDir, "tool-receipts"),
+      generation: `unmanaged:${dataDir}`,
+      mode: "stable",
+      enabled: () => !closing,
+    },
+  },
+);
 await chmod(piPath, 0o600);
 const webPort = Number(process.env.GAIA_WEB_PORT ?? 4317);
 const origins = process.env.GAIA_ORIGINS?.split(",") ?? [
@@ -35,7 +50,6 @@ app.server.listen(port, host, () =>
     `Gaia API http://${host}:${port}\nGaia chat http://127.0.0.1:${webPort}\n`,
   ),
 );
-let closing = false;
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, () => {
     if (closing) return;

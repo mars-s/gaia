@@ -33,6 +33,7 @@ export async function experienceFixture(
     directory?: string;
     extensionsForJob?: ExperienceRuntimeOptions["extensionsForJob"];
     capabilities?: ExperienceRuntimeOptions["capabilities"];
+    tools?: NonNullable<Parameters<typeof createPi>[4]>["tools"];
   } = {},
 ) {
   const dir =
@@ -100,6 +101,7 @@ export async function experienceFixture(
       { compaction: { enabled: false, keepRecentTokens: 1 } },
       {
         experiencesEnabled: true,
+        tools: options.tools,
         experiences: {
           concurrency: options.concurrency,
           extensionsForJob: options.extensionsForJob,

@@ -1,4 +1,6 @@
 import type { Extension } from "@earendil-works/pi-durable";
+import { BACKGROUND_CONTEXT } from "@earendil-works/chord/context";
+import { ToolInvocationFailure } from "../experience-tools/index.ts";
 import { ProfileDoc } from "./state.ts";
 
 export function trackedExtension(extension: Extension): Extension {
@@ -16,7 +18,21 @@ export function trackedExtension(extension: Extension): Extension {
           if (!job.invocations.includes(invocationId))
             job.invocations.push(invocationId);
         }, context);
-        const result = await tool.execute(input, api, context);
+        const result = await tool
+          .execute(input, api, context)
+          .catch((error: unknown) => {
+            if (
+              !(error instanceof ToolInvocationFailure) ||
+              error.receipt.state === "unknown" ||
+              error.receipt.state === "intent"
+            )
+              throw error;
+            return {
+              isError: true,
+              output: [{ type: "text" as const, text: error.message }],
+              details: { receipt: error.receipt },
+            };
+          });
         await api.commit(async (tx) => {
           const doc = await tx.doc(ProfileDoc);
           const job = doc.jobs.find((j) => j.workerId === api.conversationId);
@@ -29,7 +45,7 @@ export function trackedExtension(extension: Extension): Extension {
               (id) => id !== invocationId,
             );
           }
-        }, context);
+        }, BACKGROUND_CONTEXT);
         return result;
       },
     })),

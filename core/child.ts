@@ -1,5 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { createAuth } from "./auth.ts";
@@ -8,6 +8,7 @@ import { readState } from "./state.ts";
 import { control } from "./control-client.ts";
 import { webResource } from "./web.ts";
 import { QuiesceRequest, QuiesceReceipt } from "./quiescence.ts";
+import { machineGate } from "./machine-gate.ts";
 import type { createChatServer, AuthService } from "../apps/server/server.ts";
 import type { createPi, ChatAdapter } from "../apps/server/pi.ts";
 const env = z
@@ -57,6 +58,14 @@ const runtime = () => ({
 });
 let mode = sandbox ? "probe" : (await readState(env.GAIA_DATA_DIR)).kind;
 let closing: Promise<void> | undefined;
+const dispatchMode = machineGate(
+  env.GAIA_DATA_DIR,
+  {
+    release: env.GAIA_RELEASE,
+    generation: basename(env.GAIA_GENERATION),
+  },
+  sandbox,
+);
 const origins = [
   `http://${env.GAIA_HOST}:${env.GAIA_PORT}`,
   `http://127.0.0.1:${env.GAIA_PORT}`,
@@ -71,7 +80,26 @@ const app = serverFactory({
         auth,
         mode === "safe" ? [] : [selfChangeTools(env.GAIA_CONTROL_SOCKET)],
         {},
-        { areasEnabled: mode !== "safe" },
+        {
+          areasEnabled: mode !== "safe",
+          experiencesEnabled: mode !== "safe",
+          experiences: {
+            extensions:
+              mode === "safe" ? [] : [selfChangeTools(env.GAIA_CONTROL_SOCKET)],
+            capabilities: () => ({
+              selfModification: dispatchMode() === "stable",
+            }),
+          },
+          tools:
+            mode === "safe"
+              ? undefined
+              : {
+                  receiptDirectory: join(env.GAIA_GENERATION, "tool-receipts"),
+                  generation: basename(env.GAIA_GENERATION),
+                  mode: dispatchMode,
+                  enabled: () => !closing,
+                },
+        },
       ),
   auth: service,
   origins,

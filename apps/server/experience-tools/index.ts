@@ -35,6 +35,11 @@ const Receipt = z.object({
   message: z.string().optional(),
 });
 export type ToolReceipt = z.infer<typeof Receipt>;
+export class ToolInvocationFailure extends Error {
+  constructor(readonly receipt: ToolReceipt) {
+    super(receipt.message ?? "Tool invocation failed.");
+  }
+}
 const Activity = z
   .string()
   .trim()
@@ -162,7 +167,6 @@ export async function createExperienceToolHost(
       started: () => Promise<void>,
     ) => Promise<ToolExecutionResult>,
   ): Promise<ToolExecutionResult> {
-    check(binding, tool !== "search_web");
     if (api.conversationId !== binding.conversationId)
       throw new Error("Tool conversation does not match its job binding.");
     const identity = Identity.parse({
@@ -194,6 +198,7 @@ export async function createExperienceToolHost(
     };
     let dispatched = false;
     try {
+      check(binding, tool !== "search_web");
       await persist(key, intent);
       signal.throwIfAborted();
       const result = await execute(signal, async () => {
@@ -235,7 +240,7 @@ export async function createExperienceToolHost(
       )
         unjoined.add(key);
       const message = error instanceof Error ? error.message : String(error);
-      await persist(key, {
+      const failure: ToolReceipt = {
         ...intent,
         state:
           dispatched && tool !== "search_web"
@@ -245,8 +250,9 @@ export async function createExperienceToolHost(
               : "failed",
         at: new Date().toISOString(),
         message,
-      });
-      throw error;
+      };
+      await persist(key, failure);
+      throw new ToolInvocationFailure(failure);
     } finally {
       calls.delete(key);
       finish();

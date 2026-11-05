@@ -14,6 +14,10 @@ import { Harness, createRegistry } from "@earendil-works/pi-durable";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import { z } from "zod";
 import { Snapshot } from "../packages/protocol/index.ts";
+import {
+  Experience,
+  ExperienceState,
+} from "../packages/protocol/experiences.ts";
 import { AreaSnapshot } from "../packages/sdk/areas.ts";
 import {
   WorkspaceProposal,
@@ -299,6 +303,15 @@ async function fixture(t: TestContext) {
       };
       return {
         generation,
+        async setMode(kind: "stable" | "checking") {
+          await atomic(join(data, "control/manifest.json"), {
+            kind,
+            active: pair,
+            good: pair,
+            failures: 0,
+            ...(kind === "checking" ? { change: randomUUID() } : {}),
+          });
+        },
         request,
         home,
         area,
@@ -408,6 +421,111 @@ async function fixture(t: TestContext) {
     },
   };
 }
+
+test(
+  "installed profile runtime follows the protected gate, drains jobs and keeps safe mode plain",
+  { timeout: 30000 },
+  async (t) => {
+    const f = await fixture(t);
+    const active = await f.start("stable");
+    const home = await active.privateHome();
+    const proposal = Experience.parse(
+      await (
+        await active.request("experiences", {
+          requestId: randomUUID(),
+          plan: {
+            layout: "channels",
+            title: "Owned installed channels",
+            assistantName: "Gaia",
+            purpose: "Synthetic acceptance",
+            scopes: [
+              { label: "Personal", purpose: "Personal fixture" },
+              { label: "Work", purpose: "Work fixture" },
+            ],
+          },
+        })
+      ).json(),
+    );
+    const confirmed = await active.request(
+      `experiences/${proposal.id}/confirm`,
+      { revision: proposal.revision },
+    );
+    assert.equal(confirmed.status, 200, await confirmed.clone().text());
+    const profile = ExperienceState.parse(await confirmed.json());
+    assert.equal(profile.capabilities.search, true);
+    assert.equal(profile.capabilities.selfModification, true);
+    assert.equal(profile.capabilities.machine, process.platform === "darwin");
+    assert.equal((await active.request("probe/experiences")).status, 404);
+    const state = async () =>
+      ExperienceState.parse(
+        await (await active.request(`experiences/${proposal.id}/state`)).json(),
+      );
+    await active.setMode("checking");
+    assert.deepEqual((await state()).capabilities, {
+      machine: false,
+      desktop: false,
+      search: false,
+      selfModification: false,
+    });
+    await active.setMode("stable");
+    assert.equal((await state()).capabilities.search, true);
+    const scope = profile.scopes[0];
+    const first = await active.request(
+      `experiences/${proposal.id}/scopes/${scope.id}/messages`,
+      { requestId: randomUUID(), text: "Ordinary installed profile reply" },
+    );
+    assert.equal(first.status, 202, await first.clone().text());
+    await until(state, (value) =>
+      value.jobs.some((job) => job.state.kind === "completed"),
+    );
+    const stats = await active.stats();
+    const profileContext = stats.contexts.at(-1);
+    assert(profileContext);
+    for (const tool of [
+      "mac_shell",
+      "agent_desktop",
+      "search_web",
+      "self_change",
+      "spawn_agent",
+    ])
+      assert(profileContext.tools.includes(tool), tool);
+    assert.deepEqual(
+      (await active.home()).thread.messages,
+      home.thread.messages,
+    );
+    const held = await active.request(
+      `experiences/${proposal.id}/scopes/${scope.id}/messages`,
+      { requestId: randomUUID(), text: "SYNTHETIC_WAIT_FOR_ABORT" },
+    );
+    assert.equal(held.status, 202);
+    await until(
+      () => active.stats(),
+      (value) => value.callCount === stats.callCount + 1,
+    );
+    assert.equal((await active.home()).thread.run.kind, "idle");
+    await active.quiesce();
+    const reopened = await f.start("stable", active.generation);
+    const recovered = ExperienceState.parse(
+      await (await reopened.request(`experiences/${proposal.id}/state`)).json(),
+    );
+    assert(
+      recovered.jobs.every(
+        (job) => !["queued", "running", "stopping"].includes(job.state.kind),
+      ),
+    );
+    assert.equal((await reopened.stats()).callCount, 0);
+    assert.deepEqual(
+      (await reopened.home()).thread.messages,
+      home.thread.messages,
+    );
+    await reopened.stop();
+    const safe = await f.start("safe", active.generation);
+    assert.equal((await safe.request("experiences")).status, 404);
+    assert.deepEqual((await safe.home()).thread.messages, home.thread.messages);
+    assert.equal((await safe.stats()).callCount, 0);
+    await safe.stop();
+  },
+);
 
 test(
   "installed child quiesce joins area work and closes stores before acknowledgement",
