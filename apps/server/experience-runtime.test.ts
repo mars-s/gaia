@@ -595,6 +595,7 @@ test(
   { timeout: 15000 },
   async (t) => {
     const f = await experienceFixture(t);
+    let rawReceipt = "";
     f.faux.setResponses([
       fauxAssistantMessage(
         [
@@ -613,7 +614,20 @@ test(
         ],
         { stopReason: "toolUse" },
       ),
-      fauxAssistantMessage("Review this proposal in the app"),
+      (context) => {
+        const result = context.messages.find(
+          (message) =>
+            message.role === "toolResult" &&
+            message.toolName === "propose_experience",
+        );
+        assert(result && result.role === "toolResult");
+        const raw = result.content
+          .filter((part) => part.type === "text")
+          .map((part) => part.text)
+          .join("");
+        rawReceipt = raw;
+        return fauxAssistantMessage("Review this proposal in the app");
+      },
     ]);
     const response = await f.request("messages", {
       requestId: randomUUID(),
@@ -626,9 +640,34 @@ test(
       if (state.thread.run.kind !== "running") break;
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
+    assert.deepEqual(JSON.parse(rawReceipt), {
+      status: "awaiting-review",
+      title: "Proposed sessions",
+      layout: "sessions",
+      conversations: { labels: ["First session"], count: 1 },
+    });
+    assert(!rawReceipt.includes("revision"));
+    assert(!/[a-f0-9]{8}-[a-f0-9-]{27}/.test(rawReceipt));
     const index = await (await f.request("experiences")).json();
     assert.equal(index.profiles.length, 1);
     assert.equal(index.profiles[0].kind, "proposed");
-    assert.equal((await f.state(index.profiles[0].id)).scopes.length, 0);
+    const proposal = index.profiles[0];
+    assert.equal(proposal.revision, 1);
+    assert.equal(proposal.plan.purpose, "Explicit fixture request");
+    assert.equal((await f.state(proposal.id)).scopes.length, 0);
+    assert.equal(
+      (await f.request(`experiences/${proposal.id}/confirm`, { revision: 0 }))
+        .status,
+      409,
+    );
+    assert.equal((await f.state(proposal.id)).scopes.length, 0);
+    assert.equal(
+      (
+        await f.request(`experiences/${proposal.id}/confirm`, {
+          revision: proposal.revision,
+        })
+      ).status,
+      200,
+    );
   },
 );

@@ -139,7 +139,23 @@ export async function createPi(
                   );
                   return {
                     output: [
-                      { type: "text" as const, text: JSON.stringify(proposal) },
+                      {
+                        type: "text" as const,
+                        text: JSON.stringify({
+                          status:
+                            proposal.kind === "ready"
+                              ? "ready"
+                              : "awaiting-review",
+                          title: proposal.plan.title,
+                          layout: proposal.plan.layout,
+                          conversations: {
+                            labels: proposal.plan.scopes.map(
+                              (scope) => scope.label,
+                            ),
+                            count: proposal.plan.scopes.length,
+                          },
+                        }),
+                      },
                     ],
                   };
                 },
