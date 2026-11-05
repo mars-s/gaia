@@ -163,3 +163,13 @@ test("composer focus has a single accent edge and both actions share the same fi
   assert.match(css, /composer-stop \{\s*background: var\(--color-accent\)/);
   assert.match(css, /primary-action, .secondary-action, .quiet-action[^}]*border-radius: var\(--radius-sm\);\s*background-image: none/);
 });
+
+test("following survives delayed card and image layout without pulling back a reader who scrolled away", () => {
+  const hook = read("./use-transcript-follow.ts");
+  assert.match(hook, /if \(follow.current\) bottom.current\?\.scrollIntoView/);
+  assert.match(hook, /observer.observe\(content\)/);
+  assert.match(hook, /observer.observe\(viewport\)/);
+  assert.match(hook, /observer.disconnect\(\)/);
+  assert.match(read("./app.tsx"), /useTranscriptFollow\(bottom, followReply/);
+  assert.match(read("./experiences/view.tsx"), /useTranscriptFollow\(bottom, follow\)/);
+});

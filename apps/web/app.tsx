@@ -1,3 +1,4 @@
+import { useTranscriptFollow } from "./use-transcript-follow";
 import { EmptyChat } from "./empty-chat";
 import { OfflineNotice } from "./progress-row";
 import { ChatSwitcher } from "./chat-switcher";
@@ -130,6 +131,7 @@ export function App() {
   const bottom = useRef<HTMLDivElement>(null);
   const transcript = useRef<HTMLDivElement>(null);
   const followReply = useRef(true);
+  useTranscriptFollow(bottom, followReply, connected && !accountOpen && experienceView === "original");
   const authFlow = useRef(createAuthBrowserFlow(openAuthInBrowser));
   const lastMessage = active?.thread.messages.at(-1);
   const proposalId =

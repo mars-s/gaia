@@ -1,3 +1,4 @@
+import { useTranscriptFollow } from "../use-transcript-follow";
 import { EmptyChat } from "../empty-chat";
 import { AssistantHead } from "../assistant-head";
 import { Dialog } from "@base-ui/react/dialog";
@@ -305,6 +306,7 @@ function ScopeConversation({
   const draft = saved.kind === "ready" ? saved.draft : undefined;
   const bottom = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
+  useTranscriptFollow(bottom, follow);
   const model = state?.chat.models.find(
     (item) => item.id === (entry.selection?.modelId ?? state.chat.modelId),
   );
