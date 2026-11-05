@@ -346,7 +346,7 @@ export function ComposerControls({
           <div className="model-sheet-header">
             <span>Model and effort</span>
             <AriaButton
-              className="quiet-action model-done"
+              className="secondary-action model-done"
               onPress={() => setOpen(false)}
             >
               Done

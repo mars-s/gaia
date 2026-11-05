@@ -309,3 +309,12 @@ test("model facts disappear for identical choices, differ when useful and always
     "Reads images · 500k context",
   );
 });
+
+test("mobile model Done is a secondary action with a safe bottom inset", async () => {
+  const { readFileSync } = await import("node:fs");
+  const source = readFileSync(new URL("./composer-controls.tsx", import.meta.url), "utf8");
+  assert.match(source, /className="secondary-action model-done"/);
+  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+  assert.ok(css.includes("24px + env(safe-area-inset-bottom)"));
+  assert.match(css, /model-done[^}]*min-height: 32px[^}]*color: var\(--color-ink\)/);
+});

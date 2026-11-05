@@ -1070,7 +1070,7 @@ a:focus-visible {
 .model-sheet {
   width: 100%;
   max-height: 80dvh;
-  padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+  padding: 0 16px calc(24px + env(safe-area-inset-bottom));
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: var(--color-surface-raised);
   color: var(--color-ink);
@@ -1079,7 +1079,7 @@ a:focus-visible {
   transition: transform var(--motion-drawer);
 }
 .model-sheet .model-dialog {
-  max-height: calc(80dvh - 16px - env(safe-area-inset-bottom));
+  max-height: calc(80dvh - 24px - env(safe-area-inset-bottom));
 }
 .model-sheet .effort-controls {
   padding: 12px 0 0;
@@ -1096,6 +1096,10 @@ a:focus-visible {
 }
 .model-done {
   order: 1;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--color-line-strong);
+  color: var(--color-ink);
 }
 .model-scrim[data-entering],
 .model-scrim[data-exiting] {
