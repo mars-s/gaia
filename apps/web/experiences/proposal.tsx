@@ -132,6 +132,9 @@ export function ExperienceProposalNotice({
                   {errors.get(proposal.id)}
                 </p>
               )}
+              <p className="text-caption-1-regular text-text-secondary">
+                Or tell me what to change.
+              </p>
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="primary"
@@ -149,9 +152,6 @@ export function ExperienceProposalNotice({
                   Not now
                 </button>
               </div>
-              <p className="text-caption-1-regular text-text-secondary">
-                Or tell me what to change.
-              </p>
             </>
           )}
           {proposal.kind === "ready" && errors?.get(proposal.id) && (

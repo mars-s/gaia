@@ -173,3 +173,18 @@ test("created card collapses and stale error sits above the actions", async (t) 
   assert(html.indexOf(stale) < html.indexOf("Use this setup"));
   assert.match(html, /role="alert" class="text-text-error-primary"/);
 });
+
+test("proposal change caption sits above the actions and memory copy reflects the real layout", async (t) => {
+  const f = await experienceFixture(t);
+  try {
+    const proposal = await f.propose();
+    const html = renderToStaticMarkup(createElement(ExperienceProposalNotice, {
+      proposals: [proposal], disabled: false,
+    }));
+    assert.ok(html.indexOf("Or tell me what to change.") < html.indexOf("Use this setup"));
+    assert.match(html, /Your original chat stays as it is/);
+    assert.match(html, /setup-memory-caption/);
+  } finally {
+    await f.close();
+  }
+});
