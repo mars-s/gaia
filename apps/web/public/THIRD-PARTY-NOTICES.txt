@@ -2841,3 +2841,12 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+DiceBear Voxel Bot, bot-00.svg through bot-07.svg
+Copyright waived under CC0 1.0 Universal.
+Style: https://www.dicebear.com/styles/voxel-bot/
+Licence: https://creativecommons.org/publicdomain/zero/1.0/
+Downloaded from the official 10.x API on 5 November 2026.
+Per-file source URLs, fixed public seeds and SHA-256 checksums are in
+bots/provenance.json. SVG references are local fragment IDs only.
+These are DiceBear artwork, not xAI artwork. No owner labels are sent to DiceBear.

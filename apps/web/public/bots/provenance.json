@@ -1,0 +1,72 @@
+{
+  "style": "DiceBear Voxel Bot",
+  "styleSource": "https://www.dicebear.com/styles/voxel-bot/",
+  "licence": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "fetched": "2026-11-05",
+  "assets": [
+    {
+      "file": "bot-00.svg",
+      "source": "https://api.dicebear.com/10.x/voxel-bot/svg?seed=gaia-bot-00",
+      "seed": "gaia-bot-00",
+      "apiVersion": "10.x",
+      "licence": "CC0-1.0",
+      "sha256": "961a716a3b50a9afe7b65df28af4314737cb4533c22240d1a78b1836e555b185"
+    },
+    {
+      "file": "bot-01.svg",
+      "source": "https://api.dicebear.com/10.x/voxel-bot/svg?seed=gaia-bot-01",
+      "seed": "gaia-bot-01",
+      "apiVersion": "10.x",
+      "licence": "CC0-1.0",
+      "sha256": "f778ebe7eb3c28acbfeef0c84af0649177c8e5770c8436f94ec40fba222f2145"
+    },
+    {
+      "file": "bot-02.svg",
+      "source": "https://api.dicebear.com/10.x/voxel-bot/svg?seed=gaia-bot-02",
+      "seed": "gaia-bot-02",
+      "apiVersion": "10.x",
+      "licence": "CC0-1.0",
+      "sha256": "7650b12e712814f1adedeabe56e47221ce51173c09698db64deee3c7524dbc23"
+    },
+    {
+      "file": "bot-03.svg",
+      "source": "https://api.dicebear.com/10.x/voxel-bot/svg?seed=gaia-bot-03",
+      "seed": "gaia-bot-03",
+      "apiVersion": "10.x",
+      "licence": "CC0-1.0",
+      "sha256": "89859626f3a92dd675f27530f9f66b2883d44801be865fa74ab518b4b5847525"
+    },
+    {
+      "file": "bot-04.svg",
+      "source": "https://api.dicebear.com/10.x/voxel-bot/svg?seed=gaia-bot-04",
+      "seed": "gaia-bot-04",
+      "apiVersion": "10.x",
+      "licence": "CC0-1.0",
+      "sha256": "794023d6b63614f0e97fb58e41e63c740dec103fc75c6993e60d506dc8857b6f"
+    },
+    {
+      "file": "bot-05.svg",
+      "source": "https://api.dicebear.com/10.x/voxel-bot/svg?seed=gaia-bot-05",
+      "seed": "gaia-bot-05",
+      "apiVersion": "10.x",
+      "licence": "CC0-1.0",
+      "sha256": "c61accf72e0375d1164d8f546b7b0d9a8dda30618ce58a11629dd948d53d1ee9"
+    },
+    {
+      "file": "bot-06.svg",
+      "source": "https://api.dicebear.com/10.x/voxel-bot/svg?seed=gaia-bot-06",
+      "seed": "gaia-bot-06",
+      "apiVersion": "10.x",
+      "licence": "CC0-1.0",
+      "sha256": "80d973d4e1636e1c33b2bd18e80d6114f7fac2122536bc2f98052aeb42ba7b1e"
+    },
+    {
+      "file": "bot-07.svg",
+      "source": "https://api.dicebear.com/10.x/voxel-bot/svg?seed=gaia-bot-07",
+      "seed": "gaia-bot-07",
+      "apiVersion": "10.x",
+      "licence": "CC0-1.0",
+      "sha256": "842c90c41e87ae67dcfa469afa41979a3221e13ea3c3931224345d43ff2e1de3"
+    }
+  ]
+}

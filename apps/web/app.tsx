@@ -24,8 +24,14 @@ import { Composer } from "./composer";
 import { createConversationController } from "./conversation-controller";
 import { homeScope, scopeKey } from "./workspace-controller";
 import { WorkspaceNavigation, WorkspaceProposalPanel } from "./workspace-panel";
+import { ProfileExperience } from "./experiences";
+import { createExperienceController } from "./experiences/controller";
 
 export function App() {
+  const [experiences] = useState(() => createExperienceController());
+  const [experienceView, setExperienceView] = useState<
+    "original" | "profiles" | "chat"
+  >("original");
   const [legacyStore] = useState(() => createDraftStore(() => sessionStorage));
   const [controller] = useState(() =>
     createConversationController({
@@ -65,7 +71,7 @@ export function App() {
   const [updateWaiting, setUpdateWaiting] = useState(false);
   const [observeRelease] = useState(() =>
     createReleaseObserver(
-      controller.prepareReload,
+      () => controller.prepareReload() && experiences.prepareReload(),
       () => window.location.reload(),
       loadedRelease(import.meta.url),
     ),
@@ -83,12 +89,18 @@ export function App() {
       : undefined;
   useEffect(() => {
     controller.resume();
+    experiences.resume();
     const close = subscribe(controller.receiveHome, controller.setOffline);
     return () => {
       close();
       controller.pause();
+      experiences.pause();
     };
-  }, [controller]);
+  }, [controller, experiences]);
+  useEffect(() => {
+    if (!connected || controller.safeMode) experiences.pause();
+    else experiences.resume();
+  }, [connected, state?.runtime?.mode, controller, experiences]);
   useEffect(() => {
     setUpdateWaiting(observeRelease(state?.runtime?.release));
   }, [version, state?.runtime?.release, observeRelease]);
@@ -215,6 +227,17 @@ export function App() {
               Reconnect ChatGPT
             </Button>
             <AppearancePicker />
+            {!controller.safeMode && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setExperienceView("profiles");
+                  setAccountOpen(false);
+                }}
+              >
+                Profiles
+              </Button>
+            )}
             {profilePanel(true)}
             <ManagedSettings runtime={state?.runtime} />
             {error && (
@@ -336,6 +359,18 @@ export function App() {
             )}
           </section>
         </main>
+      ) : experienceView !== "original" && !controller.safeMode ? (
+        <ProfileExperience
+          controller={experiences}
+          manage={experienceView === "profiles"}
+          onOpen={() => setExperienceView("chat")}
+          onManage={() => setExperienceView("profiles")}
+          onBack={() => setExperienceView("original")}
+          onSetup={() => {
+            setExperienceView("original");
+            controller.select(homeScope);
+          }}
+        />
       ) : (
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {!controller.safeMode && (
