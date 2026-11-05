@@ -129,7 +129,7 @@ export function App() {
   }, [accountOpen, reviewAnswer, experienceView]);
   const bottom = useRef<HTMLDivElement>(null);
   const transcript = useRef<HTMLDivElement>(null);
-  const followReply = useRef(false);
+  const followReply = useRef(true);
   const authFlow = useRef(createAuthBrowserFlow(openAuthInBrowser));
   const lastMessage = active?.thread.messages.at(-1);
   const proposalId =
@@ -217,7 +217,7 @@ export function App() {
       );
   }, [connection]);
   useEffect(() => {
-    followReply.current = false;
+    followReply.current = true;
   }, [scope]);
   useEffect(() => {
     if (followReply.current) bottom.current?.scrollIntoView({ block: "end" });
@@ -703,6 +703,9 @@ export function App() {
                     />
                   )}
                 </>
+              )}
+              {Boolean(active?.thread.messages.length) && (
+                <div className="transcript-clearance" aria-hidden="true" />
               )}
               <div ref={bottom} />
             </section>

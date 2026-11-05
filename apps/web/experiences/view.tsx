@@ -481,6 +481,9 @@ function ScopeConversation({
                 scope={scope}
               />
             ))}
+          {Boolean(state?.messages.length) && (
+            <div className="transcript-clearance" aria-hidden="true" />
+          )}
           <div ref={bottom} />
         </div>
       </div>

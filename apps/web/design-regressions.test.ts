@@ -45,7 +45,7 @@ test("interview offer uses the card frame and skipped interviews stay hidden", (
 });
 test("transcript clearance tracks composer resizing and keeps the short fade", () => {
   assert.match(read("./shared-composer.tsx"), /new ResizeObserver\(measure\)/);
-  assert.match(css, /padding-bottom: var\(--composer-height, 120px\)/);
+  assert.match(css, /height: var\(--composer-height, 120px\)/);
   assert.match(
     css,
     /height: 24px;\s*pointer-events: none;\s*background: linear-gradient/,
@@ -89,16 +89,49 @@ test("proposal descriptions share fixed grid columns and model separator has no 
 });
 
 test("dark bubbles and disabled send discs use the stronger selected surface", () => {
-  assert.match(css, /\.dark .owner-bubble \{ background: var\(--color-surface-selected\)/);
-  assert.match(css, /\.composer-send:disabled \{\s*background: var\(--color-surface-selected\)/);
+  assert.match(
+    css,
+    /\.dark .owner-bubble \{ background: var\(--color-surface-selected\)/,
+  );
+  assert.match(
+    css,
+    /\.composer-send:disabled \{\s*background: var\(--color-surface-selected\)/,
+  );
 });
 test("attachments expose the filename below a 72px image in a 96px chip", () => {
   assert.match(read("./image-previews.tsx"), /<figcaption>/);
-  assert.match(css, /draft-images .image-thumbnail \{ width: 96px; height: auto/);
+  assert.match(
+    css,
+    /draft-images .image-thumbnail \{ width: 96px; height: auto/,
+  );
   assert.match(css, /width: 72px; height: 72px; border-radius: 12px/);
-  assert.match(css, /text-overflow: ellipsis; white-space: nowrap; text-align: center/);
+  assert.match(
+    css,
+    /text-overflow: ellipsis; white-space: nowrap; text-align: center/,
+  );
 });
 test("narrow model chip shares the textarea edge and proposal actions share a baseline", () => {
-  assert.match(css, /model-trigger \{ grid-column: 2 \/ 4; justify-self: start; padding-left: 12px/);
-  assert.match(css, /setup-card > div:has\(> .quiet-action\) \{ align-items: center/);
+  assert.match(
+    css,
+    /model-trigger \{ grid-column: 2 \/ 4; justify-self: start; padding-left: 12px/,
+  );
+  assert.match(
+    css,
+    /setup-card > div:has\(> .quiet-action\) \{ align-items: center/,
+  );
+});
+
+test("clearance precedes the scroll anchor and leaves empty chats centred", () => {
+  for (const file of ["./app.tsx", "./experiences/view.tsx"]) {
+    const source = read(file);
+    assert.match(
+      source,
+      /messages.length\)[\s\S]*?className="transcript-clearance"[\s\S]*?<div ref=\{bottom\}/,
+    );
+  }
+  assert.match(read("./app.tsx"), /const followReply = useRef\(true\)/);
+});
+
+test("sidebar header stays out of the narrow title bar", () => {
+ assert.match(css, /@media \(max-width: 639px\) \{ .app-bar-side.sidebar-header \{ display: none/);
 });

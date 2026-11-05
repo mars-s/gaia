@@ -1220,10 +1220,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 @media (max-width: 480px) { .setup-list-row { grid-template-columns: minmax(0, 1fr) auto; } .setup-list-row > div:last-child { grid-column: 1 / -1; } .setup-list-row > div:last-child:empty { display: none; } }
 
 /* Keep the final actions clear of the composer at every measured height. */
-.conversation-scroll {
-  padding-bottom: var(--composer-height, 120px);
-  scroll-padding-bottom: 24px;
-}
+.conversation-scroll { scroll-padding-bottom: 24px; }
+.transcript-clearance { height: var(--composer-height, 120px); flex-shrink: 0; }
 .composer-column {
   position: relative;
 }
@@ -1307,3 +1305,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .reply-error-icon { width: 24px; height: 24px; padding: 4px; }
 .reply-error { gap: 8px; font-size: 14px; line-height: 20px; }
 .reply-error button:not(.quiet-link) { margin-left: 4px; }
+
+@media (max-width: 639px) { .app-bar-side.sidebar-header { display: none; } }
