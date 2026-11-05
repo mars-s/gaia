@@ -34,7 +34,7 @@ The scope context ledger is authoritative for later messages and compaction. Adm
 | `single` | One assistant | One visible conversation and shared explicit memory. |
 | `bots` | One identity per Bot, plus Home | Separate role, thread and memory per Bot. Home transfers selected context explicitly. |
 | `channels` | One assistant | Separate channel threads and one shared memory namespace with provenance. |
-| `sessions` | One assistant | Independent session history, memory and model selection. New session preserves earlier sessions. |
+| `sessions` | One assistant | Independent session history and model selection. New session preserves earlier sessions. Under v1.5, new explicit facts are shared across sessions; earlier facts keep their session. Transcripts are never shared. |
 
 Memory is a real versioned fact store behind a small tool interface. It does not mean loading every transcript into every prompt. Concurrent updates use revisions or append-only records. No memory is inferred from the owner's existing chat. New profiles start empty.
 

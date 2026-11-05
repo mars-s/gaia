@@ -1,6 +1,6 @@
 # Gaia: product spec and architecture
 
-Status: locked v1.4, 5 Nov 2026. Decisions from Avi, 1 to 5 Nov 2026.
+Status: locked v1.5, 5 Nov 2026. Decisions from Avi, 1 to 5 Nov 2026.
 
 Changelog:
 - v0.2 (4 Nov 2026): sign-in and model traffic through Pi's built-in OAuth; Electron gets full terminal and file access; generative UI is real code changes through the self-mod pipeline.
@@ -9,6 +9,7 @@ Changelog:
 - v1.2 (4 Nov 2026): Avi chose Board UI instead of assistant-ui. Use free MIT-licensed components with a plain default theme and editable theme tokens.
 - v1.3 (5 Nov 2026): Avi authorised UI library and stack decisions for the overnight work. Base UI is preferred for new primitives. Radix is permitted where needed; assistant-ui, shadcn and existing React Aria or Board UI components may be used when they fit. Libraries must be free and openly licensed. Add genuine Pi effort controls and image attachments, and make onboarding progress after answers.
 - v1.4 (5 Nov 2026): Avi authorised four isolated experience profiles as parallel acceptance cases: Dots-style central chat, Grokbot-style area Bots, Duet-style shared-memory channels and Hermes-style sessions. Add concurrent background work, subordinate agents, actual local Mac CLI and Agent Desktop tools, hosted web search through the existing Pi ChatGPT/Codex subscription, and task-specific plain-language activity using the supplied visual reference. Profile setup stays explicit and owner-confirmed. Existing owner data is preserved.
+- v1.5 (5 Nov 2026): Founder reconciliation under Avi's delegated product authority. Chat shapes are called setups. Gaia proposes setups as cards in the conversation, with Use this setup and Not now. Not now hides a proposal and keeps its data. A confirmed setup can become the main chat through an explicit owner action, and the earlier chat stays listed and usable. The onboarding interview is offered after the first useful answer and is never offered again once skipped. New explicit facts in a sessions setup are shared across its sessions, and older facts keep their scope. Progress shows only the avatar until real activity exists. Retrying an attempt that started a machine action needs the owner's confirmation. The model menu never ranks models by parsing names. The independent-job runtime stays the conversation engine until measured gates justify a change. Protocol changes stay additive until callers migrate.
 
 ## One-line pitch
 
@@ -31,9 +32,9 @@ Gaia is an open-source agent you run on your own machine. It starts as a single 
 ### First run
 
 1. Owner runs `docker compose up` (or the native start command). Gaia prints an address and a one-time pairing code.
-2. The page shows only a chat box. Gaia asks the owner to connect ChatGPT or Claude.
-3. Gaia interviews: who you are, one or many life areas, where you sit from chat to agentic.
-4. Gaia proposes a setup (single agent or one agent per area) and builds it after a yes.
+2. The page shows a chat box and one assistant line asking the owner to connect ChatGPT or Claude.
+3. After connection, Gaia answers requests straight away. After its first useful answer, it offers once to fit itself around how the owner works. The owner can start the short interview (who you are, one or many life areas, where you sit from chat to agentic) or choose Not now. A skipped interview is never offered again automatically. It stays available under About you.
+4. When a different shape would help, Gaia proposes a setup as a card under its reply. The owner chooses Use this setup or Not now on the card. Typed agreement never confirms.
 
 ### Multi-area person
 
@@ -119,7 +120,7 @@ Hosting (detail in `docs/hosting.md`):
 | Docker Compose and native systemd seed | LXC template, Nix package |
 | Chat box, model and effort controls, image attachments, tool and compaction hints | Rich trace and DeepSeek-style views (generated) |
 | Claude and ChatGPT sign-in via Pi OAuth | More providers |
-| Onboarding interview, multi-agent setup | Routines, cross-agent planning |
+| Optional onboarding interview after the first answer, setups proposed in chat, multi-agent setup | Routines, cross-agent planning |
 | Self-mod pipeline, safe mode, history | Approval mode polish |
 | Protocol v1, SDK, conformance suite | Generated Android and Next.js clients |
 | Electron client, full terminal and file access | iOS client; optional restricted mode |
@@ -160,11 +161,19 @@ This increment tests Gaia's ability to adapt to four working styles. The product
 | Central assistant | One minimal iMessage-like chat, with relevant context selected for each task. | A second request is accepted while the first continues. Genuine independent results return to the same conversation. |
 | Area Bots | Home and named Bots in a sidebar, with researched openly licensed SVG avatars. Each Bot owns its role, memory and conversation. | Two Bots keep separate context and drafts. Home can coordinate actual subordinate work. |
 | Shared channels | One assistant identity and shared memory, with topic channels and separate conversation histories. | A remembered fact is available across channels while private thread content is included only when explicitly selected. |
-| Sessions | A left session list, New session, durable history and scoped controls. | New sessions retain older sessions. Model, effort and compaction target the selected session. |
+| Sessions | A left session list, New session, durable history and scoped controls. | New sessions retain older sessions. Model, effort and compaction target the selected session. Explicit facts remembered from v1.5 are available in every session of that setup. Earlier facts keep their session. Transcripts are never shared. |
 
-Progress is a small avatar followed by quiet, task-specific language. The agent supplies wording describing the actual action, such as Verifying RE in Jellyfin. Real execution drives its start, updates and settlement. Raw tool names, command arguments and a fixed list of status phrases do not satisfy this requirement.
+Progress is a small avatar followed by quiet, task-specific language. The agent supplies wording describing the actual action, such as Verifying RE in Jellyfin. Real execution drives its start, updates and settlement. Until real activity exists, only the avatar shows, with a subtle pulse and no words. Streamed reply text appears in the reply itself. The job title, the owner's prompt, generic words such as Running or Thinking, timers, raw tool names, command arguments and fixed status phrases are never shown as progress. Work delegated between conversations is labelled with its source and never shown as the owner's words.
+
+In the product these shapes are called setups. Profile refers only to the owner's About you details. A setup proposal appears as a card under the reply that proposed it. A newer proposal from the same conversation replaces older pending ones. Not now and replacement hide a proposal without deleting stored data. Use this setup confirms the exact revision shown, opens the setup and makes it the main chat, and the card states this before the click. The earlier chat stays listed as Earlier chat, unchanged and usable, and can be made main again at any time. Safe mode always opens the earlier chat. Owner messages are never copied or moved without a separate explicit confirmation.
+
+The model menu lists every runnable model in the live catalogue, plus the current selection even when it is no longer offered. A long catalogue shows recently used models first and the rest under All models, in catalogue order. Gaia never ranks, groups or hides models by guessing from their names.
+
+The independent-job runtime is the conversation engine for this increment. A new engine, a new store layout or a protocol major version needs recorded measurements that meet the gates in `docs/engine.md`, migrated callers, and the checked owner-upgrade path.
 
 Background tasks have stable identities, bounded concurrency, scoped cancellation and truthful results. A disconnected client does not cancel them. Restarted work must remain visible and must not silently repeat an uncertain external effect. Chat, uploads and configuration must not be globally blocked by unrelated work.
+
+Trying again after an attempt that started a machine action needs the owner's confirmation, even when that action finished. Read-only search and actions cancelled before they started can be retried freely. Gaia does not resume or deduplicate earlier attempts.
 
 The local Mac capability follows the existing full-owner-access decision. Shell and Agent Desktop are actual tools with process lifetime control and safe environment handling. Candidate checks, probes and safe mode receive no machine tools. The protected self-change allowlist and auth remain protected. Same-user shell access is not a malicious-agent isolation boundary.
 
