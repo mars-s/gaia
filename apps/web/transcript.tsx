@@ -1,3 +1,4 @@
+import { ColourCode, languageLabel } from "./code-colour";
 import { AssistantHead } from "./assistant-head";
 import { CopyButton, codeText } from "./copy-button";
 import { ReplyNotice, replyError } from "./progress-row";
@@ -106,11 +107,11 @@ export function CodeBlock({ children }: { children: ReactNode }) {
   return (
     <div className="code-block" data-overflow={overflow}>
       <div className="code-header">
-        <span>{language}</span>
+        <span>{languageLabel(language)}</span>
         <CopyButton label="Copy code" text={codeText(children)} />
       </div>
       <div className="code-scroll-area">
-        <pre ref={pre}>{children}</pre>
+        <pre ref={pre}><code className={language ? `language-${language}` : undefined}><ColourCode text={codeText(children)} language={language} /></code></pre>
       </div>
     </div>
   );

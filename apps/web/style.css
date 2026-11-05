@@ -1391,3 +1391,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .conversation-scroll::-webkit-scrollbar-track { background: transparent; }
 .conversation-scroll::-webkit-scrollbar-thumb { border-radius: var(--radius-full); background: transparent; }
 .conversation-scroll:hover::-webkit-scrollbar-thumb, .conversation-scroll:focus-within::-webkit-scrollbar-thumb { background: var(--color-line-strong); }
+
+.code-keyword { color: var(--color-code-keyword); }
+.code-string { color: var(--color-code-string); }
+.code-number { color: var(--color-code-number); }
+.code-comment { color: var(--color-code-comment); font-style: italic; }

@@ -158,7 +158,7 @@ test("code copy has a separate 28px header above the bounded scroll area", async
 test("code headers label known languages and keep copy outside the pre", () => {
   for (const language of ["ts", ""]) {
     const html = renderToStaticMarkup(createElement(MessageMarkdown, {text: "```" + language + "\nconst long = 'example';\n```"}));
-    assert.match(html, new RegExp('class="code-header"><span>' + language + '</span>'));
+    assert.match(html, new RegExp('class="code-header"><span>' + (language === 'ts' ? 'TypeScript' : 'Code') + '</span>'));
     assert.match(html, /aria-label="Copy code"[\s\S]*<div class="code-scroll-area"><pre>/);
     assert.doesNotMatch(html, /<pre>[\s\S]*<button/);
   }
