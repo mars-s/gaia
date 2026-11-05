@@ -57,7 +57,7 @@ test("transcript clearance keeps final content visible without duplicating the c
 });
 test("settings hierarchy, actions and status use the content grid", () => {
   assert.match(css, /settings-title \{\s*font-size: 20px/);
-  assert.match(css, /settings-bar .app-bar-column \{\s*padding-right: 64px/);
+  assert.match(css, /settings-bar .app-bar-column \{\s*padding-right: var\(--space-gutter\)/);
   assert.match(css, /setup-list-row:has\(> div:last-child:empty\)/);
   assert.match(
     css,

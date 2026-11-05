@@ -407,11 +407,11 @@ export function App() {
                 className="settings-section"
                 aria-labelledby="plan-title"
               >
-                <h2 id="plan-title">Plan</h2>
+                <h2 id="plan-title">Account</h2>
                 <div className="settings-plan-row">
                   <div className="plan-status">
-                    <span>ChatGPT</span>
-                    <span className="text-text-secondary">Connected</span>
+                    <span>ChatGPT plan</span>
+                    <span className="text-text-secondary">· Connected</span>
                   </div>
                   <Button
                     variant="secondary"

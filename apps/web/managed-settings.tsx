@@ -126,7 +126,7 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
         </button>
       </div>
       <p className="changes-caption">
-        Changes Gaia has made to its own code. Any change can be reverted.
+        Updates Gaia has made to itself. You can undo applied updates here.
       </p>
       {view.kind === "loading" && (
         <p className="text-text-secondary">Loading changes…</p>
