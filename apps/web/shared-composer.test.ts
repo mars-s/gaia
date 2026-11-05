@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -54,4 +55,12 @@ test("shared composer keeps draft, attachment, model and cancellation controls i
     if ("onStop" in state)
       assert.match(html, /composer-stop[^>]*[\s\S]*aria-label="Stop reply"/);
   }
+});
+
+test("composer keeps attachment growth to its row and aligns narrow model controls with add", () => {
+  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+  assert.match(css, /composer \.draft-images[^}]*padding: 0/);
+  assert.match(css, /model-trigger[^}]*grid-column: 1 \/ 4[^}]*padding-left: 10px/);
+  assert.match(css, /conversation-scroll[^}]*scrollbar-width: thin; scrollbar-color: transparent transparent/);
+  assert.match(css, /conversation-scroll:hover[^}]*scrollbar-color: var\(--color-line-strong\)/);
 });

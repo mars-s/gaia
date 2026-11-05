@@ -150,7 +150,7 @@ export function SharedComposer({
           event.target.value = "";
         }}
       />
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-x-1 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
         <ComposerActions
           disabled={actionsDisabled}
           onAttach={
@@ -162,7 +162,7 @@ export function SharedComposer({
         <Textarea
           ref={input}
           className="col-start-2 row-start-1 w-full min-w-0"
-          fieldClassName="rounded-2xl bg-transparent ring-0 hover:ring-0 focus-within:ring-0"
+          fieldClassName="composer-field rounded-2xl bg-transparent ring-0 hover:ring-0 focus-within:ring-0"
           inputClassName="placeholder:text-text-secondary focus:placeholder:text-text-secondary"
           aria-label={label}
           rows={1}
