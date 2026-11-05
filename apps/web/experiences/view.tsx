@@ -1,3 +1,4 @@
+import { CopyButton } from "../copy-button";
 import { ProgressRow } from "../progress-row";
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState } from "react";
@@ -342,6 +343,11 @@ function ScopeConversation({
                     ) : (
                       <MessageMarkdown text={message.text} />
                     )}
+                    {message.role === "assistant" &&
+                      message.text &&
+                      jobs.every((job) => job.state.kind === "completed") && (
+                        <CopyButton label="Copy answer" text={message.text} />
+                      )}
                   </article>
                   {jobs.map((job) => (
                     <JobRows
@@ -570,12 +576,20 @@ function JobRows({
         <ProgressRow
           key={activity.id}
           active
+          startedAt={state.kind === "running" ? state.startedAt : undefined}
           avatar={assistantAvatar}
           description={activity.description}
         />
       ))}
       <ProgressRow
         active={jobActive(job) && state.kind !== "stopping"}
+        startedAt={
+          state.kind === "running"
+            ? state.startedAt
+            : state.kind === "queued"
+              ? state.acceptedAt
+              : undefined
+        }
         avatar={activities.length ? null : assistantAvatar}
       >
         {state.kind !== "queued" &&

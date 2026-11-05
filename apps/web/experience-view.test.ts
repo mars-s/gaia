@@ -535,3 +535,17 @@ test("sidebar working dots reserve their slot and follow actual active jobs", ()
   assert.match(html(), /scope-work-dot[^>]+data-working="false"/);
   controller.pause();
 });
+
+test("every setup uses the shared composer contract and only settled answers offer copy", () => {
+  for (const layout of ["single", "bots", "channels", "sessions"] as const) {
+    const { controller, parsed, html } = fixture(layout);
+    assert.match(html(), /class="composer flex flex-col gap-2 p-2"/);
+    assert.equal((html().match(/aria-label="Copy answer"/g) ?? []).length, 1);
+    parsed.jobs = [progressJob()];
+    parsed.revision++;
+    assert(controller.selected);
+    controller.receive(controller.selected, { ...parsed });
+    assert.doesNotMatch(html(), /aria-label="Copy answer"/);
+    controller.pause();
+  }
+});

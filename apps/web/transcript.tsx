@@ -1,3 +1,4 @@
+import { CopyButton, codeText } from "./copy-button";
 import { ProgressRow, ReplyNotice } from "./progress-row";
 import { useMemo, type ReactNode } from "react";
 import type { ThreadMessageLike } from "@assistant-ui/core";
@@ -70,6 +71,12 @@ export function MessageMarkdown({ text }: { text: string }) {
             ) : (
               <span>{children}</span>
             ),
+          pre: ({ children }) => (
+            <div className="code-block">
+              <CopyButton label="Copy code" text={codeText(children)} />
+              <pre>{children}</pre>
+            </div>
+          ),
           img: ({ alt }) => (
             <span className="text-text-secondary">
               {alt || "Image omitted"}
@@ -138,7 +145,14 @@ export function Transcript({
                     }
                   >
                     {message.status?.type === "running" ? (
-                      <ProgressRow active />
+                      <ProgressRow
+                        key={
+                          thread.run.kind === "running"
+                            ? thread.run.id
+                            : message.id
+                        }
+                        active
+                      />
                     ) : message.status?.type === "incomplete" &&
                       message.status.reason === "cancelled" ? (
                       "Reply stopped."
@@ -147,6 +161,11 @@ export function Transcript({
                     )}
                   </div>
                 ) : null}
+                {!user &&
+                  source?.text &&
+                  message.status?.type === "complete" && (
+                    <CopyButton label="Copy answer" text={source.text} />
+                  )}
                 {afterMessage?.(message.id)}
               </article>
             );
