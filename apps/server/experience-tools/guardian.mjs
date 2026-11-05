@@ -1,21 +1,56 @@
 import process from "node:process";
 import { setTimeout, clearTimeout } from "node:timers";
 import { spawn, execFileSync } from "node:child_process";
+import { writeSync } from "node:fs";
 import { StringDecoder } from "node:string_decoder";
+process.on("uncaughtExceptionMonitor", (error) => {
+  const token = (value) =>
+    String(value ?? "unknown")
+      .replace(/[^A-Za-z0-9_]/g, "")
+      .slice(0, 64);
+  writeSync(
+    2,
+    `gaia-guardian-error code=${token(error.code)} syscall=${token(error.syscall)}\n`,
+  );
+});
 let child;
 let reason = "exited";
 let timer;
+let killRetry;
+let deniedSince;
 let stdout = "";
 let stderr = "";
 let truncated = false;
 const decoders = [new StringDecoder("utf8"), new StringDecoder("utf8")];
 let remaining = 0;
+function groupAlive() {
+  const rows = execFileSync("/bin/ps", ["-axo", "pgid=,stat="], {
+    encoding: "utf8",
+  });
+  return rows.split("\n").some((row) => {
+    const [group, state] = row.trim().split(/\s+/);
+    return Number(group) === child.pid && !state?.startsWith("Z");
+  });
+}
 function kill() {
   if (!child?.pid) return;
   try {
     process.kill(-child.pid, "SIGKILL");
   } catch (error) {
-    if (error.code !== "ESRCH") throw error;
+    if (error.code === "ESRCH") return;
+    if (error.code === "EPERM") {
+      if (!groupAlive()) return;
+      deniedSince ??= Date.now();
+      // A process can remain in ps briefly while the kernel finishes its exit.
+      if (Date.now() - deniedSince < 1000) {
+        killRetry ??= setTimeout(() => {
+          killRetry = undefined;
+          kill();
+        }, 10);
+        return;
+      }
+    }
+    throw error;
   }
 }
 function stop(value) {
@@ -59,14 +94,7 @@ process.on("message", (message) => {
     kill();
     if (child.pid) {
       for (;;) {
-        const rows = execFileSync("/bin/ps", ["-axo", "pgid=,stat="], {
-          encoding: "utf8",
-        });
-        const alive = rows.split("\n").some((row) => {
-          const [group, state] = row.trim().split(/\s+/);
-          return Number(group) === child.pid && !state?.startsWith("Z");
-        });
-        if (!alive) break;
+        if (!groupAlive()) break;
         kill();
         await new Promise((resolve) => setTimeout(resolve, 10));
       }

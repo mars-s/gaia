@@ -206,3 +206,21 @@ test("an unjoined desktop owner prevents queued and future input", async () => {
   );
   assert.equal(delivered, false);
 });
+
+test("lost guardian stays uncertain after the parent joins its process group", async (t) => {
+  if (!(await canSignalOwnedChild()))
+    return t.skip("Owned process signalling is unavailable.");
+  await assert.rejects(
+    run([
+      "-e",
+      "process.kill(process.ppid,'SIGKILL');setInterval(()=>{},1000)",
+    ]),
+    (error: unknown) => {
+      assert(error instanceof NativeProcessFailure);
+      assert.equal(error.lifetime, "joined");
+      assert.match(error.message, /signal=SIGKILL/);
+      assert.match(error.message, /external outcome is unknown/);
+      return true;
+    },
+  );
+});

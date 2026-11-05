@@ -53,27 +53,25 @@ export function localMachineEnvironment(
     LOGNAME: owner.username,
   });
 }
+function groupAlive(pid: number) {
+  const rows = execFileSync("/bin/ps", ["-axo", "pgid=,stat="], {
+    encoding: "utf8",
+  });
+  return rows.split("\n").some((row) => {
+    const [group, state] = row.trim().split(/\s+/);
+    return Number(group) === pid && !state?.startsWith("Z");
+  });
+}
 async function joinProcessGroup(pid: number) {
   const until = Date.now() + 5000;
   for (;;) {
     try {
       process.kill(-pid, "SIGKILL");
     } catch (error) {
-      if (!(
-        error instanceof Error &&
-        "code" in error &&
-        error.code === "ESRCH"
-      ))
-        throw error;
+      if (!(error instanceof Error && "code" in error)) throw error;
+      if (error.code !== "ESRCH" && error.code !== "EPERM") throw error;
     }
-    const rows = execFileSync("/bin/ps", ["-axo", "pgid=,stat="], {
-      encoding: "utf8",
-    });
-    const alive = rows.split("\n").some((row) => {
-      const [group, state] = row.trim().split(/\s+/);
-      return Number(group) === pid && !state?.startsWith("Z");
-    });
-    if (!alive) return;
+    if (!groupAlive(pid)) return;
     if (Date.now() >= until)
       throw new Error("Native process group did not stop.");
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -96,9 +94,15 @@ export function runGuardedProcess(input: {
         detached: true,
         execArgv: [],
         env: localMachineEnvironment(),
-        stdio: ["ignore", "ignore", "ignore", "ipc"],
+        stdio: ["ignore", "ignore", "pipe", "ipc"],
       },
     );
+    let diagnosticBytes = "";
+    guardian.stderr?.on("data", (chunk: Buffer) => {
+      diagnosticBytes += chunk
+        .toString("utf8")
+        .slice(0, 1024 - diagnosticBytes.length);
+    });
     let result: ProcessResult | undefined;
     let processGroup: number | undefined;
     let failure: Error | undefined;
@@ -133,7 +137,17 @@ export function runGuardedProcess(input: {
     guardian.on("error", (error) => {
       failure = error;
     });
-    guardian.on("close", async () => {
+    guardian.on("close", async (code, signal) => {
+      const errorDetail = diagnosticBytes.match(
+        /gaia-guardian-error code=[A-Za-z0-9_]{1,64} syscall=[A-Za-z0-9_]{1,64}/,
+      )?.[0];
+      const ipcCode =
+        failure && "code" in failure
+          ? String(failure.code)
+              .replace(/[^A-Za-z0-9_]/g, "")
+              .slice(0, 64)
+          : "none";
+      const diagnostic = `Guardian exit code=${code}, signal=${signal}, IPC error=${ipcCode}${errorDetail ? `, ${errorDetail}` : ""}.`;
       clearTimeout(deadline);
       clearTimeout(forced);
       input.signal.removeEventListener("abort", cancel);
@@ -142,8 +156,7 @@ export function runGuardedProcess(input: {
         reject(
           new NativeProcessFailure(
             "unjoined",
-            failure?.message ??
-              "Guardian stopped without process ownership evidence. External outcome is unknown.",
+            `${diagnostic} Guardian stopped without process ownership evidence. External outcome is unknown.`,
           ),
         );
         return;
@@ -153,14 +166,14 @@ export function runGuardedProcess(input: {
         reject(
           new NativeProcessFailure(
             "joined",
-            "Guardian stopped unexpectedly. Its process group was terminated and joined; the external outcome is unknown.",
+            `${diagnostic} Guardian stopped unexpectedly. Its process group was terminated and joined; the external outcome is unknown.`,
           ),
         );
       } catch {
         reject(
           new NativeProcessFailure(
             "unjoined",
-            "Guardian stopped and native process termination could not be verified. External outcome is unknown.",
+            `${diagnostic} Guardian stopped and native process termination could not be verified. External outcome is unknown.`,
           ),
         );
       }
