@@ -371,9 +371,9 @@ body {
   width: 32px;
   height: 32px;
   place-items: center;
-  border: 1px solid var(--color-border-button-default);
+  border: 1px solid var(--color-line);
   border-radius: 50%;
-  background: var(--color-background-full);
+  background: var(--color-surface-page);
   color: var(--color-text-primary);
   cursor: pointer;
 }

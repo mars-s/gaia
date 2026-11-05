@@ -204,3 +204,13 @@ test("sentence actions inherit the surrounding size without action button classe
   }
   assert.match(css, /inline-link \{[^}]*display: inline;[^}]*padding: 0;[^}]*font: inherit/);
 });
+
+test("attachment remove is a backed 24px circle with a 14px icon inside the image", () => {
+  const source = read("./image-previews.tsx");
+  assert.match(source, /className="remove-image"/);
+  assert.doesNotMatch(source, /quiet-action remove-image/);
+  assert.match(source, /RiCloseLine className="size-3.5"/);
+  assert.match(css, /remove-image \{[^}]*border: 1px solid var\(--color-line\);[^}]*border-radius: 50%;[^}]*background: var\(--color-surface-page\)/);
+  assert.match(css, /remove-image \{\s*width: 24px;\s*height: 24px;\s*top: 4px;\s*right: 4px/);
+  assert.match(css, /draft-images .remove-image \{ right: 16px/);
+});

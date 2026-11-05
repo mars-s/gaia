@@ -36,11 +36,11 @@ function Thumbnail({
       {remove && (
         <button
           type="button"
-          className="quiet-action remove-image"
+          className="remove-image"
           aria-label={`Remove ${name}`}
           onClick={remove}
         >
-          <RiCloseLine className="size-4" aria-hidden />
+          <RiCloseLine className="size-3.5" aria-hidden />
         </button>
       )}
       <figcaption>
