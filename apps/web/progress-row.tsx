@@ -74,6 +74,7 @@ export function ReplyNotice({
   disabled,
 }: {
   message: string;
+  onSettings?: () => void;
   onRetry?: () => void;
   disabled?: boolean;
 }) {

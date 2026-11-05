@@ -1,7 +1,7 @@
 import { AssistantHead } from "./assistant-head";
 import { CopyButton, codeText } from "./copy-button";
 import { ReplyNotice, replyError } from "./progress-row";
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useRef, useState, useMemo, type ReactNode } from "react";
 import type { ThreadMessageLike } from "@assistant-ui/core";
 import {
   AssistantRuntimeProvider,
@@ -72,12 +72,7 @@ export function MessageMarkdown({ text }: { text: string }) {
             ) : (
               <span>{children}</span>
             ),
-          pre: ({ children }) => (
-            <div className="code-block">
-              <CopyButton label="Copy code" text={codeText(children)} />
-              <pre>{children}</pre>
-            </div>
-          ),
+          pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
           img: ({ alt }) => (
             <span className="text-text-secondary">
               {alt || "Image omitted"}
@@ -91,6 +86,27 @@ export function MessageMarkdown({ text }: { text: string }) {
   );
 }
 
+export function CodeBlock({ children }: { children: ReactNode }) {
+  const pre = useRef<HTMLPreElement>(null);
+  const [overflow, setOverflow] = useState(false);
+  useEffect(() => {
+    const element = pre.current;
+    if (!element) return;
+    const measure = () =>
+      setOverflow(element.scrollWidth > element.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [children]);
+  return (
+    <div className="code-block" data-overflow={overflow}>
+      <CopyButton label="Copy code" text={codeText(children)} />
+      <pre ref={pre}>{children}</pre>
+    </div>
+  );
+}
+
 async function readOnlyTranscript(): Promise<void> {
   throw new Error("Send messages using Gaia’s composer.");
 }
@@ -100,8 +116,12 @@ export function Transcript({
   afterMessage,
   onRetry,
   retryDisabled,
+  hasSetupCard,
+  onSettings,
 }: {
   thread: Thread;
+  hasSetupCard?: (id: string) => boolean;
+  onSettings?: () => void;
   onRetry?: () => void;
   retryDisabled?: boolean;
   afterMessage?: (id: string) => ReactNode;
@@ -129,6 +149,11 @@ export function Transcript({
                 className={cx(
                   "message-text min-w-0 wrap-anywhere",
                   user ? "owner-bubble self-end" : "w-full self-start",
+                  !user &&
+                    message.id !==
+                      thread.messages.findLast((m) => m.role === "assistant")
+                        ?.id &&
+                    "earlier-answer",
                 )}
               >
                 {!user && (
@@ -165,19 +190,22 @@ export function Transcript({
                 ) : null}
                 {!user &&
                   source?.text &&
-                  message.status?.type === "complete" && (
+                  message.status?.type === "complete" &&
+                  !hasSetupCard?.(message.id) && (
                     <CopyButton label="Copy answer" text={source.text} />
                   )}
                 {!user &&
                   message.id === thread.messages.at(-1)?.id &&
                   (thread.run.kind === "error" ? (
                     <ReplyNotice
+                      onSettings={onSettings}
                       message={replyError(thread.run.message)}
                       onRetry={onRetry}
                       disabled={retryDisabled}
                     />
                   ) : thread.run.kind === "stopped" && onRetry ? (
                     <ReplyNotice
+                      onSettings={onSettings}
                       message="Stopped."
                       onRetry={onRetry}
                       disabled={retryDisabled}
@@ -198,12 +226,14 @@ export function Transcript({
               <AssistantHead />
               {thread.run.kind === "error" ? (
                 <ReplyNotice
+                  onSettings={onSettings}
                   message={replyError(thread.run.message)}
                   onRetry={onRetry}
                   disabled={retryDisabled}
                 />
               ) : thread.run.kind === "stopped" && onRetry ? (
                 <ReplyNotice
+                  onSettings={onSettings}
                   message="Stopped."
                   onRetry={onRetry}
                   disabled={retryDisabled}

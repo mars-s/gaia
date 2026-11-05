@@ -1,3 +1,4 @@
+import { RiFileCopyLine, RiCheckLine } from "@remixicon/react";
 import {
   useEffect,
   useRef,
@@ -39,7 +40,14 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
         timer.current = setTimeout(() => setStatus(""), 2000);
       }}
     >
-      <span aria-live="polite">{status || "Copy"}</span>
+      {status === "Copied" ? (
+        <RiCheckLine className="size-4" aria-hidden />
+      ) : (
+        <RiFileCopyLine className="size-4" aria-hidden />
+      )}
+      <span className="sr-only" aria-live="polite">
+        {status}
+      </span>
     </button>
   );
 }

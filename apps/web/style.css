@@ -749,34 +749,19 @@ a:focus-visible {
 }
 
 .copy-action {
-  display: block;
-  width: fit-content;
-  margin-top: 8px;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  color: var(--color-ink-2);
-  font-size: 12px;
-  line-height: 20px;
-  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; margin-top: 8px; margin-left: -6px; padding: 6px;
+  border-radius: var(--radius-sm); color: var(--color-ink-3); cursor: pointer;
+  transition: opacity var(--motion-hover);
 }
-.copy-action:hover {
-  background: var(--color-surface-hover);
-  color: var(--color-ink);
-}
-.code-block {
-  min-width: 0;
-  margin-block: 16px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-sunken);
-}
-.code-block > .copy-action {
-  margin: 0 8px 0 auto;
-}
-.message-markdown .code-block pre {
-  margin: 0;
-  padding: 16px;
-  overflow-x: auto;
-}
+.copy-action:hover { background: var(--color-surface-hover); color: var(--color-ink); }
+.earlier-answer > .copy-action { opacity: 0; }
+.earlier-answer:hover > .copy-action, .earlier-answer:focus-within > .copy-action { opacity: 1; }
+@media (pointer: coarse) { .earlier-answer > .copy-action { opacity: 1; } }
+.code-block { position: relative; min-width: 0; margin-block: 16px; border-radius: var(--radius-md); background: var(--color-surface-sunken); }
+.code-block > .copy-action { position: absolute; top: 8px; right: 8px; margin: 0; z-index: 2; background: var(--color-surface-sunken); }
+.message-markdown .code-block pre { margin: 0; padding: 16px 44px 16px 16px; overflow-x: auto; scrollbar-width: thin; }
+.code-block[data-overflow="true"]::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; pointer-events: none; background: linear-gradient(to right, transparent, var(--color-surface-sunken)); }
 .progress-elapsed {
   font-variant-numeric: tabular-nums;
   color: var(--color-ink-2);

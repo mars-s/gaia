@@ -90,7 +90,7 @@ test("code blocks have their own copy action and preserve the exact plain code",
     createElement(CopyButton, { label: "Copy code", text: code }),
   );
   assert.match(action, /type="button"/);
-  assert.match(action, /aria-live="polite">Copy/);
+  assert.match(action, /class="sr-only" aria-live="polite"><\/span>/);
 });
 
 test("working motion is separate from Gaia identity, including with real activity", () => {
@@ -105,4 +105,48 @@ test("working motion is separate from Gaia identity, including with real activit
     );
     assert.doesNotMatch(html, /job-avatar-pulse/);
   }
+});
+
+test("copy actions have icons without Copy text and setup answers suppress their action", () => {
+  const thread: Thread = {
+    version: 1,
+    id: "local",
+    run: { kind: "idle" },
+    messages: [
+      {
+        id: "old",
+        role: "assistant",
+        text: "Earlier answer",
+        createdAt: "2026-11-05T00:00:00Z",
+      },
+      {
+        id: "new",
+        role: "assistant",
+        text: "Review below",
+        createdAt: "2026-11-05T00:00:01Z",
+      },
+    ],
+  };
+  const html = renderToStaticMarkup(createElement(Transcript, { thread }));
+  assert.equal((html.match(/aria-label="Copy answer"/g) ?? []).length, 2);
+  assert.equal((html.match(/earlier-answer/g) ?? []).length, 1);
+  assert.doesNotMatch(html, />Copy</);
+  assert.match(html, /<svg/);
+  const card = renderToStaticMarkup(
+    createElement(Transcript, { thread, hasSetupCard: (id) => id === "new" }),
+  );
+  assert.equal((card.match(/aria-label="Copy answer"/g) ?? []).length, 1);
+});
+
+test("code copy floats above an observed overflow fade, with no empty header", async () => {
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+  const source = readFileSync(new URL("./transcript.tsx", import.meta.url), "utf8");
+  assert.match(source, /element.scrollWidth > element.clientWidth/);
+  assert.match(source, /observer.observe\(element\)/);
+  assert.match(css, /code-block > .copy-action.*top: 8px; right: 8px/);
+  assert.match(css, /padding: 16px 44px 16px 16px/);
+  assert.match(css, /code-block\[data-overflow="true"\]::after/);
+  assert.match(css, /earlier-answer:focus-within > .copy-action/);
+  assert.match(css, /@media \(pointer: coarse\)/);
 });

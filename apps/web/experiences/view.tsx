@@ -390,6 +390,11 @@ function ScopeConversation({
                       message.role === "user"
                         ? "owner-bubble self-end"
                         : "w-full",
+                      message.role === "assistant" &&
+                        message.id !==
+                          state.messages.findLast((m) => m.role === "assistant")
+                            ?.id &&
+                        "earlier-answer",
                     )}
                   >
                     {message.role === "assistant" && (

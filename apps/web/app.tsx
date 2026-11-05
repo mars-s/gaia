@@ -643,6 +643,16 @@ export function App() {
                 <Transcript
                   key={scopeKey(scope)}
                   thread={active.thread}
+                  onSettings={() => setAccountOpen(true)}
+                  hasSetupCard={(id) =>
+                    scope.kind === "home" &&
+                    !controller.safeMode &&
+                    proposalsAfterAnswer(
+                      experiences.profiles,
+                      id,
+                      experiences.createdSetups,
+                    ).length > 0
+                  }
                   onRetry={() => void controller.act(scope, "retry")}
                   retryDisabled={
                     pending ||
