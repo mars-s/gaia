@@ -104,14 +104,16 @@ export function ProfilePanel({
           <p>
             {state.kind === "skipped"
               ? "You skipped the short interview. You can do it any time."
-              : "Tell Gaia a little about yourself so it can fit around how you work."}
+              : account
+                ? "Tell Gaia a little about yourself so it can fit around how you work."
+                : "Want me to fit Gaia around how you work? It takes a minute, and you can skip it."}
           </p>
           <Button
             variant="secondary"
             disabled={disabled}
             onClick={() => onAction("start")}
           >
-            Start the short interview
+            {account ? "Start the short interview" : "Set up"}
           </Button>
         </>
       ) : null}
@@ -123,7 +125,7 @@ export function ProfilePanel({
         >
           {state.kind === "interview" || state.kind === "proposed"
             ? "Skip interview"
-            : "Skip"}
+            : "Not now"}
         </button>
       )}
       {account && state.kind !== "new" && (

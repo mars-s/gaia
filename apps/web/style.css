@@ -1216,3 +1216,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .assistant-name { font-size: 13px; line-height: 18px; color: var(--color-ink-2); }
 .assistant-head .progress-row { margin-left: 4px; }
 .assistant-head .working-indicator { padding: 0; }
+.text-hero { font-size: 20px; line-height: 28px; font-weight: 600; color: var(--color-ink); }
+.empty-chat { flex: 1; display: flex; flex-direction: column; justify-content: center; padding-bottom: 12vh; min-height: 0; }
+.empty-composition { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.empty-composition .gaia-mark, .empty-composition .avatar-tile { width: 32px; height: 32px; }

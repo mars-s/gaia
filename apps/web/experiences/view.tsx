@@ -1,3 +1,4 @@
+import { EmptyChat } from "../empty-chat";
 import { AssistantHead } from "../assistant-head";
 import { Dialog } from "@base-ui/react/dialog";
 import { CopyButton } from "../copy-button";
@@ -329,7 +330,7 @@ function ScopeConversation({
         }}
       >
         <div
-          className="reading-column message-list flex flex-col py-8"
+          className="reading-column message-list flex min-h-full flex-col py-8"
           role="log"
           aria-live="off"
           aria-label="Conversation"
@@ -339,9 +340,24 @@ function ScopeConversation({
               Loading conversation…
             </p>
           ) : !state.messages.length ? (
-            <h1 className="py-12 text-center text-title-3-semibold">
-              What’s on your mind?
-            </h1>
+            <EmptyChat
+              text={
+                controller.profile?.profile.plan.layout === "bots"
+                  ? state.scope.label === "Home"
+                    ? "Ask Home anything. It can hand work to your other Bots."
+                    : `Ask ${state.scope.label} anything. It keeps its own memory and conversation.`
+                  : controller.profile?.profile.plan.layout === "channels"
+                    ? "Gaia remembers facts you ask it to keep across every channel. Each channel keeps its own conversation."
+                    : controller.profile?.profile.plan.layout === "sessions"
+                      ? "A fresh conversation with its own model and effort settings."
+                      : undefined
+              }
+              avatar={
+                controller.profile?.profile.plan.layout === "bots" ? (
+                  <BotAvatar avatar={state.scope.avatar} />
+                ) : undefined
+              }
+            />
           ) : (
             state.messages.map((message) => {
               const jobs = state.jobs.filter(

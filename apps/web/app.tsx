@@ -1,3 +1,4 @@
+import { EmptyChat } from "./empty-chat";
 import { OfflineNotice } from "./progress-row";
 import { ChatSwitcher } from "./chat-switcher";
 import { createMainRestore, createNavigationGuard } from "./main-navigation";
@@ -127,7 +128,7 @@ export function App() {
   }, [accountOpen, reviewAnswer, experienceView]);
   const bottom = useRef<HTMLDivElement>(null);
   const transcript = useRef<HTMLDivElement>(null);
-  const followReply = useRef(true);
+  const followReply = useRef(false);
   const authFlow = useRef(createAuthBrowserFlow(openAuthInBrowser));
   const lastMessage = active?.thread.messages.at(-1);
   const proposalId =
@@ -215,7 +216,7 @@ export function App() {
       );
   }, [connection]);
   useEffect(() => {
-    followReply.current = true;
+    followReply.current = false;
   }, [scope]);
   useEffect(() => {
     if (followReply.current) bottom.current?.scrollIntoView({ block: "end" });
@@ -226,6 +227,26 @@ export function App() {
     profile?.kind,
     proposalId,
     workspaceProposal,
+  ]);
+  useEffect(() => {
+    if (
+      connected &&
+      draftReady &&
+      !accountOpen &&
+      experienceView === "original" &&
+      active?.thread.messages.length === 0
+    )
+      document
+        .querySelector<HTMLTextAreaElement>(
+          'textarea[aria-label="Message Gaia"]',
+        )
+        ?.focus({ preventScroll: true });
+  }, [
+    connected,
+    draftReady,
+    accountOpen,
+    experienceView,
+    active?.thread.messages.length,
   ]);
   const act = controller.homeAction;
   async function profileAction(action: string) {
@@ -598,11 +619,7 @@ export function App() {
                   Loading conversation…
                 </p>
               ) : active.thread.messages.length === 0 ? (
-                <div className="flex flex-1 items-center justify-center py-12">
-                  <h1 className="text-title-3-semibold">
-                    What’s on your mind?
-                  </h1>
-                </div>
+                <EmptyChat />
               ) : (
                 <Transcript
                   key={scopeKey(scope)}
@@ -629,9 +646,11 @@ export function App() {
                     profile.kind === "interview" ||
                     profile.kind === "proposed" ||
                     (profile.kind === "new" &&
-                      state.thread.messages.length === 0)) && (
-                    <div className="py-4">{profilePanel()}</div>
-                  )}
+                      active?.thread.run.kind === "idle" &&
+                      active.thread.messages.some(
+                        (message) =>
+                          message.role === "assistant" && message.text.trim(),
+                      ))) && <div className="py-4">{profilePanel()}</div>}
                   {!controller.safeMode && setupCards()}
                   {!controller.safeMode && (
                     <WorkspaceProposalPanel

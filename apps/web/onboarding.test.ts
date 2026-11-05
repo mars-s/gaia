@@ -1,3 +1,5 @@
+import { EmptyChat } from "./empty-chat";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -70,4 +72,20 @@ test("legacy owner states load and answered setup prompts disappear without re-a
     }),
   );
   assert(!skipped.includes("Start setup"));
+});
+
+test("new owners get the optional offer after an answer, with a permanent skip action", () => {
+ const html = renderToStaticMarkup(createElement(ProfilePanel, {state: {kind: "new"}, failed: false, account: false, disabled: false, onAction() {}, onRetry() {}}));
+ assert.match(html, /Want me to fit Gaia around how you work/);
+ assert.match(html, />Set up</);
+ assert.match(html, />Not now</);
+});
+
+test("empty chat is only its mark and headline; an interview needs a useful answer", () => {
+ const html = renderToStaticMarkup(createElement(EmptyChat));
+ assert.match(html, /gaia-mark/);
+ assert.match(html, /What’s on your mind/);
+ assert.doesNotMatch(html, /interview|Skip|button/);
+ const app = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
+ assert.match(app, /profile.kind === "new"[\s\S]*?active.thread.messages.some/);
 });
