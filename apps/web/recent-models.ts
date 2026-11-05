@@ -43,10 +43,10 @@ export function modelMenu(models: Model[], selected: string, recent: string[]) {
       .filter((id) => id !== selected && available.has(id))
       .slice(0, 3),
   ];
-  const primary = ids.flatMap((id) => {
-    const model = available.get(id) ?? (id === selected ? missing : undefined);
-    return model ? [model] : [];
-  });
+  const primary: (Model | { id: string; name: string })[] = models.filter(
+    (model) => ids.includes(model.id),
+  );
+  if (missing) primary.unshift(missing);
   return {
     primary,
     remaining: models.filter((model) => !ids.includes(model.id)),

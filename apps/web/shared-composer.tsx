@@ -171,6 +171,7 @@ export function SharedComposer({
         {chat && (
           <ComposerControls
             chat={chat}
+            hasImages={images.length > 0}
             disabled={modelDisabled}
             selection={selection}
             onSelect={onSelect}
