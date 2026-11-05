@@ -1,3 +1,4 @@
+import { RiChat1Line, RiRobot2Line, RiHashtag, RiChatHistoryLine } from "@remixicon/react";
 import {
   useEffect,
   useRef,
@@ -43,6 +44,14 @@ const layouts: Record<
       "Separate conversations, memory and model settings. Start fresh with New session.",
   },
 };
+const layoutIcons = { single: RiChat1Line, bots: RiRobot2Line, channels: RiHashtag, sessions: RiChatHistoryLine };
+function LayoutGlyph({ layout }: { layout: ExperienceLayout }) {
+  const Icon = layoutIcons[layout];
+  return <Icon className="setup-layout-icon" aria-hidden="true" />;
+}
+function SetupStatus({ main, current }: { main: boolean; current: boolean }) {
+  return <span className="setup-status">{main && <span className="setup-main-badge">Main</span>}{main && current && " · "}{current && "Current"}</span>;
+}
 export function ProfileExperience({
   controller,
   switcher,
@@ -117,19 +126,12 @@ export function SetupSettings({
       <ul className="flex w-full min-w-0 flex-col divide-y divide-separator-border">
         <li className="setup-list-row">
           <div className="min-w-0 flex-1">
-            <p className="text-body-medium">Original chat</p>{" "}
+            <p className="text-body-medium setup-name"><LayoutGlyph layout="single" />Original chat</p>{" "}
             <p className="text-caption-1-regular text-text-secondary">
               One conversation
             </p>
           </div>
-          <span className="setup-status">
-            {[
-              controller.mainId === null && "Main",
-              !controller.profile && "Current",
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
+          <SetupStatus main={controller.mainId === null} current={!controller.profile} />
           <div className="flex flex-wrap items-center gap-2">
             {controller.profile && (
               <Button
@@ -157,8 +159,8 @@ export function SetupSettings({
         {controller.profiles.map((item) => (
           <li key={item.id} className="setup-list-row">
             <div className="min-w-0 flex-1">
-              <p className="text-body-medium wrap-anywhere">
-                {item.plan.title}
+              <p className="text-body-medium wrap-anywhere setup-name">
+                <LayoutGlyph layout={item.plan.layout} />{item.plan.title}
               </p>{" "}
               <p className="text-caption-1-regular text-text-secondary">
                 {setupLayouts[item.plan.layout].label}
@@ -169,14 +171,7 @@ export function SetupSettings({
                     : ""}
               </p>
             </div>
-            <span className="setup-status">
-              {[
-                controller.mainId === item.id && "Main",
-                controller.profile?.profile.id === item.id && "Current",
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
+            <SetupStatus main={controller.mainId === item.id} current={controller.profile?.profile.id === item.id} />
             <div className="flex flex-wrap items-center gap-2">
               {(item.kind === "proposed" ||
                 controller.profile?.profile.id !== item.id) && (
@@ -257,13 +252,15 @@ export function SetupSettings({
           }}
         />
       )}
-      <button
-        className="quiet-action self-start text-text-secondary"
+      <Button
+        variant="secondary"
+        size="small"
+        className="self-start"
         disabled={pending}
         onClick={() => setCreating(!creating)}
       >
         {creating ? "Cancel" : "Create a setup manually"}
-      </button>
+      </Button>
       {creating && (
         <ProposalForm
           disabled={pending}

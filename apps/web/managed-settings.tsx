@@ -114,8 +114,9 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
     <section className="settings-section" aria-labelledby="changes-title">
       <div className="flex items-center justify-between gap-3">
         <h2 id="changes-title">Changes</h2>
-        <button
-          className="quiet-action"
+        <Button
+          variant="secondary"
+          size="small"
           disabled={submitting}
           onClick={() => {
             setActionError("");
@@ -123,7 +124,7 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
           }}
         >
           Refresh
-        </button>
+        </Button>
       </div>
       <p className="changes-caption">
         Updates Gaia has made to itself. You can undo applied updates here.

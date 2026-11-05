@@ -33,7 +33,7 @@ export function AppearancePicker() {
   const [value, setValue] = useState(preference);
   return (
     <Select
-      aria-label="Appearance"
+      label="Theme"
       selectedKey={value}
       className="w-full gap-2"
       triggerClassName="w-full"

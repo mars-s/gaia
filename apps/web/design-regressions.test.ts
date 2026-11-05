@@ -214,3 +214,12 @@ test("attachment remove is a backed 24px circle with a 14px icon inside the imag
   assert.match(css, /remove-image \{\s*width: 24px;\s*height: 24px;\s*top: 4px;\s*right: 4px/);
   assert.match(css, /draft-images .remove-image \{ right: 16px/);
 });
+
+test("Settings has labelled appearance, contained secondary actions and aligned content controls", () => {
+  assert.match(read("./appearance.tsx"), /label="Theme"/);
+  for (const file of ["./managed-settings.tsx", "./experiences/index.tsx"]) {
+    assert.match(read(file), /<Button\s*variant="secondary"\s*size="small"/);
+  }
+  assert.match(css, /settings-section > section > button.primary-action \{ align-self: flex-start/);
+  assert.match(css, /settings-bar .app-control:not\(.chat-switcher-trigger\) \{ margin-right: 0/);
+});
