@@ -19,12 +19,12 @@ function buttons(html: string) {
   const tags = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)].map(m => m[0]);
   for (const tag of tags) {
     const classes = tag.match(/class="([^"]*)"/)?.[1].split(/\s+/) ?? [];
-    assert.equal(classes.filter(c => ["primary-action", "secondary-action", "quiet-action"].includes(c)).length, 1, tag);
+    assert.equal(classes.filter(c => ["primary-action", "secondary-action", "quiet-action", "inline-link"].includes(c)).length, 1, tag);
   }
   return tags;
 }
 
-test("main screens render every button with exactly one of the three action classes", async t => {
+test("main screens render every button with exactly one of the three action classes or an inline sentence link", async t => {
   const fixture = await experienceFixture(t);
   const proposal = await fixture.propose("bots");
   const controller = createExperienceController();

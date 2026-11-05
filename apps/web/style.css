@@ -1311,7 +1311,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .failure-path { margin-top: 4px; font-size: 12px; line-height: 16px; color: var(--color-ink-2); }
 .reply-error-icon { width: 24px; height: 24px; padding: 4px; }
 .reply-error { gap: 8px; font-size: 14px; line-height: 20px; }
-.reply-error button:not(.quiet-link) { margin-left: 4px; }
+.reply-error button:not(.inline-link) { margin-left: 4px; }
 
 @media (max-width: 639px) { .app-bar-side.sidebar-header { display: none; } }
 
@@ -1357,3 +1357,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 .settings-section #plan-title { font-size: 0; }
 .settings-section #plan-title::after { content: attr(data-label); font-size: var(--text-headline-medium); }
+
+.inline-link { display: inline; padding: 0; border: 0; border-radius: 2px; background: transparent; color: var(--color-link); font: inherit; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; cursor: pointer; }
+.inline-link:hover { color: var(--color-link-hover); }
+.inline-link:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }

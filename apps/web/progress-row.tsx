@@ -88,7 +88,7 @@ export function ReplyNotice({
           {message.includes("Settings") ? (
             <>
               {message.split("Settings")[0]}
-              <button className="quiet-action quiet-link" onClick={onSettings}>
+              <button className="inline-link" onClick={onSettings}>
                 Settings
               </button>
               .
@@ -124,7 +124,7 @@ export function FailurePath({
     return (
       <p className="failure-path">
         If this keeps happening, check your plan in{" "}
-        <button className="quiet-action quiet-link" onClick={onSettings}>
+        <button className="inline-link" onClick={onSettings}>
           Settings
         </button>
         .

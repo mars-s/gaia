@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { interviewOfferAllowed } from "./experiences/proposal";
+import { FailurePath, ReplyNotice } from "./progress-row";
 import { MessageMarkdown } from "./transcript";
 import { ProfilePanel } from "./profile-panel";
 import type { Experience } from "../../packages/protocol/experiences.ts";
@@ -193,4 +194,13 @@ test("sidebar rows override the shared secondary fill in both themes and tint on
   assert.match(css, /experience-nav-row.secondary-action\[aria-current="page"\] \{\s*background: var\(--color-surface-selected\)/);
   assert.doesNotMatch(css, /\.dark \.experience-nav-row/);
   assert.match(css, /experience-nav-row:focus-visible/);
+});
+
+test("sentence actions inherit the surrounding size without action button classes", () => {
+  for (const Component of [FailurePath, ReplyNotice]) {
+    const html = renderToStaticMarkup(createElement(Component, { message: "Gaia couldn’t finish that reply.", onSettings() {} }));
+    assert.match(html, /<button class="inline-link">Settings<\/button>/);
+    assert.doesNotMatch(html, /quiet-action|quiet-link/);
+  }
+  assert.match(css, /inline-link \{[^}]*display: inline;[^}]*padding: 0;[^}]*font: inherit/);
 });

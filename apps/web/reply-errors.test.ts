@@ -55,7 +55,7 @@ test("failure second paths offer Settings for unknown causes and reconnection ad
     }),
   );
   assert.match(unknown, /If this keeps happening, check your plan in/);
-  assert.match(unknown, /class="quiet-action quiet-link">Settings<\/button>/);
+  assert.match(unknown, /class="inline-link">Settings<\/button>/);
   const offline = renderToStaticMarkup(
     createElement(ReplyNotice, { message: replyError("fetch failed") }),
   );
