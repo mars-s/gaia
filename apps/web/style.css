@@ -1368,3 +1368,10 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .setup-main-badge { display: inline-flex; padding: 2px 6px; border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-surface-sunken); color: var(--color-ink); }
 
 .app-bar .chat-switcher-trigger { color: var(--color-ink); }
+
+.experience-sidebar { display: flex; flex-direction: column; }
+.sidebar-section { padding: 4px 10px 12px; color: var(--color-ink-2); font-size: 12px; line-height: 16px; }
+.sidebar-footer { margin-top: auto; padding-top: 24px; }
+.sidebar-original { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; }
+.scope-row-copy { text-align: left; }
+.session-recency { display: block; color: var(--color-ink-2); font-size: 12px; line-height: 16px; }

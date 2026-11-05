@@ -1,3 +1,4 @@
+import { setupContext } from "../setup-context";
 import { SetupGlyph } from "../setup-glyph";
 import type {
   Experience,
@@ -95,6 +96,9 @@ export function ExperienceProposalNotice({
               <p className="whitespace-pre-wrap text-text-secondary">
                 {setupLayouts[proposal.plan.layout].label}.{" "}
                 {proposal.plan.purpose}
+              </p>
+              <p className="setup-memory-caption text-caption-1-regular text-text-secondary">
+                {setupContext[proposal.plan.layout].change} Your original chat stays as it is.
               </p>
               <ul className="flex min-w-0 flex-col gap-2">
                 {proposal.plan.scopes.map((scope, index) => (

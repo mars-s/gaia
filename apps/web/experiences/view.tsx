@@ -1,3 +1,4 @@
+import { setupContext, sessionRecency } from "../setup-context";
 import { SetupGlyph } from "../setup-glyph";
 import { useTranscriptFollow } from "../use-transcript-follow";
 import { EmptyChat } from "../empty-chat";
@@ -100,6 +101,7 @@ export function ExperienceConversation({
       >
         {switcher}
       </div>
+      <p className="sidebar-section">{setupContext[layout].section}</p>
       <div className="flex flex-col gap-1">
         {profile.scopes.map((item) => (
           <Button
@@ -128,7 +130,12 @@ export function ExperienceConversation({
               </span>
             )}
             {layout !== "bots" && <SetupGlyph layout={layout} />}
-            <span className="truncate">{item.label}</span>
+            <span className="scope-row-copy min-w-0">
+              <span className="block truncate">{item.label}</span>
+              {layout === "sessions" && sessionRecency(item.createdAt) && (
+                <span className="session-recency">{sessionRecency(item.createdAt)}</span>
+              )}
+            </span>
             {layout !== "bots" && (
               <span
                 className="scope-work-dot"
@@ -207,6 +214,15 @@ export function ExperienceConversation({
           </Button>
         </form>
       )}
+      <div className="sidebar-footer">
+        <button className="quiet-action sidebar-original" onClick={() => {
+          controller.original();
+          setNavigation(false);
+        }}>
+          <SetupGlyph layout="single" />
+          Original chat
+        </button>
+      </div>
     </nav>
   );
   return (
@@ -232,7 +248,7 @@ export function ExperienceConversation({
                 <RiMenuLine className="size-5" aria-hidden />
               </button>
             )}
-            {layout === "single" ? switcher : scopeHead}
+            {layout === "single" || layout === "bots" ? switcher : scopeHead}
           </div>
           {accountControl}
         </div>

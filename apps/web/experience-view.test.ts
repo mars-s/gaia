@@ -581,3 +581,22 @@ test("sessions keep creation order when selection moves between rows", () => {
   }
   controller.pause();
 });
+
+test("setup sidebars explain memory and provide an Original chat exit", () => {
+  for (const [layout, caption] of [
+    ["bots", "Bots · separate memory"],
+    ["channels", "Channels · shared memory"],
+    ["sessions", "Sessions · separate histories"],
+  ] as const) {
+    const html = fixture(layout).html();
+    assert.ok(html.includes(caption));
+    assert.match(html, /sidebar-original[^]*Original chat/);
+    assert.doesNotMatch(html, /session-recency/);
+  }
+});
+
+test("Sessions show their real creation date and omit unavailable dates", () => {
+  const { controller, html } = fixture("sessions");
+  controller.profile!.scopes[0].createdAt = new Date().toISOString();
+  assert.match(html(), /session-recency">Today/);
+});

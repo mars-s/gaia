@@ -41,7 +41,7 @@ const layouts: Record<
   sessions: {
     label: "Sessions",
     description:
-      "Separate conversations, memory and model settings. Start fresh with New session.",
+      "Separate histories and model settings. New remembered facts are shared across sessions.",
   },
 };
 function SetupStatus({ main, current }: { main: boolean; current: boolean }) {
