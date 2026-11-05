@@ -84,6 +84,28 @@ function fixture(layout: ExperienceLayout) {
       ),
   };
 }
+test("a removed model explains a blocked image draft and keeps its content", async () => {
+  const { controller, html } = fixture("single");
+  const selected = controller.selected;
+  assert(selected);
+  const entry = controller.entry(selected);
+  await entry.draft.load();
+  const image = {
+    id: crypto.randomUUID(),
+    name: "Keep image",
+    mimeType: "image/png" as const,
+    data: "YWJj",
+  };
+  entry.draft.update(() => ({ text: "Keep this message", images: [image] }));
+  assert.match(html(), /Choose an available model to send/);
+  const draft = entry.draft.read();
+  assert.equal(draft.kind, "ready");
+  if (draft.kind === "ready") {
+    assert.equal(draft.draft.text, "Keep this message");
+    assert.deepEqual(draft.draft.images, [image]);
+  }
+  controller.pause();
+});
 test("four layouts share one chat with distinct navigation and memory semantics", () => {
   for (const layout of ["single", "bots", "channels", "sessions"] as const) {
     const { controller, html } = fixture(layout);

@@ -409,7 +409,9 @@ function ScopeConversation({
         )}
         {!!draft?.images.length && !model?.capabilities?.images && (
           <p role="alert" className="text-text-secondary">
-            Choose an image-capable model or remove the images to send.
+            {model
+              ? "Choose an image-capable model or remove the images to send."
+              : "Choose an available model to send. Your draft and images are here."}
           </p>
         )}
         <form

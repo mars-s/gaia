@@ -188,9 +188,17 @@ export function ComposerControls({
               </RadioGroup>
             </div>
           </div>
-          {levels.length > 1 &&
-          selectedLevel &&
-          levels.includes(selectedLevel) ? (
+          {model?.capabilities &&
+          levels.length > 0 &&
+          (!selectedLevel || !levels.includes(selectedLevel)) ? (
+            <EffortRecovery
+              levels={levels}
+              disabled={disabled}
+              onSelect={(thinkingLevel) => onSelect({ modelId, thinkingLevel })}
+            />
+          ) : levels.length > 1 &&
+            selectedLevel &&
+            levels.includes(selectedLevel) ? (
             <div className="effort-controls">
               <label htmlFor={effortId} className="text-body-medium">
                 <span className="text-text-secondary">Effort </span>
@@ -236,6 +244,39 @@ export function ComposerControls({
         </Dialog>
       </Popover>
     </DialogTrigger>
+  );
+}
+
+export function EffortRecovery({
+  levels,
+  disabled,
+  onSelect,
+}: {
+  levels: ThinkingLevel[];
+  disabled: boolean;
+  onSelect(level: ThinkingLevel): void;
+}) {
+  return (
+    <div className="effort-controls text-caption-1-regular text-text-secondary">
+      <p>Choose an effort level for this model.</p>
+      <div
+        role="group"
+        aria-label="Reasoning effort"
+        className="flex flex-wrap gap-3"
+      >
+        {levels.map((level) => (
+          <AriaButton
+            key={level}
+            type="button"
+            isDisabled={disabled}
+            className="quiet-link"
+            onPress={() => onSelect(level)}
+          >
+            {effortLabels[level]}
+          </AriaButton>
+        ))}
+      </div>
+    </div>
   );
 }
 

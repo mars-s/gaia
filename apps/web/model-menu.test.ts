@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ComposerControls } from "./composer-controls.tsx";
+import { ComposerControls, EffortRecovery } from "./composer-controls.tsx";
 import { modelMenu, readRecentModels, rememberModel } from "./recent-models.ts";
 
 const models = [
@@ -15,6 +15,22 @@ const models = [
   "D",
   "E",
 ].map((name) => ({ id: name, name, contextWindow: 1000 }));
+
+test("an unavailable stored effort offers only current supported choices without switching automatically", () => {
+  const html = renderToStaticMarkup(
+    createElement(EffortRecovery, {
+      levels: ["low", "medium"],
+      disabled: false,
+      onSelect() {
+        assert.fail("Rendering must not change the effort");
+      },
+    }),
+  );
+  assert.match(html, /Choose an effort level/);
+  assert.match(html, /Low/);
+  assert.match(html, /Medium/);
+  assert.doesNotMatch(html, /High|Max|no adjustable reasoning/);
+});
 
 test("small catalogues preserve Pi order including an unavailable current selection", () => {
   const small = models.slice(0, 6);
