@@ -21,6 +21,7 @@ import {
 } from "../../../packages/protocol/experiences.ts";
 import { createAuth } from "../auth.ts";
 import { createPi } from "../pi.ts";
+import type { ExperienceRuntimeOptions } from "../experiences/runtime.ts";
 import { createChatServer, openDatabase } from "../server.ts";
 import { deferred, png } from "./workspace.ts";
 export { deferred, png };
@@ -30,6 +31,8 @@ export async function experienceFixture(
     concurrency?: number;
     extensions?: Extension[];
     directory?: string;
+    extensionsForJob?: ExperienceRuntimeOptions["extensionsForJob"];
+    capabilities?: ExperienceRuntimeOptions["capabilities"];
   } = {},
 ) {
   const dir =
@@ -99,6 +102,8 @@ export async function experienceFixture(
         experiencesEnabled: true,
         experiences: {
           concurrency: options.concurrency,
+          extensionsForJob: options.extensionsForJob,
+          capabilities: options.capabilities,
           extensions: [hold, ...(options.extensions ?? [])],
         },
       },

@@ -130,6 +130,7 @@ export function createJobTask({
   joinChildren,
   stopChildren,
   publish,
+  prepareWorker,
 }: {
   getHarness(): Harness;
   options: ProfileOptions;
@@ -139,6 +140,7 @@ export function createJobTask({
   joinChildren(id: string): Promise<void>;
   stopChildren(id: string): Promise<void>;
   publish(): void;
+  prepareWorker(job: State["jobs"][number]): Promise<() => void>;
 }) {
   return defineTask<{ jobId: string }, { phase: "execute" }, null>({
     name: "gaia.experience-job",
@@ -152,6 +154,7 @@ export function createJobTask({
         if (runtime.signal.aborted) abort();
         controls.set(task.input.jobId, controller);
         let release: (() => void) | undefined;
+        let disposeExtensions: (() => void) | undefined;
         try {
           const initial = jobIn(await read(), task.input.jobId);
           release = await options.capacity.acquire(
@@ -167,6 +170,7 @@ export function createJobTask({
               activity: [],
             };
           });
+          disposeExtensions = await prepareWorker(initial);
           const worker = await getHarness().conversation(initial.workerId, ctx);
           if (!worker) throw new Error("Job worker is missing.");
           const adapter = await conversationAdapter(
@@ -331,6 +335,7 @@ export function createJobTask({
             };
           }, context);
         } finally {
+          disposeExtensions?.();
           release?.();
           controls.delete(task.input.jobId);
           runtime.signal.removeEventListener("abort", abort);

@@ -3,6 +3,7 @@ import { join, dirname } from "node:path";
 import {
   ExperienceId,
   ExperienceCreate,
+  ExperienceCapabilities,
 } from "../../../packages/protocol/experiences.ts";
 import {
   openProfile,
@@ -17,7 +18,9 @@ export type ExperienceRuntimeOptions = Omit<
   ProfileOptions,
   "capacity" | "capabilities"
 > & {
-  capabilities?: Partial<ProfileOptions["capabilities"]>;
+  capabilities?:
+    | Partial<z.infer<typeof ExperienceCapabilities>>
+    | (() => Partial<z.infer<typeof ExperienceCapabilities>>);
   concurrency?: number;
 };
 export async function createExperienceRuntime(
@@ -26,13 +29,15 @@ export async function createExperienceRuntime(
 ) {
   const directory = join(generation, "experiences");
   const profiles = new Map<ExperienceId, Promise<ProfileRuntime>>();
-  const capabilities = {
+  const capabilities = () => ({
     machine: false,
     desktop: false,
     search: false,
     selfModification: false,
-    ...options.capabilities,
-  };
+    ...(typeof options.capabilities === "function"
+      ? options.capabilities()
+      : options.capabilities),
+  });
   const capacity = new Capacity(options.concurrency ?? 4);
   let open = true;
   durableDirectory(directory);
@@ -55,7 +60,9 @@ export async function createExperienceRuntime(
     return profile;
   };
   return {
-    capabilities,
+    get capabilities() {
+      return capabilities();
+    },
     resolve,
     async index() {
       return {
@@ -67,7 +74,7 @@ export async function createExperienceRuntime(
             ),
           )
         ).filter((p) => p !== null),
-        capabilities,
+        capabilities: capabilities(),
       };
     },
     async create(input: z.infer<typeof ExperienceCreate>) {

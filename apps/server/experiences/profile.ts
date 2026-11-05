@@ -10,11 +10,11 @@ import {
   configure,
   createRegistry,
   defineExtension,
-  wrapTool,
   type Extension,
   type HarnessSettings,
   type HarnessOptions,
   type Tx,
+  type ConversationId,
 } from "@earendil-works/pi-durable";
 import { openNodeSqliteStorage } from "@earendil-works/pi-durable/storage/sqlite/node";
 import type { Models } from "@earendil-works/pi-ai";
@@ -36,12 +36,21 @@ import { HttpError } from "../http-error.ts";
 import { ProfileDoc, State, Scope, terminal, now } from "./state.ts";
 import { Capacity } from "./capacity.ts";
 import { createExperienceTools } from "./tools.ts";
+import { trackedExtension } from "./external.ts";
 
 export type ProfileOptions = {
   models: Models;
   env?: HarnessOptions["env"];
   extensions?: Extension[];
-  capabilities: z.infer<typeof ExperienceCapabilities>;
+  extensionsForJob?(binding: {
+    profileId: ExperienceId;
+    scopeId: ScopeId;
+    jobId: string;
+    conversationId: ConversationId;
+  }): readonly Extension[] | Promise<readonly Extension[]>;
+  capabilities:
+    | z.infer<typeof ExperienceCapabilities>
+    | (() => z.infer<typeof ExperienceCapabilities>);
   capacity: Capacity;
   settings?: Pick<HarnessSettings, "compaction">;
 };
@@ -104,6 +113,7 @@ export async function openProfile(
     joinChildren,
     stopChildren,
     publish,
+    prepareWorker,
   });
   const send = createAdmission({
     id,
@@ -125,56 +135,40 @@ export async function openProfile(
     wait: (jobId) => wait(jobId),
   });
   const registry = createRegistry();
-  registry.install(
-    defineExtension({
-      name: "gaia-experience",
-      tasks: [anchor],
-      tools: tools.tools,
-    }),
-  );
-  for (const extension of options.extensions ?? []) registry.install(extension);
-  registry.install(
-    defineExtension({
-      name: "gaia-experience-receipts",
-      wraps: (options.extensions ?? []).flatMap((extension) =>
-        (extension.tools ?? []).map((tool) =>
-          wrapTool(tool, (original) => ({
-            ...original,
-            replay: "unsafe",
-            async execute(input, api, context) {
-              const invocationId = `${api.conversationId}/${api.callId}`;
-              await api.commit(async (tx) => {
-                const doc = await tx.doc(ProfileDoc);
-                const job = doc.jobs.find(
-                  (j) => j.workerId === api.conversationId,
-                );
-                if (!job) throw new Error("Tool has no job owner.");
-                if (!job.invocations.includes(invocationId))
-                  job.invocations.push(invocationId);
-              }, context);
-              const result = await original.execute(input, api, context);
-              await api.commit(async (tx) => {
-                const doc = await tx.doc(ProfileDoc);
-                const job = doc.jobs.find(
-                  (j) => j.workerId === api.conversationId,
-                );
-                if (job) {
-                  job.receipts.push({
-                    callId: invocationId,
-                    result: JSON.stringify(result),
-                  });
-                  job.invocations = job.invocations.filter(
-                    (id) => id !== invocationId,
-                  );
-                }
-              }, context);
-              return result;
-            },
-          })),
-        ),
-      ),
-    }),
-  );
+  const base = defineExtension({
+    name: "gaia-experience",
+    tasks: [anchor],
+    tools: tools.tools,
+  });
+  registry.install(base);
+  const shared = (options.extensions ?? []).map(trackedExtension);
+  for (const extension of shared) registry.install(extension);
+  async function prepareWorker(job: State["jobs"][number]) {
+    const extensions = (
+      (await options.extensionsForJob?.({
+        profileId: id,
+        scopeId: job.public.scopeId,
+        jobId: job.public.id,
+        conversationId: job.workerId,
+      })) ?? []
+    ).map(trackedExtension);
+    for (const extension of extensions) registry.install(extension);
+    try {
+      await harness.commit(
+        (tx) =>
+          configure(tx, job.workerId, {
+            extensions: [base, ...shared, ...extensions],
+          }),
+        ctx,
+      );
+    } catch (error) {
+      for (const extension of extensions) registry.uninstall(extension);
+      throw error;
+    }
+    return () => {
+      for (const extension of extensions) registry.uninstall(extension);
+    };
+  }
   const { harness } = await openRecoveredHarness(
     await openNodeSqliteStorage(join(path, "pi.sqlite")),
     {
@@ -343,7 +337,10 @@ export async function openProfile(
         revision: state.revision,
         scopes: state.scopes.map((s) => s.public),
         jobs: state.jobs.map((j) => j.public),
-        capabilities: options.capabilities,
+        capabilities:
+          typeof options.capabilities === "function"
+            ? options.capabilities()
+            : options.capabilities,
       };
     },
     async confirm(revision: number) {
