@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { interviewOfferAllowed } from "./experiences/proposal";
+import { MessageMarkdown } from "./transcript";
 import { ProfilePanel } from "./profile-panel";
 import type { Experience } from "../../packages/protocol/experiences.ts";
 
@@ -173,3 +174,15 @@ test("following survives delayed card and image layout without pulling back a re
   assert.match(read("./app.tsx"), /useTranscriptFollow\(bottom, followReply/);
   assert.match(read("./experiences/view.tsx"), /useTranscriptFollow\(bottom, follow\)/);
 });
+
+ test("answer links keep accent ink, an underline and focus without any button class", () => {
+  const html = renderToStaticMarkup(createElement(MessageMarkdown, { text: "Read [the source](https://example.org)." }));
+  assert.match(html, /<a href="https:\/\/example.org"[^>]*>the source<\/a>/);
+  assert.doesNotMatch(html, /<a[^>]*class="[^"]*(?:action|button)/);
+  assert.match(css, /message-markdown a \{[^}]*color: var\(--color-link\);[^}]*text-decoration: underline;[^}]*text-underline-offset: 2px;[^}]*text-decoration-thickness: 1px/);
+  assert.match(css, /message-markdown a:hover \{ color: var\(--color-link-hover\)/);
+  assert.match(css, /message-markdown a:focus-visible[^}]*outline: 2px solid var\(--color-focus\)/);
+  const theme = read("./styles/theme.css");
+  assert.match(theme, /--color-link: var\(--color-accent-700\)/);
+  assert.match(theme, /--color-link: var\(--color-accent-300\)/);
+ });

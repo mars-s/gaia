@@ -87,10 +87,15 @@ body {
   font-weight: 600;
 }
 .message-markdown a {
-  text-decoration: none;
+  color: var(--color-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
 }
+.message-markdown a:hover { color: var(--color-link-hover); }
 .message-markdown a:focus-visible {
-  outline: 2px solid var(--color-border-focus-ring);
+  outline-offset: 2px;
+  outline: 2px solid var(--color-focus);
 }
 .message-markdown code {
   background: var(--color-surface-sunken);
