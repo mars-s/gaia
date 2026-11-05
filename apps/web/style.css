@@ -1176,7 +1176,7 @@ a:focus-visible {
  .app-bar-side { display: none; }
  [data-desktop="darwin"] .app-bar:not(.has-side) .app-bar-column { padding-left: 16px; }
 }
-.scope-head { display: flex; min-width: 0; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500; }
+.scope-head { color: var(--color-ink); display: flex; min-width: 0; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500; }
 .scope-head > svg { color: var(--color-ink-3); flex-shrink: 0; }
 .scope-head .avatar-tile { width: 24px; height: 24px; }
 .sidebar-switcher { margin-bottom: 8px; }
@@ -1366,3 +1366,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .setup-name { display: flex; align-items: center; gap: 8px; }
 .setup-layout-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--color-ink-2); }
 .setup-main-badge { display: inline-flex; padding: 2px 6px; border: 1px solid var(--color-line); border-radius: 4px; background: var(--color-surface-sunken); color: var(--color-ink); }
+
+.app-bar .chat-switcher-trigger { color: var(--color-ink); }

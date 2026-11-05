@@ -230,3 +230,8 @@ test("welcome paragraph and action share a measure and omit the repeated connect
   assert.match(css, /welcome-composition .welcome-button \{ width: 100%; max-width: 320px/);
   assert.match(read("./app.tsx"), /connection.message !== "Connect your plan to begin."/);
 });
+
+test("all shell titles use the primary ink instead of quiet action ink", () => {
+  assert.match(css, /app-bar .chat-switcher-trigger \{ color: var\(--color-ink\)/);
+  assert.match(css, /scope-head \{[^}]*color: var\(--color-ink\)/);
+});
