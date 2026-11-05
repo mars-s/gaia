@@ -1019,14 +1019,15 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 0;
-  min-width: 36px;
-  padding: 0 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 4px;
   border-radius: var(--radius-xs);
   color: var(--color-ink-2);
   font-size: 12px;
   line-height: 16px;
   white-space: nowrap;
+  text-align: center;
   cursor: pointer;
   transition:
     background-color var(--motion-hover),
@@ -1039,7 +1040,7 @@ a:focus-visible {
   padding: 0 2px;
 }
 .effort-cell:hover {
-  background: var(--color-surface-hover);
+  color: var(--color-ink);
 }
 .effort-cell[data-selected] {
   background: var(--color-surface-selected);

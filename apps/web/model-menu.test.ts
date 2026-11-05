@@ -270,11 +270,42 @@ test("real Pi effort cells render in registry order with Medium selected and nev
     }),
   );
   assert.equal((html.match(/type="radio"/g) ?? []).length, 5);
-  assert.match(html, /checked=""/);
+  assert.equal((html.match(/checked=""/g) ?? []).length, 1);
+  assert.equal((html.match(/data-selected="true"/g) ?? []).length, 1);
   let last = -1;
   for (const name of ["Low", "Medium", "High", "Extra high", "Max"]) {
     const index = html.indexOf(`>${name}<`, last + 1);
     assert.ok(index > last);
     last = index;
   }
+});
+
+test("model facts disappear for identical choices, differ when useful and always warn about draft images", async () => {
+  const { modelChoiceFacts } = await import("./composer-controls.tsx");
+  const sol = {
+    id: "sol",
+    name: "Sol",
+    contextWindow: 500000,
+    capabilities: { images: true, thinkingLevels: [] },
+  };
+  const terra = { ...sol, id: "terra", name: "Terra" };
+  assert.equal(modelChoiceFacts(sol, [sol, terra], false), undefined);
+  const smaller = { ...terra, contextWindow: 128000 };
+  assert.equal(
+    modelChoiceFacts(sol, [sol, smaller], false),
+    "Reads images · 500k context",
+  );
+  assert.equal(
+    modelChoiceFacts(smaller, [sol, smaller], false),
+    "Reads images · 128k context",
+  );
+  const text = { ...sol, capabilities: { ...sol.capabilities, images: false } };
+  assert.equal(
+    modelChoiceFacts(text, [text], true),
+    "Can't read your images · 500k context",
+  );
+  assert.equal(
+    modelChoiceFacts(sol, [sol, text], false),
+    "Reads images · 500k context",
+  );
 });

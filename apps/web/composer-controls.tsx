@@ -49,6 +49,18 @@ export function modelFacts(model: Model, images: boolean) {
   if (!model.capabilities) return undefined;
   return `${model.capabilities.images ? "Reads images" : images ? "Can't read your images" : "Text only"} · ${contextCount(model.contextWindow)} context`;
 }
+export function modelChoiceFacts(
+  model: Model,
+  models: Model[],
+  images: boolean,
+) {
+  const facts = modelFacts(model, images);
+  if (images && model.capabilities && !model.capabilities.images) return facts;
+  const choices = new Set(
+    models.map((item) => modelFacts(item, images)).filter(Boolean),
+  );
+  return choices.size > 1 ? facts : undefined;
+}
 export function effortText(
   model: Model | undefined,
   level: ThinkingLevel | undefined,
@@ -292,7 +304,9 @@ export function ComposerControls({
   }
   function row(item: (typeof primary)[number]) {
     const real = chat.models.find((model) => model.id === item.id);
-    const facts = real ? modelFacts(real, hasImages) : "Not available now";
+    const facts = real
+      ? modelChoiceFacts(real, chat.models, hasImages)
+      : "Not available now";
     return (
       <Radio
         key={item.id}
