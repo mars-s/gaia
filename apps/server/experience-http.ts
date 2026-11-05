@@ -95,7 +95,14 @@ export function createExperienceRoutes(
               res.destroy();
             });
         });
-        req.once("close", unsubscribe);
+        const heartbeat = setInterval(() => {
+          if (!res.destroyed) res.write("event: heartbeat\ndata: {}\n\n");
+        }, 2000);
+        heartbeat.unref();
+        req.once("close", () => {
+          clearInterval(heartbeat);
+          unsubscribe();
+        });
         return { stream: true as const };
       }
       if (req.method === "POST")

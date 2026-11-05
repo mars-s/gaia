@@ -26,6 +26,7 @@ export interface ExperienceTransport {
     onmessage: ((event: MessageEvent<string>) => void) | null;
     onerror: ((event: Event) => void) | null;
     onopen: ((event: Event) => void) | null;
+    addEventListener?(type: string, listener: EventListener): void;
     close(): void;
   };
 }
@@ -73,6 +74,11 @@ export function createExperienceClient(
         );
       return parsed.data;
     } catch (cause) {
+      if (cause instanceof SyntaxError)
+        throw new Error(
+          "Gaia returned an unreadable response. Reconnect and try again.",
+          { cause },
+        );
       if (cause instanceof TypeError)
         throw new Error(
           "Connection lost. Your draft is here. Reconnect and try again.",
@@ -205,8 +211,37 @@ export function createExperienceClient(
       let revision = -1;
       let retry = 500;
       let timer: ReturnType<typeof setTimeout> | undefined;
+      let watchdog: ReturnType<typeof setTimeout> | undefined;
+      let recoveryTimer: ReturnType<typeof setTimeout> | undefined;
       let source: ReturnType<ExperienceTransport["events"]> | undefined;
       let recovery: AbortController | undefined;
+      function fetchFresh(reportFailure = false) {
+        recovery?.abort();
+        clearTimeout(recoveryTimer);
+        const requestController = new AbortController();
+        recovery = requestController;
+        recoveryTimer = setTimeout(() => requestController.abort(), 5000);
+        void request(
+          `${scope(id, sid)}/state`,
+          scoped(id, sid),
+          requestController.signal,
+        )
+          .then((value) => {
+            if (
+              !closed &&
+              recovery === requestController &&
+              !requestController.signal.aborted
+            )
+              accept(value);
+          })
+          .catch(() => {
+            if (reportFailure && !closed && recovery === requestController)
+              offline();
+          })
+          .finally(() => {
+            if (recovery === requestController) clearTimeout(recoveryTimer);
+          });
+      }
       function accept(value: ExperienceScopeState) {
         if (!closed && value.revision >= revision) {
           revision = value.revision;
@@ -221,30 +256,29 @@ export function createExperienceClient(
         const reconnect = () => {
           if (!active()) return;
           generation++;
+          clearTimeout(watchdog);
           source?.close();
           recovery?.abort();
           offline();
+          fetchFresh();
           timer = setTimeout(connect, retry);
           retry = Math.min(10000, retry * 2);
         };
+        const alive = () => {
+          if (!active()) return;
+          clearTimeout(watchdog);
+          watchdog = setTimeout(reconnect, 10000);
+        };
+        alive();
+        source.addEventListener?.("heartbeat", alive);
         source.onopen = () => {
           if (!active()) return;
-          recovery?.abort();
-          recovery = new AbortController();
-          void request(
-            `${scope(id, sid)}/state`,
-            scoped(id, sid),
-            recovery.signal,
-          )
-            .then((value) => {
-              if (active()) accept(value);
-            })
-            .catch(() => {
-              if (active()) offline();
-            });
+          alive();
+          fetchFresh(true);
         };
         source.onmessage = (event) => {
           if (!active()) return;
+          alive();
           try {
             const value = scoped(id, sid).parse(JSON.parse(event.data));
             retry = 500;
@@ -262,6 +296,8 @@ export function createExperienceClient(
         source?.close();
         recovery?.abort();
         clearTimeout(timer);
+        clearTimeout(watchdog);
+        clearTimeout(recoveryTimer);
       };
     },
   };
