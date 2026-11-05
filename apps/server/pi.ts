@@ -33,6 +33,7 @@ import type { WorkspaceChat } from "./pi-workspace.ts";
 import { createWorkspaceChat } from "./pi-workspace.ts";
 import { createWorkspaceTools } from "./pi-workspace-tools.ts";
 import { conversationAdapter } from "./pi-conversation.ts";
+import { readOwnerState } from "./profile.ts";
 import type { Chat, ThinkingLevel } from "../../packages/protocol/index.ts";
 import {
   OwnerProfile,
@@ -257,6 +258,7 @@ export async function createPi(
           models: auth.models,
           settings,
           ...options.experiences,
+          readOwner: () => readOwnerState(dirname(path)),
           capabilities: experienceCapabilities,
           extensionsForJob: async (binding) => [
             ...((await options.experiences?.extensionsForJob?.(binding)) ?? []),

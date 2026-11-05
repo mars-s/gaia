@@ -20,6 +20,25 @@ import {
   type OwnerAnswers,
 } from "../../packages/sdk/onboarding.ts";
 
+export function readOwnerState(directory: string): OwnerState {
+  const path = join(directory, "owner-profile.json");
+  let fd: number;
+  try {
+    fd = openSync(path, "r");
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT")
+      return { kind: "new" };
+    throw error;
+  }
+  try {
+    if (fstatSync(fd).size > 16384)
+      throw new Error("Owner profile is too large.");
+    return OwnerState.parse(JSON.parse(readFileSync(fd, "utf8")));
+  } finally {
+    closeSync(fd);
+  }
+}
+
 export function openOwnerProfile(db: DatabaseSync) {
   const main = z.object({ name: z.literal("main"), file: z.string() }).parse(
     db
@@ -29,24 +48,9 @@ export function openOwnerProfile(db: DatabaseSync) {
   );
   if (!isAbsolute(main.file) || basename(main.file) !== "gaia.sqlite")
     throw new Error("Owner profile requires a file-backed gaia.sqlite.");
-  const path = join(dirname(main.file), "owner-profile.json");
-  function read(): OwnerState {
-    let fd: number;
-    try {
-      fd = openSync(path, "r");
-    } catch (error) {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT")
-        return { kind: "new" };
-      throw error;
-    }
-    try {
-      if (fstatSync(fd).size > 16384)
-        throw new Error("Owner profile is too large.");
-      return OwnerState.parse(JSON.parse(readFileSync(fd, "utf8")));
-    } finally {
-      closeSync(fd);
-    }
-  }
+  const directory = dirname(main.file);
+  const path = join(directory, "owner-profile.json");
+  const read = () => readOwnerState(directory);
   function write(value: OwnerState) {
     read();
     const content = JSON.stringify(OwnerState.parse(value));

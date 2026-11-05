@@ -38,9 +38,11 @@ import { Capacity } from "./capacity.ts";
 import { createExperienceTools } from "./tools.ts";
 import { trackedExtension } from "./external.ts";
 import { defaultAvatar } from "./avatars.ts";
+import type { OwnerState } from "../../../packages/sdk/onboarding.ts";
 
 export type ProfileOptions = {
   models: Models;
+  readOwner?(): OwnerState | undefined;
   env?: HarnessOptions["env"];
   extensions?: Extension[];
   extensionsForJob?(binding: {
@@ -123,6 +125,7 @@ export async function openProfile(
     compacting,
     memory,
     anchor,
+    readOwner: options.readOwner,
   });
   const tools = createExperienceTools({
     read,
