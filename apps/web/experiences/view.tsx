@@ -33,11 +33,13 @@ export function ExperienceConversation({
   switcher,
   accountControl,
   onSettings,
+  onOriginal,
 }: {
   controller: ExperienceController;
   switcher?: ReactNode;
   accountControl?: ReactNode;
   onSettings?: () => void;
+  onOriginal?: () => void;
 }) {
   const profile = controller.profile;
   const scope = controller.selected;
@@ -216,7 +218,8 @@ export function ExperienceConversation({
       )}
       <div className="sidebar-footer">
         <button className="quiet-action sidebar-original" onClick={() => {
-          controller.original();
+          if (onOriginal) onOriginal();
+          else controller.original();
           setNavigation(false);
         }}>
           <SetupGlyph layout="single" />

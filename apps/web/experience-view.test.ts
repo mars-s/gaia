@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -599,4 +600,11 @@ test("Sessions show their real creation date and omit unavailable dates", () => 
   const { controller, html } = fixture("sessions");
   controller.profile!.scopes[0].createdAt = new Date().toISOString();
   assert.match(html(), /session-recency">Today/);
+});
+
+test("Original chat footer passes through the app navigation callback", () => {
+  const view = readFileSync(new URL("./experiences/view.tsx", import.meta.url), "utf8");
+  const app = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
+  assert.match(view, /if \(onOriginal\) onOriginal\(\)/);
+  assert.match(app, /onOriginal=\{\(\) => \{[^]*experiences.original\(\);[^]*setExperienceView\("original"\)/);
 });

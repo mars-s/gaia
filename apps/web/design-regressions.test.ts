@@ -112,10 +112,10 @@ test("attachments expose the filename below a 72px image in a 96px chip", () => 
     /text-overflow: ellipsis; white-space: nowrap; text-align: center/,
   );
 });
-test("narrow model chip shares the textarea edge and proposal actions share a baseline", () => {
+test("narrow model chip shares the add column and proposal actions share a baseline", () => {
   assert.match(
     css,
-    /model-trigger \{ grid-column: 2 \/ 4; justify-self: start; padding-left: 12px/,
+    /model-trigger \{ grid-column: 1 \/ 4; justify-self: start; padding-left: 10px/,
   );
   assert.match(
     css,
@@ -162,7 +162,7 @@ test("Bot art is clipped to one shared tile radius and welcome lines are balance
 });
 test("composer focus has a single accent edge and both actions share the same fill and shape", () => {
   assert.match(css, /composer:focus-within[^}]*border-color: var\(--color-accent\);\s*box-shadow: none/);
-  assert.match(css, /composer-stop \{\s*background: var\(--color-accent\)/);
+  assert.match(css, /composer-stop \{\s*background: var\(--color-primary-fill\)/);
   assert.match(css, /primary-action, .secondary-action, .quiet-action[^}]*border-radius: var\(--radius-sm\);\s*background-image: none/);
 });
 
@@ -217,9 +217,8 @@ test("attachment remove is a backed 24px circle with a 14px icon inside the imag
 
 test("Settings has labelled appearance, contained secondary actions and aligned content controls", () => {
   assert.match(read("./appearance.tsx"), /label="Theme"/);
-  for (const file of ["./managed-settings.tsx", "./experiences/index.tsx"]) {
-    assert.match(read(file), /<Button\s*variant="secondary"\s*size="small"/);
-  }
+  assert.match(read("./experiences/index.tsx"), /<Button\s*variant="secondary"\s*size="small"/);
+  assert.match(read("./managed-settings.tsx"), /className="quiet-action app-control"[^]*aria-label="Check for changes"/);
   assert.match(css, /settings-section > section > button.primary-action \{ align-self: flex-start/);
   assert.match(css, /settings-bar .app-control:not\(.chat-switcher-trigger\) \{ margin-right: 0/);
 });

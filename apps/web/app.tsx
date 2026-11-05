@@ -600,6 +600,10 @@ export function App() {
       ) : experienceView !== "original" && !controller.safeMode ? (
         <ProfileExperience
           controller={experiences}
+          onOriginal={() => {
+            experiences.original();
+            setExperienceView("original");
+          }}
           onSettings={() => setAccountOpen(true)}
           switcher={setupSwitcher}
           accountControl={accountControl}

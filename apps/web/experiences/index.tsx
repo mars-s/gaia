@@ -52,11 +52,13 @@ export function ProfileExperience({
   switcher,
   accountControl,
   onSettings,
+  onOriginal,
 }: {
   controller: ExperienceController;
   switcher?: ReactNode;
   accountControl?: ReactNode;
   onSettings?: () => void;
+  onOriginal?: () => void;
 }) {
   useSyncExternalStore(
     controller.subscribe,
@@ -69,6 +71,7 @@ export function ProfileExperience({
       switcher={switcher}
       accountControl={accountControl}
       onSettings={onSettings}
+      onOriginal={onOriginal}
     />
   );
 }
