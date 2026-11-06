@@ -1497,3 +1497,9 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .starter { width: 100%; min-height: 36px; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 14px; line-height: 20px; color: var(--color-ink-2); text-align: center; }
 .starter:hover { color: var(--color-ink); background: var(--color-surface-hover); }
 .starter:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+.welcome-composition .welcome-button + .welcome-button { margin-top: 8px; }
+.welcome-composition .welcome-button { font-size: 14px; line-height: 20px; font-weight: 500; }
+.welcome-button svg { width: 18px; height: 18px; }
+.welcome-button:disabled { opacity: .4; }
+.dark .welcome-composition .welcome-button { border-color: var(--color-line-strong); }

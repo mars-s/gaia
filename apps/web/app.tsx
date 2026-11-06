@@ -394,7 +394,7 @@ export function App() {
               setupSwitcher
             ) : (
               <span className="select-none text-body-medium">
-                {connected ? "Original chat" : "Gaia"}
+                {connected ? "Original chat" : ""}
               </span>
             )}
             {connected && accountControl}
@@ -505,7 +505,7 @@ export function App() {
                   Open browser again
                 </Button>
                 <p className="welcome-caption">
-                  Sign in with your {connection.provider === "anthropic" ? "Claude" : "ChatGPT"} plan. No API key needed.
+                  Your browser opens to sign in. No API key needed.
                 </p>
                 {browserError && (
                   <p role="alert" className="text-text-error-primary">
@@ -554,7 +554,7 @@ export function App() {
                     Welcome to Gaia
                   </h1>
                   <p className="text-text-secondary">
-                    Gaia is an assistant that runs on your own machine. Your
+                    An assistant that runs on your own machine. Your
                     conversations and memory stay here.
                   </p>
                 </div>
@@ -573,10 +573,7 @@ export function App() {
                   {pending ? "Connecting…" : "Continue with ChatGPT"}
                 </SocialButton>
                 <ClaudeSignIn disabled={pending || offline} onConnect={() => void act("auth/connect", { provider: "anthropic" })} />
-                {connection?.kind === "disconnected" && connection.message &&
-                  connection.message !== "Connect your plan to begin." && (
-                    <p className="welcome-caption">{connection.message}</p>
-                  )}
+                <p className="welcome-caption">{connection?.kind === "disconnected" && connection.message && connection.message !== "Connect your plan to begin." ? connection.message : "Your browser opens to sign in. No API key needed."}</p>
               </>
             )}
             {offline && state && (
