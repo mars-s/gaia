@@ -1,0 +1,13 @@
+# Capture v2
+
+Approved scope, 6 November 2026. The extended set makes the measure stricter.
+
+The existing 25 captures keep their journey, dimensions, theme, content and ordering. J5, J8account, J8setups, J10 and J11 each gain 1000 dark, 320 light and 320 dark variants. The total is 40 PNGs. Desktop remains 1000 by 760 CSS pixels and narrow remains 320 by 700.
+
+J1 uses the merged welcome screen with matching ChatGPT and Claude buttons. No fake sign-in state is added. Its description now names both plans. The account description names both plan rows. The manifest records captureVersion 2.
+
+The merged provider filter requires an explicit availability hook in the existing faux-provider fixture. It exposes only the faux ChatGPT provider, and no connected plan for J1. Seeded messages, proposals, model catalogue and attachment content are unchanged. No owner credential store is opened or initialised.
+
+The Electron bootstrap is unchanged. Windows remain hidden and unfocused, background throttling is disabled, the activation policy prohibits a Dock icon and no Agent Desktop command runs. The isolated server uses port 4337. The owner runtime and credentials on 4317 are outside this work.
+
+Round 11m is captured from the committed v2 implementation. Every PNG must be inspected before judging. Its verdict remains pending judge. Rubric and all frozen hooks remain unchanged.
