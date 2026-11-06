@@ -28,7 +28,7 @@ test("interview waits for proposals to settle and a later answer after any setup
     assert.equal(interviewOfferAllowed([item], "later"), true);
   }
 });
-test("interview offer is a borderless aside and skipped interviews stay hidden", () => {
+test("interview offer shares the proposal frame and skipped interviews stay hidden", () => {
   const render = (kind: "new" | "skipped") =>
     renderToStaticMarkup(
       createElement(ProfilePanel, {
@@ -40,13 +40,15 @@ test("interview offer is a borderless aside and skipped interviews stay hidden",
         onRetry() {},
       }),
     );
-  assert.match(render("new"), /class="interview-offer"/);
+  assert.match(render("new"), /class="setup-card interview-offer [^"]*rounded-xl border border-separator-border p-5/);
   assert.match(render("new"), />Start the short interview</);
   const offer = render("new");
-  assert.match(offer, /class="interview-offer"/);
+  assert.match(offer, /class="setup-card interview-offer [^"]*rounded-xl border border-separator-border p-5/);
   assert.match(offer, /secondary-action[^]*Start the short interview/);
   assert.doesNotMatch(offer, /primary-action/);
-  assert.match(css, /interview-offer[^}]*border-color: color-mix/);
+  assert.match(offer, /suggestion-caption">A suggestion from Gaia/);
+  assert.match(css, /interview-offer \{ margin-top: 8px; gap: 12px; padding: 16px/);
+  assert.doesNotMatch(css, /interview-offer[^}]*border: 0/);
   assert.match(render("new"), />Not now</);
   assert.doesNotMatch(render("skipped"), /Start the short interview|Not now|fit Gaia/);
 });

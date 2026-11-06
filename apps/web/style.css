@@ -1285,7 +1285,6 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border-color: color-mix(in oklab, var(--color-line) 65%, transparent);
 }
 @media (min-width: 640px) {
   .desktop-sidebar .drawer-switcher {
@@ -1484,8 +1483,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .proposal-scopes .scope-purpose { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; font-size: 13px; line-height: 18px; margin-top: -6px; }
 }
 
-.interview-offer { margin-top: 16px; gap: 8px; border: 0; background: transparent; border-radius: 0; padding: 0; }
-.interview-offer > p { max-width: 56ch; font-size: 14px; line-height: 20px; color: var(--color-ink-2); }
+.interview-offer { margin-top: 8px; gap: 12px; padding: 16px; }
+.interview-offer > p:not(.suggestion-caption) { max-width: 56ch; font-size: 14px; line-height: 20px; color: var(--color-ink-2); }
 
 .empty-chat { padding-bottom: 8vh; }
 .starter-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: min(640px, 100%); margin-top: 16px; }
@@ -1569,3 +1568,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 .setup-open-now { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; color: var(--color-ink-2); white-space: nowrap; }
 .setup-open-now svg { width: 14px; height: 14px; }
+
+.suggestion-caption { font-size: 12px; line-height: 16px; color: var(--color-ink-2); }

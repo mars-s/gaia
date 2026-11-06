@@ -41,8 +41,9 @@ export function ProfilePanel({
     return (
       <section
         aria-label="About you"
-        className="interview-offer"
+        className="setup-card interview-offer flex min-w-0 flex-col gap-4 rounded-xl border border-separator-border p-5 wrap-anywhere"
       >
+        <p className="suggestion-caption">A suggestion from Gaia</p>
         <p>
           If you like, I can fit myself around how you work. It takes a minute.
         </p>
