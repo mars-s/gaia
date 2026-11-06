@@ -79,7 +79,7 @@ test("Settings interview is secondary and change refresh is an accessible icon a
   assert.match(css, /settings-content[^}]*gap: 0/);
 });
 
-import { SettingsIndex, settingsSections } from "./settings-index";
+import { SettingsHeading, SettingsIndex, settingsSections } from "./settings-index";
 test("Settings navigation selects exactly one pane and retains five owner choices", () => {
  for (const [current] of settingsSections) {
   const html = renderToStaticMarkup(createElement(SettingsIndex, { current, onSelect() {} }));
@@ -134,4 +134,12 @@ test("narrow Settings uses a real heading and an accessible listbox switcher", (
 test("selected Settings labels use primary ink and medium weight at every width", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.match(css, /\n.settings-index button\[aria-current\] \{ color: var\(--color-ink\); font-weight: 500/);
+});
+
+test("narrow heading keeps the exact section name independently of its button name", () => {
+ for (const [id, label] of settingsSections) {
+  const html = renderToStaticMarkup(createElement(SettingsHeading, { id, children: label }));
+  assert.match(html, new RegExp(`<h2[^>]*aria-label="${label}"`));
+  assert.match(html, new RegExp(`<button[^>]*role="button"[^>]*aria-label="Settings section: ${label}"`));
+ }
 });
