@@ -124,6 +124,7 @@ export async function experienceFixture(
             ? { kind: "connected", model: "gpt-6.1-sol" }
             : { kind: "disconnected", message: "Connect first" },
         connect() {},
+        disconnect: (provider) => auth.disconnect(provider),
         reply() {},
         close: () => auth.close(),
       },

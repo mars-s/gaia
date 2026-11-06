@@ -38,7 +38,7 @@ export function createWorkspaceRoutes({
   stop: (areaId: AreaId) => Promise<void>;
 }) {
   function available() {
-    if (!connected()) throw new HttpError(409, "Connect ChatGPT first.");
+    if (!connected()) throw new HttpError(409, "Connect a plan first.");
     if (!workspace)
       throw new HttpError(409, "Workspace controls are unavailable.");
     return workspace;
