@@ -11,3 +11,9 @@ The merged provider filter requires an explicit availability hook in the existin
 The Electron bootstrap is unchanged. Windows remain hidden and unfocused, background throttling is disabled, the activation policy prohibits a Dock icon and no Agent Desktop command runs. The isolated server uses port 4337. The owner runtime and credentials on 4317 are outside this work.
 
 Round 11m is captured from the committed v2 implementation. Every PNG must be inspected before judging. Its verdict remains pending judge. Rubric and all frozen hooks remain unchanged.
+
+## h3
+
+Claude authorised this minimal J8 navigation revision on 6 November 2026. Real Settings panes replace the long page, so the previous all-five-headings assertion and scroll-to-Setups hook cannot describe owner navigation.
+
+Diff: J8 opens Settings and waits for Account plus the desktop navigation or narrow section picker. J8account stays on Account. J8setups clicks Setups in the desktop navigation, or opens the compact picker and chooses its Setups option at 320 px, then waits for the Setups heading. The existing no-Created assertion moves to the selected Setups pane. The all-five-headings assertion is removed. All other journeys, assertions, dimensions, themes, ordering, background bootstrap and seeded content are unchanged. The exact patch is in the h3 commit for capture.ts.

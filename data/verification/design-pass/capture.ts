@@ -138,11 +138,17 @@ for (const key of Object.keys(descriptions)) {
    if(key==='J8account'||key==='J8setups') {
     assert.equal(await page.locator('.app-bar').innerText(),'Settings');
     await page.getByRole('button',{name:'Close settings',exact:true}).waitFor();
-    assert.deepEqual(await page.locator('.settings-content > .settings-section > h2, .settings-content > .settings-section > div > h2').allTextContents(),['Plan','Appearance','Setups','About you','Changes']);
+    if(width===320)await page.getByRole('button',{name:/Settings section/}).waitFor();
+    else await page.getByRole('navigation',{name:'Settings sections',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'Account',exact:true}).waitFor();
     assert.equal(await page.getByRole('button',{name:'Skip',exact:true}).count(),0);
+   }
+   if(key==='J8setups'){
+    if(width===320){await page.getByRole('button',{name:/Settings section/}).click();await page.getByRole('option',{name:'Setups',exact:true}).click();}
+    else await page.getByRole('navigation',{name:'Settings sections',exact:true}).getByRole('button',{name:'Setups',exact:true}).click();
+    await page.getByRole('heading',{name:'Setups',exact:true}).waitFor();
     assert(!await page.locator('.setup-settings').innerText().then(t=>t.includes('Created')));
    }
-   if(key==='J8setups'){await page.getByRole('heading',{name:'Setups',exact:true}).scrollIntoViewIfNeeded();await page.getByRole('heading',{name:'Setups',exact:true}).waitFor();}
    if(key==='J9'){
     await page.getByRole('button',{name:/Model and reasoning effort/}).click();
     await page.getByRole('dialog',{name:'Model and reasoning effort',exact:true}).waitFor();
