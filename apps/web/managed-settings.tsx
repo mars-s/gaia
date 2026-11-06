@@ -114,10 +114,10 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
   return (
     <section className="settings-section" aria-labelledby="changes-title">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="changes-title">Changes</h2>
+        <h2 tabIndex={-1} id="changes-title">Changes</h2>
         <button
           className="quiet-action app-control"
-          aria-label="Check for changes"
+          aria-label="Refresh changes"
           disabled={submitting}
           onClick={() => {
             setActionError("");

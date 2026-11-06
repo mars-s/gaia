@@ -1421,3 +1421,33 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .setup-list-row > .setup-row-actions { grid-column: 2; grid-row: 3; justify-self: start; }
  .setup-list-row:has(> span:empty) > .setup-row-actions { grid-row: 2; }
 }
+
+.settings-shell { overflow: hidden; }
+.settings-page { padding: 24px 0 48px; }
+.settings-content { gap: 0; }
+.settings-section + .settings-section { margin-top: 24px; padding-top: 24px; }
+.settings-section h2 { font-size: var(--text-headline-medium); line-height: 22px; font-weight: 600; scroll-margin-top: 24px; }
+.settings-section { scroll-margin-top: 24px; }
+.settings-section .section-explainer { margin-top: -8px; }
+.settings-index, .settings-bar-side { display: none; }
+.settings-bar .app-control { background: transparent; border: 0; }
+.settings-title { font-size: 16px; line-height: 22px; }
+.settings-section .react-aria-Label { font-size: 13px; line-height: 18px; color: var(--color-ink-2); margin-bottom: 4px; }
+.settings-plan-row { min-width: 0; }
+.plan-status { min-width: 0; overflow-wrap: anywhere; }
+.settings-plan-row > div:last-child { flex-wrap: wrap; }
+@media (min-width: 640px) {
+ .settings-index { display: flex; flex-direction: column; width: 240px; flex-shrink: 0; padding: 12px; border-right: 1px solid var(--color-line); }
+ .settings-index a { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 8px; padding: 8px 10px; height: 36px; font-size: 14px; line-height: 20px; border-radius: var(--radius-sm); }
+ .settings-index a[aria-current] { background: var(--color-surface-selected); font-weight: 500; }
+ .settings-index a:hover { background: var(--color-surface-hover); }
+ .settings-bar-side { display: flex; align-items: center; padding-left: 22px; font-size: 16px; line-height: 22px; font-weight: 600; }
+ .settings-bar .settings-title { display: none; }
+ .settings-bar .app-bar-column { justify-content: flex-end; }
+}
+@media (max-width: 479px) {
+ .settings-plan-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+ .plan-status { display: flex; flex-direction: column; align-items: flex-start; }
+}
+
+.text-text-secondary, .text-caption-1-regular, .section-explainer, .setup-memory-caption, .session-recency, .welcome-caption { letter-spacing: 0; }

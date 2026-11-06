@@ -114,7 +114,7 @@ export function SetupSettings({
       className="setup-settings settings-section"
       aria-labelledby="setups-title"
     >
-      <h2 id="setups-title">Setups</h2>
+      <h2 tabIndex={-1} id="setups-title">Setups</h2>
       <p className="section-explainer">The main setup is the one Gaia opens at start.</p>
       {controller.error && (
         <p role="alert" className="text-text-error-primary">

@@ -1,5 +1,6 @@
 import { ClaudeSignIn, PlanAccounts } from "./plan-sign-in";
 import { useTranscriptFollow } from "./use-transcript-follow";
+import { SettingsIndex } from "./settings-index";
 import { EmptyChat } from "./empty-chat";
 import { OfflineNotice } from "./progress-row";
 import { ChatSwitcher } from "./chat-switcher";
@@ -382,8 +383,9 @@ export function App() {
     <div className="app-shell flex h-dvh flex-col bg-background-full text-body-regular text-text-primary">
       {!setupShell && (
         <header
-          className={`app-bar flex shrink-0 items-center${accountOpen ? " settings-bar" : ""}`}
+          className={`app-bar flex shrink-0 items-center${accountOpen ? " settings-bar has-side" : ""}`}
         >
+          {accountOpen && <div className="app-bar-side settings-bar-side" aria-hidden="true">Settings</div>}
           <div className="app-bar-column reading-column">
             {accountOpen ? (
               <span className="settings-title">Settings</span>
@@ -400,6 +402,8 @@ export function App() {
       )}
 
       {accountOpen && connected ? (
+        <div className="settings-shell min-h-0 flex flex-1">
+        <SettingsIndex />
         <main
           id="account-settings"
           className="settings-page min-h-0 flex-1 overflow-y-auto"
@@ -411,7 +415,7 @@ export function App() {
                 aria-labelledby="plan-title"
               >
                 {/* Plan is the frozen capture text hook. Account is the visible and accessible name. */}
-                <h2 id="plan-title" aria-label="Account" data-label="Account">Plan</h2>
+                <h2 tabIndex={-1} id="plan-title" aria-label="Account" data-label="Account">Plan</h2>
                 <PlanAccounts connection={connection} disabled={pending || running || offline}
                   onConnect={(provider) => { void act("auth/connect", { provider }); }}
                   onDisconnect={(provider) => { void act("auth/disconnect", { provider }); }}
@@ -421,7 +425,7 @@ export function App() {
                 className="settings-section"
                 aria-labelledby="appearance-title"
               >
-                <h2 id="appearance-title">Appearance</h2>
+                <h2 tabIndex={-1} id="appearance-title">Appearance</h2>
                 <div className="w-60 max-w-full">
                   <AppearancePicker />
                 </div>
@@ -451,7 +455,7 @@ export function App() {
                 className="settings-section"
                 aria-labelledby="about-title"
               >
-                <h2 id="about-title">About you</h2>
+                <h2 tabIndex={-1} id="about-title">About you</h2>
                 {profilePanel(true)}
               </section>
               <ManagedSettings runtime={state?.runtime} />
@@ -463,6 +467,7 @@ export function App() {
             </section>
           </div>
         </main>
+        </div>
       ) : !state || !connected ? (
         <main className="welcome-page grid min-h-0 flex-1 place-items-center overflow-y-auto px-4">
           <section

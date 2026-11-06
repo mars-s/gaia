@@ -28,7 +28,7 @@ test("Settings has its own header, close control and five peer sections in order
     new URL("./managed-settings.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(changes, /<h2 id="changes-title"[^>]*>\s*Changes/);
+  assert.match(changes, /<h2 tabIndex={-1} id="changes-title"[^>]*>\s*Changes/);
 });
 
 test("Settings folds the interview offer into About you without a Skip action", () => {
@@ -73,8 +73,26 @@ test("Settings interview is secondary and change refresh is an accessible icon a
   assert.match(html, /secondary-action[^]*Start the short interview/);
   assert.doesNotMatch(html, /primary-action/);
   const changes = readFileSync(new URL("./managed-settings.tsx", import.meta.url), "utf8");
-  assert.match(changes, /aria-label="Check for changes"/);
+  assert.match(changes, /aria-label="Refresh changes"/);
   assert.match(changes, /<RiRefreshLine/);
   const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
-  assert.match(css, /settings-content[^}]*gap: 20px/);
+  assert.match(css, /settings-content[^}]*gap: 0/);
+});
+
+import { SettingsIndex, currentSettingsSection } from "./settings-index";
+test("Settings index links to all five headings and tracks the last heading above its reading line", () => {
+ const html = renderToStaticMarkup(createElement(SettingsIndex));
+ assert.equal((html.match(/<a /g) ?? []).length, 5);
+ assert.match(html, /href="#plan-title" aria-current="true"/);
+ assert.match(html, /href="#changes-title"/);
+ assert.equal(currentSettingsSection([{id: "plan-title", top: -20}, {id: "setups-title", top: 100}], 150), "setups-title");
+ const source = readFileSync(new URL("./settings-index.tsx", import.meta.url), "utf8");
+ assert.match(source, /heading\?\.focus\(\{ preventScroll: true \}\)/);
+});
+
+test("narrow account rows stack status and actions, and secondary text shares body tracking", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /settings-plan-row \{ grid-template-columns: minmax\(0, 1fr\); gap: 8px/);
+ assert.match(css, /plan-status \{ display: flex; flex-direction: column/);
+ assert.match(css, /text-text-secondary[^}]*letter-spacing: 0/);
 });
