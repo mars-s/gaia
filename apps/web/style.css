@@ -1670,3 +1670,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .draft-file-copy p:first-child { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .draft-file-copy p + p { font-size: 12px; line-height: 16px; color: var(--color-ink-2); }
 .composer .draft-images .draft-file-chip .remove-image { position: static; flex-shrink: 0; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--color-ink-2); background: transparent; }
+
+.setup-settings { gap: 0; }

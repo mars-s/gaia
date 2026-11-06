@@ -85,3 +85,10 @@ test("setup rows use unfilled rows, visible actions and wrapping descriptions", 
  assert.match(source, /controller.makeMain\(item.id\)/);
  assert.equal((source.match(/Main chat: /g) ?? []).length, 1);
 });
+
+test("setup pane uses explicit heading, setting and list spacing without an extra section gap", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /setup-settings \{ gap: 0/);
+ assert.match(css, /main-chat-setting \{[^}]*margin-top: 16px/);
+ assert.match(css, /your-setups-label \{ margin-top: 24px; margin-bottom: 8px/);
+});
