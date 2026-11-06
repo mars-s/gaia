@@ -51,7 +51,7 @@ test("real setup stays pending until exact confirmation, then its review notice 
   assert.match(notice(), /Open it/);
 });
 
-test("inline card shows the full exact plan and friendly states without internal identifiers", async (t) => {
+test("inline card shows the exact Bot roles and one change summary and friendly states without internal identifiers", async (t) => {
   const f = await experienceFixture(t);
   const proposal = await f.propose("bots");
   const render = (value = proposal, error?: string) =>
@@ -65,12 +65,12 @@ test("inline card shows the full exact plan and friendly states without internal
   const html = render();
   for (const text of [
     proposal.plan.title,
-    proposal.plan.purpose,
+    "This becomes your main chat, where each Bot keeps its own memory and conversation",
     ...proposal.plan.scopes.flatMap((s) => [s.label, s.purpose]),
     "Use this setup",
     "Not now",
     "Or tell me what to change.",
-    "Your original chat stays available",
+    "your original chat stays available",
   ])
     assert(html.includes(text), text);
   assert(!html.includes("Separate Bots. Gaia."));
@@ -182,8 +182,12 @@ test("proposal change caption sits above the actions and memory copy reflects th
       proposals: [proposal], disabled: false,
     }));
     assert.ok(html.indexOf("Or tell me what to change.") < html.indexOf("Use this setup"));
-    assert.match(html, /Your original chat stays as it is/);
+    assert.match(html, /your original chat stays available/);
     assert.match(html, /setup-memory-caption/);
+    assert.equal((html.match(/original chat/g) ?? []).length, 1);
+    assert.equal((html.match(/main chat/g) ?? []).length, 1);
+    assert.match(html, /items-baseline justify-between/);
+    assert.doesNotMatch(html, /text-body-regular text-text-secondary|whitespace-pre-wrap/);
   } finally {
     await f.close();
   }

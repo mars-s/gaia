@@ -1,4 +1,3 @@
-import { setupContext } from "../setup-context";
 import { SetupGlyph } from "../setup-glyph";
 import type {
   Experience,
@@ -12,6 +11,13 @@ export const setupLayouts = {
   bots: { label: "Separate Bots" },
   channels: { label: "One assistant with channels" },
   sessions: { label: "Separate sessions" },
+};
+
+const setupChange = {
+  single: "one conversation keeps shared explicit memory",
+  bots: "each Bot keeps its own memory and conversation",
+  channels: "channels share remembered facts with separate conversations",
+  sessions: "sessions keep separate histories and share new remembered facts",
 };
 
 export function proposalsAfterAnswer(
@@ -87,18 +93,14 @@ export function ExperienceProposalNotice({
             <p className="text-text-secondary">Replaced by a newer proposal.</p>
           ) : (
             <>
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-baseline justify-between gap-3">
                 <h2 className="text-title-3-semibold">{proposal.plan.title}</h2>
                 <span className="text-caption-1-regular text-text-secondary">
                   Proposed
                 </span>
               </div>
-              <p className="whitespace-pre-wrap text-text-secondary">
-                {setupLayouts[proposal.plan.layout].label}.{" "}
-                {proposal.plan.purpose}
-              </p>
               <p className="setup-memory-caption text-caption-1-regular text-text-secondary">
-                {setupContext[proposal.plan.layout].change} Your original chat stays as it is.
+                This becomes your main chat, where {setupChange[proposal.plan.layout]}, while your original chat stays available.
               </p>
               <ul className="flex min-w-0 flex-col gap-2">
                 {proposal.plan.scopes.map((scope, index) => (
@@ -114,7 +116,7 @@ export function ExperienceProposalNotice({
                     <div className="setup-scope-copy min-w-0 flex-1">
                       <p className="shrink-0 text-body-medium">{scope.label}</p>
                       <p
-                        className="truncate text-body-regular text-text-secondary"
+                        className="truncate text-caption-1-regular text-text-secondary"
                         title={scope.purpose}
                       >
                         {scope.purpose}
@@ -123,10 +125,6 @@ export function ExperienceProposalNotice({
                   </li>
                 ))}
               </ul>
-              <p className="text-caption-1-regular text-text-secondary">
-                Using it makes this your main chat. Your original chat stays
-                available.
-              </p>
               {errors?.get(proposal.id) && (
                 <p role="alert" className="text-text-error-primary">
                   {errors.get(proposal.id)}
