@@ -65,7 +65,7 @@ test("inline card shows the exact Bot roles and one change summary and friendly 
   const html = render();
   for (const text of [
     proposal.plan.title,
-    "This becomes your main chat, where each Bot keeps its own memory and conversation",
+    "This becomes your main chat. Each Bot keeps its own memory and conversation",
     ...proposal.plan.scopes.flatMap((s) => [s.label, s.purpose]),
     "Use this setup",
     "Not now",
@@ -174,19 +174,20 @@ test("created card collapses and stale error sits above the actions", async (t) 
   assert.match(html, /role="alert" class="text-text-error-primary"/);
 });
 
-test("proposal change caption sits above the actions and memory copy reflects the real layout", async (t) => {
+test("proposal change caption sits after the actions and memory copy reflects the real layout", async (t) => {
   const f = await experienceFixture(t);
   try {
     const proposal = await f.propose();
     const html = renderToStaticMarkup(createElement(ExperienceProposalNotice, {
       proposals: [proposal], disabled: false,
     }));
-    assert.ok(html.indexOf("Or tell me what to change.") < html.indexOf("Use this setup"));
+    assert.ok(html.indexOf("Or tell me what to change.") > html.indexOf("Use this setup"));
     assert.match(html, /your original chat stays available/);
     assert.match(html, /setup-memory-caption/);
+    assert.match(html, /class="status-pill" data-tone="neutral">Proposed/);
     assert.equal((html.match(/original chat/g) ?? []).length, 1);
     assert.equal((html.match(/main chat/g) ?? []).length, 1);
-    assert.match(html, /items-baseline justify-between/);
+    assert.match(html, /proposal-heading/);
     assert.doesNotMatch(html, /text-body-regular text-text-secondary|whitespace-pre-wrap/);
   } finally {
     await f.close();

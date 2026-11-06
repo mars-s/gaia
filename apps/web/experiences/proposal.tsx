@@ -1,3 +1,4 @@
+import { StatusPill } from "../status-pill";
 import { SetupGlyph } from "../setup-glyph";
 import type {
   Experience,
@@ -14,10 +15,10 @@ export const setupLayouts = {
 };
 
 const setupChange = {
-  single: "one conversation keeps shared explicit memory",
-  bots: "each Bot keeps its own memory and conversation",
-  channels: "channels share remembered facts with separate conversations",
-  sessions: "sessions keep separate histories and share new remembered facts",
+  single: "This becomes your main chat. One conversation keeps your shared memory, and your original chat stays available.",
+  bots: "This becomes your main chat. Each Bot keeps its own memory and conversation, and your original chat stays available.",
+  channels: "This becomes your main chat. Channels share remembered facts and keep separate conversations, and your original chat stays available.",
+  sessions: "This becomes your main chat. Sessions keep separate histories and share new remembered facts, and your original chat stays available.",
 };
 
 export function proposalsAfterAnswer(
@@ -93,30 +94,28 @@ export function ExperienceProposalNotice({
             <p className="text-text-secondary">Replaced by a newer proposal.</p>
           ) : (
             <>
-              <div className="flex items-baseline justify-between gap-3">
+              <div className="proposal-heading">
                 <h2 className="text-title-3-semibold">{proposal.plan.title}</h2>
-                <span className="text-caption-1-regular text-text-secondary">
-                  Proposed
-                </span>
+                <StatusPill>Proposed</StatusPill>
               </div>
               <p className="setup-memory-caption text-caption-1-regular text-text-secondary">
-                This becomes your main chat, where {setupChange[proposal.plan.layout]}, while your original chat stays available.
+                {setupChange[proposal.plan.layout]}
               </p>
-              <ul className="flex min-w-0 flex-col gap-2">
+              <ul className="proposal-scopes">
                 {proposal.plan.scopes.map((scope, index) => (
                   <li
                     key={index}
-                    className="setup-scope-row flex min-w-0 items-center gap-3"
+                    className="setup-scope-row"
                   >
                     {proposal.plan.layout === "bots" ? (
                       <BotAvatar avatar={scope.avatar} />
                     ) : (
                       <span className="avatar-tile"><SetupGlyph layout={proposal.plan.layout} /></span>
                     )}
-                    <div className="setup-scope-copy min-w-0 flex-1">
+                    <div className="setup-scope-copy">
                       <p className="shrink-0 text-body-medium">{scope.label}</p>
                       <p
-                        className="truncate text-caption-1-regular text-text-secondary"
+                        className="scope-purpose"
                         title={scope.purpose}
                       >
                         {scope.purpose}
@@ -130,9 +129,6 @@ export function ExperienceProposalNotice({
                   {errors.get(proposal.id)}
                 </p>
               )}
-              <p className="text-caption-1-regular text-text-secondary">
-                Or tell me what to change.
-              </p>
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="primary"
@@ -150,6 +146,9 @@ export function ExperienceProposalNotice({
                   Not now
                 </button>
               </div>
+              <p className="text-caption-1-regular text-text-secondary">
+                Or tell me what to change.
+              </p>
             </>
           )}
           {proposal.kind === "ready" && errors?.get(proposal.id) && (
