@@ -1,3 +1,5 @@
+import { unified } from "unified";
+import remarkParse from "remark-parse";
 import { ColourCode, languageLabel } from "./code-colour";
 import { AssistantHead } from "./assistant-head";
 import { CopyButton, codeText } from "./copy-button";
@@ -125,9 +127,16 @@ async function readOnlyTranscript(): Promise<void> {
   throw new Error("Send messages using Gaia’s composer.");
 }
 
+const markdownParser = unified().use(remarkParse).use(remarkGfm);
+export function substantialReply(text: string) {
+  const blocks = markdownParser.parse(text).children;
+  return blocks.length > 1 || blocks.some(block => ["heading", "list", "code", "table"].includes(block.type));
+}
+
 export function Transcript({
   thread,
   afterMessage,
+  hasSetupCard,
   onRetry,
   retryDisabled,
   onSettings,
@@ -159,14 +168,12 @@ export function Transcript({
               <>
               <article
                 aria-label={user ? "You" : "Gaia"}
+                data-setup-card={hasSetupCard?.(message.id) || undefined}
                 data-role={user ? "user" : "assistant"}
                 className={cx(
                   "message-text min-w-0 wrap-anywhere",
                   user ? "owner-bubble self-end" : "w-full self-start",
-                  !user &&
-                    message.id !==
-                      thread.messages.findLast((m) => m.role === "assistant")
-                        ?.id &&
+                  !user && !substantialReply(source?.text ?? "") &&
                     "earlier-answer",
                 )}
               >
@@ -221,6 +228,7 @@ export function Transcript({
                   ) : null)}
                 {!user &&
                   source?.text &&
+                  !hasSetupCard?.(message.id) &&
                   message.status?.type === "complete" &&
                   (
                     <div className="reply-actions"><CopyButton label="Copy answer" text={source.text} /></div>

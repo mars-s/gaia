@@ -21,7 +21,7 @@ import {
   RiAddLine,
 } from "@remixicon/react";
 import { Button } from "../components/base/buttons/button";
-import { MessageMarkdown } from "../transcript";
+import { MessageMarkdown, substantialReply } from "../transcript";
 import { cx } from "../utils/cx";
 import type { ExperienceJob } from "../../../packages/protocol/experiences.ts";
 import {
@@ -426,10 +426,7 @@ function ScopeConversation({
                       message.role === "user"
                         ? "owner-bubble self-end"
                         : "w-full",
-                      message.role === "assistant" &&
-                        message.id !==
-                          state.messages.findLast((m) => m.role === "assistant")
-                            ?.id &&
+                      message.role === "assistant" && !substantialReply(message.text) &&
                         "earlier-answer",
                     )}
                   >

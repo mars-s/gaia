@@ -108,7 +108,7 @@ test("working motion is separate from Gaia identity, including with real activit
   }
 });
 
-test("copy actions have a visible label and stay before setup cards", () => {
+test("copy actions hide at rest for short replies and are absent from setup intros", () => {
   const thread: Thread = {
     version: 1,
     id: "local",
@@ -130,13 +130,13 @@ test("copy actions have a visible label and stay before setup cards", () => {
   };
   const html = renderToStaticMarkup(createElement(Transcript, { thread }));
   assert.equal((html.match(/aria-label="Copy answer"/g) ?? []).length, 2);
-  assert.equal((html.match(/earlier-answer/g) ?? []).length, 1);
+  assert.equal((html.match(/earlier-answer/g) ?? []).length, 2);
   assert.match(html, />Copy</);
   assert.match(html, /<svg/);
   const card = renderToStaticMarkup(
     createElement(Transcript, { thread, hasSetupCard: (id) => id === "new" }),
   );
-  assert.equal((card.match(/aria-label="Copy answer"/g) ?? []).length, 2);
+  assert.equal((card.match(/aria-label="Copy answer"/g) ?? []).length, 1);
 });
 
 test("code copy has a separate 28px header above the bounded scroll area", async () => {
@@ -176,8 +176,9 @@ test("reply actions follow the whole turn and sit eight pixels below its content
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.match(css, /reply-actions \{ margin-top: 8px; display: flex/);
  assert.match(css, /reply-actions .copy-action \{[^}]*margin: 0/);
- const html = renderToStaticMarkup(createElement(Transcript, { thread: { version: 1, id: "local", run: {kind: "idle"}, messages: [{id: "reply", role: "assistant", text: "Reply text", createdAt: "2026-11-05"}] }, afterMessage: () => createElement("aside", null, "Proposal") }));
- assert.match(html, /Reply text[^]*reply-actions[^]*Copy answer[^]*<\/article>[^]*Proposal/);
+ const html = renderToStaticMarkup(createElement(Transcript, { thread: { version: 1, id: "local", run: {kind: "idle"}, messages: [{id: "reply", role: "assistant", text: "Reply text", createdAt: "2026-11-05"}] }, hasSetupCard: () => true, afterMessage: () => createElement("aside", null, "Proposal") }));
+ assert.match(html, /Reply text[^]*<\/article>[^]*Proposal/);
+ assert.doesNotMatch(html, /Copy answer/);
 });
 
 test("code overflow measurement covers narrow screens and the thin scrollbar stays visible", () => {
@@ -216,4 +217,10 @@ test("block code clears the inline background and shares one neutral surface wit
  assert.match(css, /message-markdown pre code \{[^}]*background: transparent;[^}]*border-radius: 0/);
  assert.match(css, /code-block pre \{[^}]*background: var\(--code-surface\)/);
  assert.match(css, /dark .code-block \{ --code-surface: var\(--color-surface-selected\)/);
+});
+
+import { substantialReply } from "./transcript";
+test("Copy stays visible for multiple Markdown blocks and structured content", () => {
+ for (const text of ["First.\n\nSecond.", "# Title", "- Item", "1. Item", "```ts\nlet x=1;\n```", "a | b\n-- | --\n1 | 2"]) assert.equal(substantialReply(text), true, text);
+ for (const text of ["One short reply.", "One\nwrapped paragraph.", "> One quote"]) assert.equal(substantialReply(text), false, text);
 });
