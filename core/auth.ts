@@ -79,15 +79,19 @@ export function createAuth(db: DatabaseSync) {
         .map((row) => String(row.provider)),
     );
   const planAvailability = { connectedProviders };
+  const loginErrors = new Map<PlanProvider, string>();
   const plans = () => {
     const connected = connectedProviders();
     return (["openai-codex", "anthropic"] as const).map((provider) => ({
       provider,
       connected: connected.has(provider),
+      ...(loginErrors.has(provider)
+        ? { error: loginErrors.get(provider) }
+        : {}),
     }));
   };
-  const settled = (): Connection =>
-    plans().some((plan) => plan.connected)
+  const settled = (entries = plans()): Connection =>
+    entries.some((plan) => plan.connected)
       ? {
           kind: "connected",
           model: defaultPlanModel(models, planAvailability).modelId,
@@ -126,20 +130,26 @@ export function createAuth(db: DatabaseSync) {
       }
       if (await models.checkAuth("openai-codex")) state = settled();
     },
-    status: (): Connection => ({
-      ...(state.kind === "connecting" || !plans().some((plan) => plan.connected)
-        ? state
-        : settled()),
-      plans: plans(),
-    }),
+    status: (): Connection => {
+      const entries = plans();
+      const current =
+        state.kind === "connecting"
+          ? state
+          : entries.some((plan) => plan.connected) || state.kind === "connected"
+            ? settled(entries)
+            : state;
+      return { ...current, plans: entries };
+    },
     async disconnect(provider: PlanProvider) {
       if (login)
         throw new Error("Finish signing in before disconnecting a plan.");
       await models.logout(provider);
+      loginErrors.delete(provider);
       state = settled();
     },
     connect(provider: PlanProvider = "openai-codex") {
       if (login) return;
+      loginErrors.delete(provider);
       state = { kind: "connecting", provider };
       login = models
         .login(provider, "oauth", {
@@ -171,10 +181,9 @@ export function createAuth(db: DatabaseSync) {
         })
         .catch(() => {
           reply = undefined;
-          state = {
-            kind: "disconnected",
-            message: `${provider === "anthropic" ? "Claude" : "ChatGPT"} sign-in did not complete. Try connecting again.`,
-          };
+          const message = `${provider === "anthropic" ? "Claude" : "ChatGPT"} sign-in did not complete. Try connecting again.`;
+          loginErrors.set(provider, message);
+          state = { kind: "disconnected", message };
         })
         .finally(() => {
           login = undefined;

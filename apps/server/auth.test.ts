@@ -108,9 +108,14 @@ for (const provider of ["openai-codex", "anthropic"] as const) {
       await new Promise((resolve) => setTimeout(resolve, 1));
     assert.equal(auth.status().kind, "connected");
     assert(
-      planModels(auth.models, auth.planAvailability).every((model) => model.provider === provider),
+      planModels(auth.models, auth.planAvailability).every(
+        (model) => model.provider === provider,
+      ),
     );
-    assert.equal(defaultPlanModel(auth.models, auth.planAvailability).provider, provider);
+    assert.equal(
+      defaultPlanModel(auth.models, auth.planAvailability).provider,
+      provider,
+    );
     const resolutions = await Promise.all([
       auth.models.getAuth(provider),
       auth.models.getAuth(provider),
@@ -130,10 +135,17 @@ for (const provider of ["openai-codex", "anthropic"] as const) {
     }));
     assert.equal((await auth.store.list()).length, 2);
     assert.equal(
-      new Set(planModels(auth.models, auth.planAvailability).map((model) => model.provider)).size,
+      new Set(
+        planModels(auth.models, auth.planAvailability).map(
+          (model) => model.provider,
+        ),
+      ).size,
       2,
     );
-    assert.equal(defaultPlanModel(auth.models, auth.planAvailability).modelId, "gpt-6.1-sol");
+    assert.equal(
+      defaultPlanModel(auth.models, auth.planAvailability).modelId,
+      "gpt-6.1-sol",
+    );
     const reopened = createAuth(db);
     await reopened.initialise(false);
     assert.equal(
@@ -144,7 +156,11 @@ for (const provider of ["openai-codex", "anthropic"] as const) {
     await auth.disconnect(provider);
     assert.equal(await auth.store.read(provider), undefined);
     assert(await auth.store.read(other));
-    assert(planModels(auth.models, auth.planAvailability).every((model) => model.provider === other));
+    assert(
+      planModels(auth.models, auth.planAvailability).every(
+        (model) => model.provider === other,
+      ),
+    );
     await auth.disconnect(other);
     assert.equal(auth.status().kind, "disconnected");
     assert.equal(planModels(auth.models, auth.planAvailability).length, 0);
@@ -170,4 +186,56 @@ test("credential deletion queues behind refresh and before later writes", async 
   assert.equal(await auth.store.read("anthropic"), undefined);
   await auth.close();
   db.close();
+});
+
+test("failed Claude login stays visible while ChatGPT remains connected", async () => {
+  const db = new DatabaseSync(":memory:");
+  const auth = createAuth(db);
+  const provider = anthropicProvider();
+  auth.models.setProvider({
+    ...provider,
+    auth: {
+      oauth: {
+        name: "Synthetic failing OAuth",
+        async login() {
+          throw new Error("synthetic private endpoint response");
+        },
+        async refresh() {
+          throw new Error("must not refresh");
+        },
+        async toAuth(credential) {
+          return { apiKey: credential.access };
+        },
+      },
+    },
+  });
+  try {
+    await auth.store.modify("openai-codex", async () => ({
+      type: "oauth",
+      access: "synthetic",
+      refresh: "synthetic",
+      expires: Date.now() + 3600000,
+    }));
+    await auth.initialise(false);
+    auth.connect("anthropic");
+    for (let i = 0; i < 50 && auth.status().kind === "connecting"; i++)
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    assert.equal(auth.status().kind, "connected");
+    assert.match(
+      JSON.stringify(auth.status().plans),
+      /Claude sign-in did not complete/,
+    );
+    assert.doesNotMatch(
+      JSON.stringify(auth.status()),
+      /private endpoint response/,
+    );
+    auth.connect("anthropic");
+    assert.doesNotMatch(
+      JSON.stringify(auth.status().plans),
+      /did not complete/,
+    );
+  } finally {
+    await auth.close();
+    db.close();
+  }
 });

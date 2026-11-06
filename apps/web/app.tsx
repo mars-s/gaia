@@ -412,11 +412,10 @@ export function App() {
               >
                 {/* Plan is the frozen capture text hook. Account is the visible and accessible name. */}
                 <h2 id="plan-title" aria-label="Account" data-label="Account">Plan</h2>
-                <PlanAccounts connection={connection} disabled={pending || running || offline} onConnect={(provider) => {
-                  void act("auth/connect", { provider }).then((ok) => {
-                    if (ok) setAccountOpen(false);
-                  });
-                }} />
+                <PlanAccounts connection={connection} disabled={pending || running || offline}
+                  onConnect={(provider) => { void act("auth/connect", { provider }); }}
+                  onDisconnect={(provider) => { void act("auth/disconnect", { provider }); }}
+                />
               </section>
               <section
                 className="settings-section"

@@ -24,7 +24,7 @@ The work uses temporary databases and `initialise(false)`. It does not read the 
 
 Connection snapshots optionally include `plans`, an array of `{ provider, connected }`. Connecting snapshots optionally identify `provider`. The connected `model` string can now identify Claude as well as the existing GPT default. Catalogue rows optionally identify their provider. The existing v1 routes, snapshot envelope, ChatGPT names and request bodies remain valid. Updated clients are required to understand Claude model IDs. Conformance checks cover both provider values, the legacy empty connect body and invalid inputs.
 
-Only one interactive login runs at a time. Both stored plans can be connected together. Disconnect waits for idle chat and refuses an in-progress login. Expired credentials remain listed as connected until Pi resolves them; refresh failures require Reconnect, as with the existing ChatGPT flow. Gaia does not revoke the upstream account grant on local disconnect.
+Only one interactive login runs at a time. Both stored plans can be connected together. Disconnect waits for idle chat and independent jobs, refuses an in-progress login with HTTP 409, and blocks new writes while credentials are removed. Store failures return a plain HTTP 503. A second Connect during an active login returns HTTP 409. Expired credentials remain listed as connected until Pi resolves them; refresh failures require Reconnect, as with the existing ChatGPT flow. Gaia does not revoke the upstream account grant on local disconnect.
 
 ## Isolated authorisation check
 
@@ -46,3 +46,14 @@ Model availability is supplied explicitly by auth to each adapter and setup runt
 Hosted web search currently uses Pi's Codex-specific implementation. Claude models are not offered `search_web`; their prompt explains that hosted search is unavailable and that the owner can choose a ChatGPT model to use it. Gaia does not call the unsupported search path or claim that Claude searched the web. Native Claude hosted search remains unimplemented.
 
 The existing automatic Pi credential import remains ChatGPT-only. Claude always uses its explicit Connect action. Tests and this task use `initialise(false)` and never inspect the owner's import file. Login errors deliberately use Gaia's own plain messages and do not log Pi's token-endpoint exception text.
+
+
+## Review corrections
+
+Claude's default is explicitly `claude-opus-5-5`, checked against Pi's real catalogue. The ordered fallback list is Sonnet 5.5, Opus 5, Sonnet 5, Opus 4.8, Sonnet 4.6, then Haiku 4.5. These preferences only choose the initial default; the picker continues to show the connected catalogue in Pi's order. An unknown catalogue does not choose its first row. ChatGPT keeps its existing GPT 6.1 Sol default when both plans are connected.
+
+The credential store returns the post-write credential even when Pi's modify callback leaves it unchanged. Both concurrent refresh callers are tested for an OAuth result, as well as a single refresh operation.
+
+Each Account row offers Disconnect when connected, followed by a browser confirmation naming the selected plan. Removing one plan preserves the other. A failed login is retained as an optional per-plan `error` until reconnect or disconnect, without copying Pi's endpoint diagnostics. Settings stays open across sign-in so this feedback remains visible when another plan is connected. This error is kept in memory, not stored with tokens.
+
+Protocol v1 clients must accept any model string in `connection.model`, including Claude IDs. This widens the earlier literal GPT value; callers using that old literal need the updated schema before connecting Claude. The new per-plan `error` field is optional, like the earlier `plans`, connecting `provider`, and catalogue `provider` additions.

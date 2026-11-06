@@ -47,7 +47,11 @@ export const AuthConnect = z
   .strict();
 export const AuthDisconnect = z.object({ provider: PlanProvider }).strict();
 const Plans = z.array(
-  z.object({ provider: PlanProvider, connected: z.boolean() }),
+  z.object({
+    provider: PlanProvider,
+    connected: z.boolean(),
+    error: z.string().optional(),
+  }),
 );
 export const Connection = z.discriminatedUnion("kind", [
   z.object({
