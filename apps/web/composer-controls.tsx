@@ -538,13 +538,7 @@ export function EffortControls({
     <div className="effort-controls">
       <p className="effort-header">
         <span>Effort</span>
-        <strong>
-          {!adjustable
-            ? "Not adjustable"
-            : valid
-              ? effortLabels[level]
-              : "Choose one"}
-        </strong>
+
       </p>
       {adjustable ? (
         <>
@@ -589,13 +583,13 @@ export function EffortControls({
           </div>
           {!valid && (
             <p className="effort-caption">
-              {model.name} doesn’t offer the last level you used.
+              Choose one. {model.name} doesn’t offer the last level you used.
             </p>
           )}
         </>
       ) : (
         <p className="effort-caption">
-          {model.name} has one fixed effort level.
+          Not adjustable. {model.name} has one fixed effort level.
         </p>
       )}
     </div>

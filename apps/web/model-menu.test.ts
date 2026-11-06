@@ -325,3 +325,13 @@ test("model sheet dims with the shared backdrop and radios keep one centre token
  assert.match(css, /model-scrim \{[^}]*background: var\(--backdrop\)/);
  assert.match(css, /data-selected\] > \.model-radio \{[^}]*background: var\(--color-primary-ink\)/);
 });
+
+ test("effort names its selected value only in its segment", () => {
+ const html = renderToStaticMarkup(createElement(EffortControls, {
+ model: { id: "test", name: "Test", contextWindow: 1000, capabilities: { images: true, thinkingLevels: ["low", "medium", "high"] } },
+ level: "medium", disabled: false, onSelect() {},
+ }));
+ assert.equal((html.match(/>Medium</g) ?? []).length, 1);
+ assert.match(html, /effort-header[^]*?<span>Effort<\/span>\s*<\/p>/);
+ assert.match(html, /data-selected/);
+ });
