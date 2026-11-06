@@ -128,9 +128,13 @@ async function readOnlyTranscript(): Promise<void> {
 }
 
 const markdownParser = unified().use(remarkParse).use(remarkGfm);
+type MarkdownBlock = { type: string; children?: MarkdownBlock[] };
+function structuredBlock(block: MarkdownBlock): boolean {
+  return ["heading", "list", "code", "table"].includes(block.type) || Boolean(block.children?.some(structuredBlock));
+}
 export function substantialReply(text: string) {
   const blocks = markdownParser.parse(text).children;
-  return blocks.length > 1 || blocks.some(block => ["heading", "list", "code", "table"].includes(block.type));
+  return blocks.length > 1 || blocks.some(structuredBlock);
 }
 
 export function Transcript({

@@ -221,6 +221,6 @@ test("block code clears the inline background and shares one neutral surface wit
 
 import { substantialReply } from "./transcript";
 test("Copy stays visible for multiple Markdown blocks and structured content", () => {
- for (const text of ["First.\n\nSecond.", "# Title", "- Item", "1. Item", "```ts\nlet x=1;\n```", "a | b\n-- | --\n1 | 2"]) assert.equal(substantialReply(text), true, text);
+ for (const text of ["> # Quoted heading", "> - Quoted list", "First.\n\nSecond.", "# Title", "- Item", "1. Item", "```ts\nlet x=1;\n```", "a | b\n-- | --\n1 | 2"]) assert.equal(substantialReply(text), true, text);
  for (const text of ["One short reply.", "One\nwrapped paragraph.", "> One quote"]) assert.equal(substantialReply(text), false, text);
 });
