@@ -583,7 +583,7 @@ test("sessions keep creation order when selection moves between rows", () => {
   controller.pause();
 });
 
-test("setup sidebars explain memory and provide an Original chat exit", () => {
+test("setup sidebars explain memory and leave Original chat to the switcher", () => {
   for (const [layout, caption] of [
     ["bots", "Bots · separate memory"],
     ["channels", "Channels · shared memory"],
@@ -591,32 +591,32 @@ test("setup sidebars explain memory and provide an Original chat exit", () => {
   ] as const) {
     const html = fixture(layout).html();
     assert.ok(html.includes(caption));
-    assert.match(html, /sidebar-original[^]*Original chat/);
+    assert.doesNotMatch(html, /sidebar-footer|sidebar-original/);
     assert.doesNotMatch(html, /session-recency/);
   }
 });
 
-test("Sessions omit repeated recency and row icons, showing dates only when they differ", () => {
+test("Sessions show icons and truthful creation dates even when repeated", () => {
   const { controller, html } = fixture("sessions");
   controller.profile!.scopes[0].createdAt = new Date().toISOString();
-  assert.doesNotMatch(html(), /session-recency/);
+  assert.match(html(), /session-recency">Started today/);
   const first = controller.profile!.scopes[0];
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   controller.profile!.scopes.push({ ...first, id: ScopeId.parse("33333333-3333-4333-8333-333333333333"), createdAt: yesterday.toISOString() });
-  assert.match(html(), /session-recency">Today/);
-  assert.match(html(), /session-recency">Yesterday/);
+  assert.match(html(), /session-recency">Started today/);
+  assert.match(html(), /session-recency">Started yesterday/);
   const nav = html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
   const rows = [...nav.matchAll(/<button[^]*?<\/button>/g)].filter(row => row[0].includes("experience-nav-row"));
   assert.equal(rows.length, 2);
-  for (const row of rows) assert.doesNotMatch(row[0], /<svg/);
+  for (const row of rows) assert.match(row[0], /sidebar-glyph[^]*<svg/);
   controller.pause();
 });
 
 test("Original chat footer passes through the app navigation callback", () => {
   const view = readFileSync(new URL("./experiences/view.tsx", import.meta.url), "utf8");
   const app = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
-  assert.match(view, /if \(onOriginal\) onOriginal\(\)/);
+  assert.doesNotMatch(view, /sidebar-footer/);
   assert.match(app, /onOriginal=\{\(\) => \{[^]*experiences.original\(\);[^]*setExperienceView\("original"\)/);
 });
 
@@ -629,4 +629,13 @@ test("Original chat footer passes through the app navigation callback", () => {
     assert.match(header, layout === "bots" ? /avatar-tile/ : /setup-layout-icon/);
     controller.pause();
   }
+});
+
+test("narrow setup headers keep context and channels use the Gaia placeholder", () => {
+ for (const layout of ["bots", "channels", "sessions"] as const) {
+  const { controller, html } = fixture(layout);
+  assert.match(html(), /narrow-setup-context">Test/);
+  assert.match(html(), layout === "bots" ? /placeholder="Message Main…"/ : /placeholder="Message Gaia…"/);
+  controller.pause();
+ }
 });

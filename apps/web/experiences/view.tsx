@@ -14,6 +14,7 @@ import {
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  RiChat1Line,
   RiMenuLine,
   RiHashtag,
   RiAddLine,
@@ -34,7 +35,6 @@ export function ExperienceConversation({
   switcher,
   accountControl,
   onSettings,
-  onOriginal,
 }: {
   controller: ExperienceController;
   switcher?: ReactNode;
@@ -70,8 +70,6 @@ export function ExperienceConversation({
     sessions: "New session",
   }[layout];
   const selected = profile.scopes.find((item) => item.id === scope.scopeId);
-  const recencies = profile.scopes.map((item) => sessionRecency(item.createdAt));
-  const showRecency = new Set(recencies.filter(Boolean)).size > 1;
   const scopeHead = (
     <span className="scope-head">
       {layout === "bots" ? (
@@ -116,6 +114,7 @@ export function ExperienceConversation({
             variant="secondary"
             size="small"
             className="experience-nav-row w-full justify-start"
+            data-two-lines={layout === "sessions"}
             aria-current={item.id === scope.scopeId ? "page" : undefined}
             onClick={() => {
               controller.select({
@@ -136,11 +135,11 @@ export function ExperienceConversation({
                 />
               </span>
             )}
-            {layout === "channels" && <RiHashtag className="setup-layout-icon" aria-hidden="true" />}
+            {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <RiChat1Line aria-hidden="true" />}</span>}
             <span className="scope-row-copy min-w-0">
               <span className="block truncate">{item.label}</span>
-              {layout === "sessions" && showRecency && sessionRecency(item.createdAt) && (
-                <span className="session-recency">{sessionRecency(item.createdAt)}</span>
+              {layout === "sessions" && sessionRecency(item.createdAt) && (
+                <span className="session-recency">Started {sessionRecency(item.createdAt)}</span>
               )}
             </span>
             {layout !== "bots" && (
@@ -221,16 +220,7 @@ export function ExperienceConversation({
           </Button>
         </form>
       )}
-      <div className="sidebar-footer">
-        <button className="quiet-action sidebar-original" onClick={() => {
-          if (onOriginal) onOriginal();
-          else controller.original();
-          setNavigation(false);
-        }}>
-          <SetupGlyph layout="single" />
-          Original chat
-        </button>
-      </div>
+
     </nav>
   );
   return (
@@ -256,7 +246,7 @@ export function ExperienceConversation({
                 <RiMenuLine className="size-5" aria-hidden />
               </button>
             )}
-            {layout === "single" ? switcher : scopeHead}
+            {layout === "single" ? switcher : <div className="scope-title">{scopeHead}<span className="narrow-setup-context">{profile.profile.plan.title}</span></div>}
           </div>
           {accountControl}
         </div>
@@ -549,9 +539,7 @@ function ScopeConversation({
           placeholder={
             controller.profile?.profile.plan.layout === "bots"
               ? `Message ${state?.scope.label ?? "Home"}…`
-              : controller.profile?.profile.plan.layout === "channels"
-                ? `Message #${state?.scope.label ?? "Home"}…`
-                : `Message ${controller.profile?.profile.plan.assistantName ?? "Gaia"}…`
+              : "Message Gaia…"
           }
           draft={draft?.text ?? ""}
           images={draft?.images ?? []}
