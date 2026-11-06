@@ -37,13 +37,14 @@ export function createAuth(db: DatabaseSync) {
     },
     modify(provider, fn) {
       const next = queue.then(async () => {
-        const value = await fn(await store.read(provider));
+        const current = await store.read(provider);
+        const value = await fn(current);
         if (value)
           db.prepare("INSERT OR REPLACE INTO credentials VALUES (?,?)").run(
             provider,
             JSON.stringify(OAuth.parse(value)),
           );
-        return value;
+        return value ?? current;
       });
       queue = next.catch(() => undefined);
       return next;

@@ -111,10 +111,14 @@ for (const provider of ["openai-codex", "anthropic"] as const) {
       planModels(auth.models).every((model) => model.provider === provider),
     );
     assert.equal(defaultPlanModel(auth.models).provider, provider);
-    await Promise.all([
+    const resolutions = await Promise.all([
       auth.models.getAuth(provider),
       auth.models.getAuth(provider),
     ]);
+    assert.deepEqual(
+      resolutions.map((result) => result?.source),
+      ["OAuth", "OAuth"],
+    );
     assert.equal(refreshed, 1);
     assert.equal((await auth.store.read(provider))?.type, "oauth");
     const other = provider === "anthropic" ? "openai-codex" : "anthropic";
