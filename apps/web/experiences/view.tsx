@@ -15,7 +15,6 @@ import {
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  RiChat1Line,
   RiMenuLine,
   RiHashtag,
   RiAddLine,
@@ -83,6 +82,7 @@ export function ExperienceConversation({
       <span className="truncate">{selected?.label}</span>
     </span>
   );
+  const showSessionRecency = layout === "sessions" && new Set(profile.scopes.map(item => sessionRecency(item.createdAt)).filter(Boolean)).size > 1;
   const sidebar = (
     <nav
       id="experience-navigation"
@@ -115,7 +115,7 @@ export function ExperienceConversation({
             variant="secondary"
             size="small"
             className="experience-nav-row w-full justify-start"
-            data-two-lines={layout === "sessions"}
+            data-two-lines={showSessionRecency && Boolean(sessionRecency(item.createdAt))}
             aria-current={item.id === scope.scopeId ? "page" : undefined}
             onClick={() => {
               controller.select({
@@ -136,10 +136,10 @@ export function ExperienceConversation({
                 />
               </span>
             )}
-            {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <RiChat1Line aria-hidden="true" />}</span>}
+            {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <SetupGlyph layout={layout} />}</span>}
             <span className="scope-row-copy min-w-0">
               <span className="block truncate">{item.label}</span>
-              {layout === "sessions" && sessionRecency(item.createdAt) && (
+              {showSessionRecency && sessionRecency(item.createdAt) && (
                 <span className="session-recency">Started {sessionRecency(item.createdAt)}</span>
               )}
             </span>

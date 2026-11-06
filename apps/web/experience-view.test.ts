@@ -1,3 +1,4 @@
+import { SetupGlyph } from "./setup-glyph";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -596,10 +597,10 @@ test("setup sidebars explain memory and leave Original chat to the switcher", ()
   }
 });
 
-test("Sessions show icons and truthful creation dates even when repeated", () => {
+test("Sessions use one glyph and show recency only when dates distinguish rows", () => {
   const { controller, html } = fixture("sessions");
   controller.profile!.scopes[0].createdAt = new Date().toISOString();
-  assert.match(html(), /session-recency">Started today/);
+  assert.doesNotMatch(html(), /session-recency/);
   const first = controller.profile!.scopes[0];
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -609,7 +610,13 @@ test("Sessions show icons and truthful creation dates even when repeated", () =>
   const nav = html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
   const rows = [...nav.matchAll(/<button[^]*?<\/button>/g)].filter(row => row[0].includes("experience-nav-row"));
   assert.equal(rows.length, 2);
-  for (const row of rows) assert.match(row[0], /sidebar-glyph[^]*<svg/);
+  for (const row of rows) {
+    assert.match(row[0], /sidebar-glyph[^]*setup-layout-icon/);
+    const glyph = renderToStaticMarkup(createElement(SetupGlyph, { layout: "sessions" }));
+    assert.ok(row[0].includes(glyph));
+  }
+  controller.profile!.scopes[1].createdAt = first.createdAt;
+  assert.doesNotMatch(html(), /session-recency/);
   controller.pause();
 });
 
