@@ -1,3 +1,5 @@
+import { StatusPill } from "../status-pill";
+import { RiAddLine } from "@remixicon/react";
 import { SetupGlyph } from "../setup-glyph";
 import {
   useEffect,
@@ -15,7 +17,7 @@ import {
 } from "../../../packages/protocol/experiences.ts";
 import type { ExperienceController } from "./controller";
 import { ExperienceConversation } from "./view";
-import { ExperienceProposalNotice, setupLayouts } from "./proposal";
+import { ExperienceProposalNotice } from "./proposal";
 import { Input } from "../components/base/input/input";
 import { Textarea } from "../components/base/textarea/textarea";
 import { Select, SelectItem } from "../components/base/select/select";
@@ -44,8 +46,11 @@ const layouts: Record<
       "Separate histories and model settings. New remembered facts are shared across sessions.",
   },
 };
-function SetupStatus({ main, current }: { main: boolean; current: boolean }) {
-  return <span className="setup-status">{main && <span className="setup-status-badge">Main</span>}{current && <span className="setup-status-badge">Current</span>}</span>;
+export function setupSubtitle(layout: ExperienceLayout, n: number) {
+  if (layout === "single") return "One conversation";
+  if (layout === "bots") return n === 1 ? "1 Bot with its own memory" : `${n} Bots with separate memory`;
+  if (layout === "channels") return `${n} ${n === 1 ? "channel" : "channels"} with shared memory`;
+  return n === 1 ? "1 session with its own history" : `${n} sessions with separate histories`;
 }
 export function ProfileExperience({
   controller,
@@ -110,6 +115,7 @@ export function SetupSettings({
       aria-labelledby="setups-title"
     >
       <h2 id="setups-title">Setups</h2>
+      <p className="section-explainer">The main setup is the one Gaia opens at start.</p>
       {controller.error && (
         <p role="alert" className="text-text-error-primary">
           {controller.error}{" "}
@@ -123,14 +129,16 @@ export function SetupSettings({
       )}
       <ul className="flex w-full min-w-0 flex-col divide-y divide-separator-border">
         <li className="setup-list-row">
+          <span className="avatar-tile"><SetupGlyph layout="single" /></span>
           <div className="min-w-0 flex-1">
-            <p className="text-body-medium setup-name"><SetupGlyph layout="single" />Original chat</p>{" "}
+            <p className="text-body-medium setup-name">Original chat</p>{" "}
             <p className="text-caption-1-regular text-text-secondary">
               One conversation
             </p>
           </div>
-          <SetupStatus main={controller.mainId === null} current={!controller.profile} />
-          <div className="flex flex-wrap items-center gap-2">
+          {controller.mainId === null ? <StatusPill tone="accent">Main</StatusPill> : <span />}
+          <div className="setup-row-actions">
+            {!controller.profile && <span className="setup-current">Current</span>}
             {controller.profile && (
               <Button
                 variant="secondary"
@@ -143,34 +151,30 @@ export function SetupSettings({
                 Open
               </Button>
             )}
-            {controller.mainId !== null && (
-              <Button
-                variant="secondary"
-                size="small"
+            {controller.profile && controller.mainId !== null && (
+              <button
+                className="quiet-action"
                 onClick={() => void controller.makeMain(null)}
               >
                 Make main
-              </Button>
+              </button>
             )}
           </div>
         </li>
         {controller.profiles.map((item) => (
           <li key={item.id} className="setup-list-row">
+            <span className="avatar-tile"><SetupGlyph layout={item.plan.layout} /></span>
             <div className="min-w-0 flex-1">
               <p className="text-body-medium wrap-anywhere setup-name">
-                <SetupGlyph layout={item.plan.layout} />{item.plan.title}
+                {item.plan.title}
               </p>{" "}
               <p className="text-caption-1-regular text-text-secondary">
-                {setupLayouts[item.plan.layout].label}
-                {item.proposal?.dismissedAt || item.proposal?.supersededBy
-                  ? " · Hidden"
-                  : item.kind === "proposed"
-                    ? " · Proposed"
-                    : ""}
+                {setupSubtitle(item.plan.layout, item.plan.scopes.length)}
               </p>
             </div>
-            <SetupStatus main={controller.mainId === item.id} current={controller.profile?.profile.id === item.id} />
-            <div className="flex flex-wrap items-center gap-2">
+            {controller.mainId === item.id ? <StatusPill tone="accent">Main</StatusPill> : item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
+            <div className="setup-row-actions">
+              {controller.profile?.profile.id === item.id && <span className="setup-current">Current</span>}
               {(item.kind === "proposed" ||
                 controller.profile?.profile.id !== item.id) && (
                 <Button
@@ -199,15 +203,14 @@ export function SetupSettings({
                   {item.kind === "proposed" ? "Review" : "Open"}
                 </Button>
               )}
-              {item.kind === "ready" && controller.mainId !== item.id && (
-                <Button
-                  variant="secondary"
-                  size="small"
+              {item.kind === "ready" && controller.profile?.profile.id !== item.id && controller.mainId !== item.id && (
+                <button
+                  className="quiet-action"
                   disabled={pending}
                   onClick={() => void controller.makeMain(item.id)}
                 >
                   Make main
-                </Button>
+                </button>
               )}
             </div>
           </li>
@@ -250,15 +253,10 @@ export function SetupSettings({
           }}
         />
       )}
-      <Button
-        variant="secondary"
-        size="small"
-        className="self-start"
-        disabled={pending}
-        onClick={() => setCreating(!creating)}
-      >
+      <button className="quiet-action setup-create" disabled={pending} onClick={() => setCreating(!creating)}>
+        <RiAddLine aria-hidden="true" size={16} />
         {creating ? "Cancel" : "Create a setup manually"}
-      </Button>
+      </button>
       {creating && (
         <ProposalForm
           disabled={pending}

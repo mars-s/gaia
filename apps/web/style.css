@@ -1373,8 +1373,6 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .settings-bar .app-control:not(.chat-switcher-trigger) { margin-right: 0; }
 .setup-name { display: flex; align-items: center; gap: 8px; }
 .setup-layout-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--color-ink-2); }
-.setup-status-badge { display: inline-flex; align-items: center; gap: 4px; color: var(--color-ink-2); }
-.setup-status-badge::before { content: ""; width: 5px; height: 5px; border-radius: var(--radius-full); background: currentColor; }
 
 .app-bar .chat-switcher-trigger { color: var(--color-ink); }
 
@@ -1404,3 +1402,22 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 .model-trigger:has(.model-trigger-effort) { column-gap: 0; }
 .model-trigger > svg { margin-left: 4px; }
+
+.status-pill { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: var(--radius-full); white-space: nowrap; border: 0; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0; background: var(--color-surface-selected); color: var(--color-ink-2); }
+.status-pill[data-tone="accent"] { background: var(--color-accent-soft); color: var(--color-primary-fill); }
+.dark .status-pill[data-tone="accent"] { color: var(--color-accent-strong); }
+.setup-list-row { grid-template-columns: 28px minmax(0, 1fr) auto auto; column-gap: 12px; min-height: 64px; padding: 12px 0; }
+.setup-list-row:has(> div:last-child:empty) { grid-template-columns: 28px minmax(0, 1fr) auto auto; }
+.setup-list-row .avatar-tile { width: 28px; height: 28px; border-radius: 8px; background: var(--color-surface-sunken); color: var(--color-ink-2); }
+.setup-name { font-size: 14px; line-height: 20px; font-weight: 500; }
+.setup-name + p, .setup-current, .section-explainer { font-size: 13px; line-height: 18px; color: var(--color-ink-2); }
+.setup-name + p { margin-top: 2px; }
+.setup-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.setup-create { display: grid; grid-template-columns: 28px 1fr; gap: 12px; margin-top: 12px; text-align: left; }
+.setup-create svg { justify-self: center; }
+@media (max-width: 479px) {
+ .setup-list-row, .setup-list-row:has(> div:last-child:empty) { grid-template-columns: 28px minmax(0, 1fr); }
+ .setup-list-row > .status-pill, .setup-list-row > span:empty { grid-column: 2; grid-row: 2; justify-self: start; }
+ .setup-list-row > .setup-row-actions { grid-column: 2; grid-row: 3; justify-self: start; }
+ .setup-list-row:has(> span:empty) > .setup-row-actions { grid-row: 2; }
+}

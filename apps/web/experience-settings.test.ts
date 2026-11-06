@@ -37,16 +37,17 @@ test("Settings rows separate names and layout text, identify exactly one main ch
   const rows = () =>
     [...render().matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((m) => m[1]);
   const text = (row: string) => row.replace(/<[^>]*>/g, "");
-  assert.match(text(rows()[1]), /Everyday Bots Separate Bots/);
+  assert.match(text(rows()[1]), /Everyday Bots 2 Bots with separate memory/);
   assert.match(
     text(rows()[2]),
-    /Shared workspace Shared channels · Proposed/,
+    /Shared workspace 2 channels with shared memoryProposed/,
   );
-  assert.match(text(rows()[3]), /My sessions Separate sessions · Hidden/);
+  assert.match(text(rows()[3]), /My sessions 2 sessions with separate historiesHidden/);
   assert.match(text(rows()[0]), /Original chat One conversationMainCurrent/);
-  assert.equal((render().match(/class="setup-status-badge">Main</g) ?? []).length, 1);
-  assert.equal((render().match(/class="setup-status-badge">Current</g) ?? []).length, 1);
-  assert.doesNotMatch(render(), /Created/);
+  assert.equal((render().match(/class="status-pill" data-tone="accent">Main</g) ?? []).length, 1);
+  assert.equal((render().match(/class="setup-current">Current</g) ?? []).length, 1);
+  assert.doesNotMatch(render(), /Created|setup-status-badge/);
+  assert.match(rows()[1], /<button class="quiet-action"[^]*Make main/);
   assert.doesNotMatch(rows()[0], /<button/);
   assert.equal((render().match(/class="[^"]*\bsetup-layout-icon\b[^"]*"/g) ?? []).length, 4);
   assert.match(rows()[1], /Open/);
@@ -54,11 +55,11 @@ test("Settings rows separate names and layout text, identify exactly one main ch
   assert.match(rows()[2], /Review/);
   assert.doesNotMatch(rows()[2], /Make main/);
   controller.mainId = bots.id;
-  assert.equal((render().match(/class="setup-status-badge">Main</g) ?? []).length, 1);
-  assert.equal((render().match(/class="setup-status-badge">Current</g) ?? []).length, 1);
-  assert.match(text(rows()[1]), /Separate BotsMain/);
+  assert.equal((render().match(/class="status-pill" data-tone="accent">Main</g) ?? []).length, 1);
+  assert.equal((render().match(/class="setup-current">Current</g) ?? []).length, 1);
+  assert.match(text(rows()[1]), /2 Bots with separate memoryMain/);
   assert.doesNotMatch(rows()[1], /Make main/);
-  assert.match(rows()[0], /Make main/);
+  assert.doesNotMatch(rows()[0], /<button/);
   assert.doesNotMatch(
     render(),
     /Everyday BotsBots|Shared workspaceChannels|My sessionsSessions/,
