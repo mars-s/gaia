@@ -1147,7 +1147,7 @@ a:focus-visible {
   color: var(--color-ink-3);
 }
 
-.settings-content { width: 100%; margin: 0; display: flex; flex-direction: column; gap: 20px; }
+.settings-content { width: 100%; max-width: 560px; margin: 0; display: flex; flex-direction: column; gap: 20px; }
 .settings-section { width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .settings-section h2 { font-size: var(--text-headline-medium); line-height: var(--text-headline-medium--line-height); font-weight: 600; color: var(--color-ink); }
 .settings-section section h2 { font-size: 14px; line-height: 20px; }

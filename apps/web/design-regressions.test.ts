@@ -275,3 +275,10 @@ test("model sheets use the light 24 percent and dark 48 percent backdrop tokens 
  assert.match(css, /model-scrim \{[^}]*background: var\(--backdrop\)/);
  assert.doesNotMatch(css, /color-mix\(in srgb, var\(--backdrop\)/);
 });
+
+test("desktop Settings keeps a 560px content measure aligned to the pane gutter", () => {
+ assert.match(css, /settings-content \{ width: 100%; max-width: 560px; margin: 0;/);
+ const app = read("./app.tsx");
+ assert.match(app, /className="settings-page[^]*?<div className="reading-column">\s*<section className="settings-content"/);
+ assert.match(app, /<SettingsIndex current=\{settingsSection\}/);
+});
