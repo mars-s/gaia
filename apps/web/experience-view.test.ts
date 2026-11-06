@@ -608,3 +608,14 @@ test("Original chat footer passes through the app navigation callback", () => {
   assert.match(view, /if \(onOriginal\) onOriginal\(\)/);
   assert.match(app, /onOriginal=\{\(\) => \{[^]*experiences.original\(\);[^]*setExperienceView\("original"\)/);
 });
+
+ test("setup title bars name the selected item rather than repeating the switcher", () => {
+  for (const layout of ["bots", "channels", "sessions"] as const) {
+    const { controller, html } = fixture(layout);
+    const header = html().match(/<header[^]*?<\/header>/)?.[0] ?? "";
+    assert.match(header, /scope-head/);
+    assert.match(header, />Main</);
+    assert.match(header, layout === "bots" ? /avatar-tile/ : /setup-layout-icon/);
+    controller.pause();
+  }
+});

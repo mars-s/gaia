@@ -251,7 +251,7 @@ export function ExperienceConversation({
                 <RiMenuLine className="size-5" aria-hidden />
               </button>
             )}
-            {layout === "single" || layout === "bots" ? switcher : scopeHead}
+            {layout === "single" ? switcher : scopeHead}
           </div>
           {accountControl}
         </div>
