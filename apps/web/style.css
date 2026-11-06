@@ -1544,3 +1544,18 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .settings-plan-row > div:last-child { grid-column: 2; }
  .plan-status { flex-direction: row; }
 }
+
+.app-bar { position: relative; z-index: 2; }
+.app-shell:has(.conversation-scroll[data-scrolled="true"]) .app-bar::after {
+ content: "";
+ position: absolute;
+ top: 100%;
+ left: 0;
+ right: 0;
+ height: 32px;
+ pointer-events: none;
+ background: linear-gradient(to bottom, var(--color-surface-page) 0px, var(--color-surface-page) 8px, transparent 32px);
+}
+@media (min-width: 640px) {
+ .app-shell:has(.conversation-scroll[data-scrolled="true"]) .app-bar.has-side::after { left: 240px; }
+}
