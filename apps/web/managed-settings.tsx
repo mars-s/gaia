@@ -116,7 +116,7 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
       <div className="flex items-center justify-between gap-3">
         <h2 tabIndex={-1} id="changes-title">Changes</h2>
         <button
-          className="quiet-action app-control"
+          className="quiet-action refresh-changes"
           aria-label="Refresh changes"
           disabled={submitting}
           onClick={() => {
@@ -124,7 +124,7 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
             setRefresh((value) => value + 1);
           }}
         >
-          <RiRefreshLine className="size-4" aria-hidden />
+          <RiRefreshLine className="size-4" aria-hidden />Refresh
         </button>
       </div>
       <p className="changes-caption">

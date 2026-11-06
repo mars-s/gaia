@@ -87,7 +87,7 @@ test("empty chat is only its mark and headline; an interview needs a useful answ
  assert.match(html, /What’s on your mind/);
  assert.doesNotMatch(html, /interview|Skip|button/);
  const app = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
- assert.match(app, /profile.kind === "new"[\s\S]*?active.thread.messages.some/);
+ assert.match(app, /profile\?.kind === "new" && id === active.thread.messages.at\(-1\)\?.id && active.thread.run.kind === "idle"/);
 });
 
 test("interview offer is a borderless aside in Gaia’s voice", () => {

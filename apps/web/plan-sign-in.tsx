@@ -8,9 +8,11 @@ import type {
 
 export function ClaudeSignIn({
   disabled,
+  connecting = false,
   onConnect,
 }: {
   disabled: boolean;
+  connecting?: boolean;
   onConnect(): void;
 }) {
   return (
@@ -26,7 +28,7 @@ export function ClaudeSignIn({
       disabled={disabled}
       onClick={onConnect}
     >
-      Continue with Claude
+      {connecting ? "Connecting…" : "Continue with Claude"}
     </SocialButton>
   );
 }

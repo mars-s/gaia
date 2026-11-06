@@ -70,5 +70,6 @@ test("composer focus is neutral with a visible halo, shared by both conversation
  assert.match(css, /composer:focus-within \{[^}]*border-color: var\(--color-line-strong\)/);
  assert.match(css, /box-shadow: var\(--shadow-level-1\), 0 0 0 3px color-mix/);
  assert.doesNotMatch(css, /composer:focus-within \{[^}]*color-primary-fill/);
+ assert.match(css, /composer\.composer-dragging \{ border-color: var\(--color-accent\)/);
  assert.match(css, /dark \.secondary-action \{ border-color: var\(--color-line-strong\)/);
 });

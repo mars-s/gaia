@@ -28,7 +28,7 @@ test("interview waits for proposals to settle and a later answer after any setup
     assert.equal(interviewOfferAllowed([item], "later"), true);
   }
 });
-test("interview offer uses the card frame and skipped interviews stay hidden", () => {
+test("interview offer is a borderless aside and skipped interviews stay hidden", () => {
   const render = (kind: "new" | "skipped") =>
     renderToStaticMarkup(
       createElement(ProfilePanel, {
@@ -40,10 +40,10 @@ test("interview offer uses the card frame and skipped interviews stay hidden", (
         onRetry() {},
       }),
     );
-  assert.match(render("new"), /setup-card interview-offer/);
+  assert.match(render("new"), /class="interview-offer"/);
   assert.match(render("new"), />Start the short interview</);
   const offer = render("new");
-  assert.match(offer, /interview-offer[^"]*p-3/);
+  assert.match(offer, /class="interview-offer"/);
   assert.match(offer, /secondary-action[^]*Start the short interview/);
   assert.doesNotMatch(offer, /primary-action/);
   assert.match(css, /interview-offer[^}]*border-color: color-mix/);
@@ -82,12 +82,12 @@ test("Gaia orb, focus and effort selection share the primary accent", () => {
 test("setup shells have a sidebar header and identity-aware placeholder", () => {
   const view = read("./experiences/view.tsx");
   assert.match(view, /app-bar-side sidebar-header/);
-  assert.match(view, /`Message #\$\{state\?\.scope.label/);
+  assert.match(view, /"Message Gaia…"/);
   assert.match(view, /`Message \$\{state\?\.scope.label/);
   assert.match(css, /desktop-sidebar .drawer-switcher \{\s*display: none/);
 });
-test("proposal descriptions share fixed grid columns and model separator has no extra space", () => {
-  assert.match(css, /grid-template-columns: 92px minmax\(0, 1fr\)/);
+test("proposal descriptions share content-sized grid columns and model separator has no extra space", () => {
+  assert.match(css, /grid-template-columns: 28px max-content minmax\(0, 1fr\)/);
   assert.match(
     read("./composer-controls.tsx"),
     /model-trigger-effort">\{"\\u202f·\\u202f"\}\{levelText\}/,
@@ -220,9 +220,9 @@ test("attachment remove is a backed 24px circle with a 14px icon inside the imag
 });
 
 test("Settings has labelled appearance, contained secondary actions and aligned content controls", () => {
-  assert.match(read("./appearance.tsx"), /label="Theme"/);
+  assert.match(read("./appearance.tsx"), /<label id="theme-label">Theme<\/label>/);
   assert.match(read("./experiences/index.tsx"), /<Button\s*variant="secondary"\s*size="small"/);
-  assert.match(read("./managed-settings.tsx"), /className="quiet-action app-control"[^]*aria-label="Refresh changes"/);
+  assert.match(read("./managed-settings.tsx"), /className="quiet-action refresh-changes"[^]*aria-label="Refresh changes"/);
   assert.match(css, /settings-section > section > button.primary-action \{ align-self: flex-start/);
   assert.match(css, /settings-bar .app-control:not\(.chat-switcher-trigger\) \{ margin-right: 0/);
 });

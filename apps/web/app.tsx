@@ -40,6 +40,7 @@ import {
 } from "./experiences/proposal";
 
 export function App() {
+  const [welcomeProvider, setWelcomeProvider] = useState("openai-codex");
   const [experiences] = useState(() => createExperienceController());
   useSyncExternalStore(experiences.subscribe, experiences.version);
   const [restoreMain] = useState(createMainRestore);
@@ -568,11 +569,11 @@ export function App() {
                   appearance="white"
                   fullWidth
                   disabled={pending || offline}
-                  onClick={() => void act("auth/connect")}
+                  onClick={() => { setWelcomeProvider("openai-codex"); void act("auth/connect"); }}
                 >
-                  {pending ? "Connecting…" : "Continue with ChatGPT"}
+                  {pending && welcomeProvider === "openai-codex" ? "Connecting…" : "Continue with ChatGPT"}
                 </SocialButton>
-                <ClaudeSignIn disabled={pending || offline} onConnect={() => void act("auth/connect", { provider: "anthropic" })} />
+                <ClaudeSignIn connecting={pending && welcomeProvider === "anthropic"} disabled={pending || offline} onConnect={() => { setWelcomeProvider("anthropic"); void act("auth/connect", { provider: "anthropic" }); }} />
                 <p className="welcome-caption">{connection?.kind === "disconnected" && connection.message && connection.message !== "Connect your plan to begin." ? connection.message : "Your browser opens to sign in. No API key needed."}</p>
               </>
             )}

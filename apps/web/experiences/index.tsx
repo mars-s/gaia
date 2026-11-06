@@ -136,6 +136,7 @@ export function SetupSettings({
               One conversation
             </p>
           </div>
+          <div className="setup-row-meta">
           {controller.mainId === null ? <StatusPill tone="accent">Main</StatusPill> : <span />}
           <div className="setup-row-actions">
             {!controller.profile && <span className="setup-current">Current</span>}
@@ -160,6 +161,7 @@ export function SetupSettings({
               </button>
             )}
           </div>
+          </div>
         </li>
         {controller.profiles.map((item) => (
           <li key={item.id} className="setup-list-row">
@@ -172,6 +174,7 @@ export function SetupSettings({
                 {setupSubtitle(item.plan.layout, item.plan.scopes.length)}
               </p>
             </div>
+            <div className="setup-row-meta">
             {controller.mainId === item.id ? <StatusPill tone="accent">Main</StatusPill> : item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
             <div className="setup-row-actions">
               {controller.profile?.profile.id === item.id && <span className="setup-current">Current</span>}
@@ -212,6 +215,7 @@ export function SetupSettings({
                   Make main
                 </button>
               )}
+            </div>
             </div>
           </li>
         ))}

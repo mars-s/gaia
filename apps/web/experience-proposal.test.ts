@@ -193,3 +193,20 @@ test("proposal change caption sits after the actions and memory copy reflects th
     await f.close();
   }
 });
+
+test("every proposal explains the actual memory boundary and preserves the original chat", async t => {
+ const f = await experienceFixture(t);
+ const explanations = {
+  single: "One conversation keeps your shared memory",
+  bots: "Each Bot keeps its own memory and conversation",
+  channels: "Channels share remembered facts and keep separate conversations",
+  sessions: "Sessions keep separate histories and share new remembered facts",
+ } as const;
+ for (const layout of ["single", "bots", "channels", "sessions"] as const) {
+  const proposal = await f.propose(layout);
+  const html = renderToStaticMarkup(createElement(ExperienceProposalNotice, { proposals: [proposal], disabled: false }));
+  assert.ok(html.includes(`This becomes your main chat. ${explanations[layout]}, and your original chat stays available.`));
+  assert.match(html, /class="status-pill" data-tone="neutral">Proposed/);
+  assert.ok(html.indexOf("Or tell me what to change.") > html.indexOf("Use this setup"));
+ }
+});

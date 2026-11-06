@@ -32,8 +32,9 @@ export function initialiseAppearance() {
 export function AppearancePicker() {
   const [value, setValue] = useState(preference);
   return (
+    <div className="appearance-picker"><label id="theme-label">Theme</label>
     <Select
-      label="Theme"
+      aria-labelledby="theme-label"
       selectedKey={value}
       className="w-full gap-2"
       triggerClassName="w-full"
@@ -59,6 +60,6 @@ export function AppearancePicker() {
       <SelectItem id="dark" textValue="Dark">
         Dark
       </SelectItem>
-    </Select>
+    </Select></div>
   );
 }

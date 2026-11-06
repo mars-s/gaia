@@ -10,6 +10,7 @@ export function SettingsIndex() {
     if (!root) return;
     const headings = settingsSections.flatMap(([id]) => { const heading = document.getElementById(id); return heading ? [heading] : []; });
     const update = () => {
+      if (root.scrollTop === 0) { setCurrent("plan-title"); return; }
       const bounds = root.getBoundingClientRect();
       setCurrent(currentSettingsSection(headings.map(heading => ({ id: heading.id, top: heading.getBoundingClientRect().top })), bounds.top + bounds.height * .4));
     };
