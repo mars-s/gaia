@@ -598,7 +598,7 @@ test("setup sidebars explain memory and leave Original chat to the switcher", ()
   }
 });
 
-test("Sessions use one glyph and show recency only when dates distinguish rows", () => {
+test("Sessions keep one glyph and single-line rows even when dates differ", () => {
   const { controller, html } = fixture("sessions");
   controller.profile!.scopes[0].createdAt = new Date().toISOString();
   assert.doesNotMatch(html(), /session-recency/);
@@ -606,8 +606,8 @@ test("Sessions use one glyph and show recency only when dates distinguish rows",
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   controller.profile!.scopes.push({ ...first, id: ScopeId.parse("33333333-3333-4333-8333-333333333333"), createdAt: yesterday.toISOString() });
-  assert.match(html(), /scope-preview[^>]*>I will check both\./);
-  assert.match(html(), /session-recency">Started yesterday/);
+  assert.doesNotMatch(html(), /scope-preview/);
+  assert.doesNotMatch(html(), /session-recency/);
   const nav = html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
   const rows = [...nav.matchAll(/<button[^]*?<\/button>/g)].filter(row => row[0].includes("experience-nav-row"));
   assert.equal(rows.length, 2);
@@ -649,26 +649,18 @@ test("narrow setup headers keep context and channels use the Gaia placeholder", 
  }
 });
 
-test("sidebar previews use the last real message, omit empty histories and keep Bot purposes", () => {
+test("all sidebar shapes keep names without purposes or previews for populated and empty histories", () => {
  for (const layout of ["sessions", "channels", "bots"] as const) {
    const {controller, parsed, html} = fixture(layout);
    const nav = () => html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
-   assert.match(nav(), layout === "bots" ? /scope-preview[^>]*>Test</ : /scope-preview[^>]*>I will check both\.</);
-   controller.receive(controller.selected!, {...parsed, revision: 2, messages: []});
-   if (layout === "bots") assert.match(nav(), /scope-preview[^>]*>Test</);
-   else assert.doesNotMatch(nav(), /scope-preview/);
-   assert.doesNotMatch(nav(), /sidebar-settings/);
+   for (const messages of [parsed.messages, [], [{id: "long", role: "assistant" as const, text: "A long message that must stay out of navigation", createdAt: "now"}]]) {
+     controller.receive(controller.selected!, {...parsed, revision: controller.entry(controller.selected!).state!.revision + 1, messages});
+     assert.match(nav(), /scope-row-copy[^]*>Main</);
+     assert.doesNotMatch(nav(), /scope-preview|session-recency|data-two-lines|I will check both|A long message/);
+   }
    controller.pause();
  }
-});
-
-test("long sidebar messages have bounded excerpts and retain the full message as a tooltip", () => {
- const {controller, parsed, html} = fixture("sessions");
- const text = "A real message with enough detail to continue well beyond the small sidebar row and its preview.";
- controller.receive(controller.selected!, {...parsed, revision: 2, messages: [{id: "long", role: "assistant", text, createdAt: "now"}]});
- const nav = html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
- assert.ok(nav.includes(`title="${text}"`));
- assert.ok(nav.includes(`>${text.slice(0, 71).trimEnd()}…</span>`));
- assert.ok(!nav.includes(`>${text}</span>`));
- controller.pause();
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /experience-nav-row.secondary-action \{ padding: 8px 10px; height: 36px/);
+ assert.doesNotMatch(css, /experience-nav-row\[data-two-lines/);
 });

@@ -1,4 +1,4 @@
-import { setupContext, sessionRecency } from "../setup-context";
+import { setupContext } from "../setup-context";
 import { SetupGlyph } from "../setup-glyph";
 import { useTranscriptFollow } from "../use-transcript-follow";
 import { EmptyChat } from "../empty-chat";
@@ -97,7 +97,6 @@ export function ExperienceConversation({
       <span className="truncate">{selected?.label}</span>
     </span>
   );
-  const showSessionRecency = layout === "sessions" && new Set(profile.scopes.map(item => sessionRecency(item.createdAt)).filter(Boolean)).size > 1;
   const sidebar = (
     <nav
       id="experience-navigation"
@@ -125,14 +124,12 @@ export function ExperienceConversation({
       <p className="sidebar-section">{setupContext[layout].section}</p>
       <div className="flex flex-col gap-1">
         {profile.scopes.map((item) => {
-          const preview = layout === "bots" ? item.purpose : controller.entry({ profileId: profile.profile.id, scopeId: item.id }).state?.messages.findLast(message => message.text.trim())?.text.replace(/\s+/g, " ").trim();
           return (
           <Button
             key={item.id}
             variant="secondary"
             size="small"
             className="experience-nav-row w-full justify-start"
-            data-two-lines={Boolean(preview) || (showSessionRecency && Boolean(sessionRecency(item.createdAt)))}
             aria-current={item.id === scope.scopeId ? "page" : undefined}
             onClick={() => {
               controller.select({
@@ -156,10 +153,6 @@ export function ExperienceConversation({
             {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <SetupGlyph layout={layout} />}</span>}
             <span className="scope-row-copy min-w-0">
               <span className="block truncate">{item.label}</span>
-              {preview && <span className="scope-preview" title={preview}>{preview.length > 72 ? `${preview.slice(0, 71).trimEnd()}…` : preview}</span>}
-              {!preview && showSessionRecency && sessionRecency(item.createdAt) && (
-                <span className="session-recency">Started {sessionRecency(item.createdAt)}</span>
-              )}
             </span>
             {layout !== "bots" && (
               <span
