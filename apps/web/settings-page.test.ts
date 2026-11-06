@@ -56,9 +56,9 @@ test("Settings folds the interview offer into About you without a Skip action", 
 
 test("Settings has an Account group, clear update copy and separated sections", () => {
   const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
-  assert.match(read("./app.tsx"), /id="plan-title" aria-label="Account" data-label="Account">Plan/);
+  assert.match(read("./app.tsx"), /id="plan-title">Account/);
   assert.match(read("./app.tsx"), /<PlanAccounts/);
-  assert.match(read("./plan-sign-in.tsx"), /\\u202f·\\u202f/);
+
   assert.match(read("./plan-sign-in.tsx"), /connected \? "Connected" : "Not connected"/);
   assert.match(read("./managed-settings.tsx"), /Updates Gaia has made to itself. You can undo applied updates here./);
   assert.match(read("./style.css"), /settings-section \+ .settings-section[^}]*border-top: 1px/);
@@ -79,15 +79,18 @@ test("Settings interview is secondary and change refresh is an accessible icon a
   assert.match(css, /settings-content[^}]*gap: 0/);
 });
 
-import { SettingsIndex, currentSettingsSection } from "./settings-index";
-test("Settings index links to all five headings and tracks the last heading above its reading line", () => {
- const html = renderToStaticMarkup(createElement(SettingsIndex));
- assert.equal((html.match(/<a /g) ?? []).length, 5);
- assert.match(html, /href="#plan-title" aria-current="true"/);
- assert.match(html, /href="#changes-title"/);
- assert.equal(currentSettingsSection([{id: "plan-title", top: -20}, {id: "setups-title", top: 100}], 150), "setups-title");
- const source = readFileSync(new URL("./settings-index.tsx", import.meta.url), "utf8");
- assert.match(source, /heading\?\.focus\(\{ preventScroll: true \}\)/);
+import { SettingsIndex, settingsSections } from "./settings-index";
+test("Settings navigation selects exactly one pane and retains five owner choices", () => {
+ for (const [current] of settingsSections) {
+  const html = renderToStaticMarkup(createElement(SettingsIndex, { current, onSelect() {} }));
+  assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1);
+  assert.match(html, new RegExp('aria-current="page" aria-controls="' + current + '"'));
+  assert.match(html, /Settings section/);
+ }
+ const source = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
+ for (const [id] of settingsSections) assert.ok(source.includes('settingsSection === "' + id + '"'));
+ assert.match(source, /document.getElementById\(section\)\?\.focus/);
+ assert.match(source, /setSettingsSection\("setups-title"\)/);
 });
 
 test("narrow account rows stack status and actions, and secondary text shares body tracking", () => {

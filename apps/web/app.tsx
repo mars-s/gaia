@@ -1,6 +1,6 @@
 import { ClaudeSignIn, PlanAccounts } from "./plan-sign-in";
 import { useTranscriptFollow } from "./use-transcript-follow";
-import { SettingsIndex } from "./settings-index";
+import { SettingsIndex, type SettingsSection } from "./settings-index";
 import { EmptyChat } from "./empty-chat";
 import { OfflineNotice } from "./progress-row";
 import { ChatSwitcher } from "./chat-switcher";
@@ -105,6 +105,7 @@ export function App() {
   const [authReply, setAuthReply] = useState("");
   const [browserError, setBrowserError] = useState("");
   const [accountOpen, updateAccountOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("plan-title");
   useEffect(() => {
     if (!accountOpen) return;
     const close = (event: KeyboardEvent) => {
@@ -338,9 +339,7 @@ export function App() {
     <ChatSwitcher
       onManage={() => {
         setAccountOpen(true);
-        requestAnimationFrame(() =>
-          document.querySelector(".setup-settings")?.scrollIntoView(),
-        );
+        setSettingsSection("setups-title");
       }}
       profiles={experiences.profiles}
       error={experiences.error}
@@ -373,7 +372,7 @@ export function App() {
       aria-label={accountOpen ? "Close settings" : "Account settings"}
       aria-expanded={accountOpen}
       aria-controls="account-settings"
-      onClick={() => setAccountOpen(!accountOpen)}
+      onClick={() => { setSettingsSection("plan-title"); setAccountOpen(!accountOpen); }}
     />
   );
   const setupShell =
@@ -405,25 +404,30 @@ export function App() {
 
       {accountOpen && connected ? (
         <div className="settings-shell min-h-0 flex flex-1">
-        <SettingsIndex />
+        <SettingsIndex current={settingsSection} onSelect={section => {
+          setSettingsSection(section);
+          requestAnimationFrame(() => {
+            document.querySelector(".settings-page")?.scrollTo(0, 0);
+            document.getElementById(section)?.focus({ preventScroll: true });
+          });
+        }} />
         <main
           id="account-settings"
           className="settings-page min-h-0 flex-1 overflow-y-auto"
         >
           <div className="reading-column">
             <section className="settings-content" aria-label="Settings">
-              <section
+              {settingsSection === "plan-title" && <section
                 className="settings-section"
                 aria-labelledby="plan-title"
               >
-                {/* Plan is the frozen capture text hook. Account is the visible and accessible name. */}
-                <h2 tabIndex={-1} id="plan-title" aria-label="Account" data-label="Account">Plan</h2>
+                <h2 tabIndex={-1} id="plan-title">Account</h2>
                 <PlanAccounts connection={connection} disabled={pending || running || offline}
                   onConnect={(provider) => { void act("auth/connect", { provider }); }}
                   onDisconnect={(provider) => { void act("auth/disconnect", { provider }); }}
                 />
-              </section>
-              <section
+              </section>}
+              {settingsSection === "appearance-title" && <section
                 className="settings-section"
                 aria-labelledby="appearance-title"
               >
@@ -431,8 +435,8 @@ export function App() {
                 <div className="w-60 max-w-full">
                   <AppearancePicker />
                 </div>
-              </section>
-              {!controller.safeMode && (
+              </section>}
+              {settingsSection === "setups-title" && !controller.safeMode && (
                 <SetupSettings
                   controller={experiences}
                   onOpen={() => {
@@ -453,14 +457,14 @@ export function App() {
                   }}
                 />
               )}
-              <section
+              {settingsSection === "about-title" && <section
                 className="settings-section"
                 aria-labelledby="about-title"
               >
                 <h2 tabIndex={-1} id="about-title">About you</h2>
                 {profilePanel(true)}
-              </section>
-              <ManagedSettings runtime={state?.runtime} />
+              </section>}
+              {settingsSection === "changes-title" && <ManagedSettings runtime={state?.runtime} />}
               {error && (
                 <p role="alert" className="text-text-error-primary">
                   {error}
