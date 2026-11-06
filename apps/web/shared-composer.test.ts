@@ -82,5 +82,5 @@ test("both themes set a composer halo and share one code block border", () => {
  assert.match(theme, /--color-composer-halo: color-mix\(in oklab, var\(--color-ink\) 6%, transparent\)/);
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.match(css, /\n.code-block \{ border: 1px solid var\(--color-line-strong\)/);
- assert.doesNotMatch(css, /dark \.code-block/);
+ assert.doesNotMatch(css, /dark \.code-block[^}]*border-color/);
 });

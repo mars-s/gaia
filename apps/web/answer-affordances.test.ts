@@ -150,7 +150,7 @@ test("code copy has a separate 28px header above the bounded scroll area", async
   assert.match(source, /observer.observe\(element\)/);
   assert.match(css, /code-header \{ height: 28px/);
   assert.match(css, /code-block \{[^}]*max-width: 100%; overflow: hidden/);
-  assert.match(css, /padding: 16px; border-radius: 0; overflow-x: auto/);
+  assert.match(css, /padding: 16px; border-radius: 0; background: var\(--code-surface\); overflow-x: auto/);
   assert.match(css, /code-block\[data-overflow="true"\] .code-scroll-area::after/);
   assert.match(css, /earlier-answer:focus-within > .reply-actions/);
   assert.match(css, /@media \(pointer: coarse\)/);
@@ -209,4 +209,11 @@ test("older reply actions overlay the turn gap without reserving layout space", 
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.match(css, /earlier-answer > .reply-actions \{ position: absolute; top: 100%; left: 0; opacity: 0/);
  assert.match(css, /earlier-answer:hover > .reply-actions, .earlier-answer:focus-within > .reply-actions \{ opacity: 1/);
+});
+
+test("block code clears the inline background and shares one neutral surface with its frame", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /message-markdown pre code \{[^}]*background: transparent;[^}]*border-radius: 0/);
+ assert.match(css, /code-block pre \{[^}]*background: var\(--code-surface\)/);
+ assert.match(css, /dark .code-block \{ --code-surface: var\(--color-surface-selected\)/);
 });

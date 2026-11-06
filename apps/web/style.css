@@ -111,6 +111,8 @@ body {
 }
 .message-markdown pre code {
   padding: 0;
+  background: transparent;
+  border-radius: 0;
 }
 .message-markdown blockquote {
   border-left: 2px solid var(--color-line-strong);
@@ -765,12 +767,12 @@ a:focus-visible {
 .earlier-answer > .reply-actions { position: absolute; top: 100%; left: 0; opacity: 0; z-index: 1; }
 .earlier-answer:hover > .reply-actions, .earlier-answer:focus-within > .reply-actions { opacity: 1; }
 @media (pointer: coarse) { .earlier-answer:focus-within > .reply-actions { opacity: 1; } }
-.code-block { min-width: 0; width: 100%; max-width: 100%; overflow: hidden; margin-block: 16px; border-radius: var(--radius-md); background: var(--color-surface-sunken); }
+.code-block { min-width: 0; width: 100%; max-width: 100%; overflow: hidden; margin-block: 16px; border-radius: var(--radius-md); --code-surface: var(--color-surface-sunken); background: var(--code-surface); }
 .code-header { height: 28px; display: flex; align-items: center; justify-content: space-between; padding-inline: 16px 8px; color: var(--color-ink-2); font-size: 12px; line-height: 16px; border-bottom: 1px solid var(--color-line); }
 .code-header .copy-action { width: 24px; min-height: 24px; height: 24px; margin: 0; }
 .code-scroll-area { position: relative; min-width: 0; }
-.message-markdown .code-block pre { margin: 0; padding: 16px; border-radius: 0; overflow-x: auto; scrollbar-width: thin; }
-.code-block[data-overflow="true"] .code-scroll-area::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 32px; pointer-events: none; background: linear-gradient(to right, transparent, var(--color-surface-sunken) 80%); }
+.message-markdown .code-block pre { margin: 0; padding: 16px; border-radius: 0; background: var(--code-surface); overflow-x: auto; scrollbar-width: thin; }
+.code-block[data-overflow="true"] .code-scroll-area::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 32px; pointer-events: none; background: linear-gradient(to right, transparent, var(--code-surface) 80%); }
 .message-markdown { min-width: 0; width: 100%; }
 
 .progress-elapsed {
@@ -1596,3 +1598,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .settings-content > .settings-section > h2, .settings-content > .settings-section > div > #changes-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
  .settings-section .section-explainer { margin-top: 0; }
 }
+
+.dark .code-block { --code-surface: var(--color-surface-selected); }
