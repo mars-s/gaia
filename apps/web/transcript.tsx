@@ -202,12 +202,6 @@ export function Transcript({
                   </div>
                 ) : null}
                 {!user &&
-                  source?.text &&
-                  message.status?.type === "complete" &&
-                  (
-                    <div className="reply-actions"><CopyButton label="Copy answer" text={source.text} /></div>
-                  )}
-                {!user &&
                   message.id === thread.messages.at(-1)?.id &&
                   (thread.run.kind === "error" ? (
                     <ReplyNotice
@@ -225,6 +219,12 @@ export function Transcript({
                     />
                   ) : null)}
                 {afterMessage?.(message.id)}
+                {!user &&
+                  source?.text &&
+                  message.status?.type === "complete" &&
+                  (
+                    <div className="reply-actions"><CopyButton label="Copy answer" text={source.text} /></div>
+                  )}
               </article>
             );
           }}
