@@ -10,6 +10,7 @@ import {
   replyError,
   OfflineNotice,
   FailurePath,
+  ErrorMessage,
 } from "../progress-row";
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -728,7 +729,7 @@ function JobRows({
         {state.kind !== "queued" &&
           state.kind !== "running" &&
           state.kind !== "stopping" && (
-            <span>
+            <ErrorMessage alert={state.kind === "failed" || state.kind === "uncertain"}>
               {state.kind === "failed" || state.kind === "uncertain"
                 ? state.kind === "uncertain"
                   ? "This may already have happened. Try again only if you want it to run again."
@@ -736,7 +737,7 @@ function JobRows({
                 : state.kind === "interrupted"
                   ? "Interrupted. Not repeated automatically."
                   : "Stopped"}
-            </span>
+            </ErrorMessage>
           )}
         {jobActive(job) ? (
           <button

@@ -34,14 +34,10 @@ export function ProgressRow({
           : "progress-row chat-notice"
       }
     >
-      {error ? (
-        <RiErrorWarningLine className="reply-error-icon" aria-hidden="true" />
-      ) : (
-        avatar && (
+      {!error && avatar && (
           <span className="progress-avatar" aria-hidden="true">
             {avatar}
           </span>
-        )
       )}
       {active && (
         <span className="working-indicator" aria-label="Reply in progress">
@@ -70,6 +66,10 @@ export function ProgressRow({
   );
 }
 
+export function ErrorMessage({ children, alert = true }: { children: ReactNode; alert?: boolean }) {
+  return <span className="error-message">{alert && <RiErrorWarningLine className="reply-error-icon" aria-hidden="true" />}{children}</span>;
+}
+
 export function ReplyNotice({
   message,
   onRetry,
@@ -84,7 +84,7 @@ export function ReplyNotice({
   return (
     <div className="reply-notice" role="alert">
       <ProgressRow active={false} error>
-        <span>
+        <ErrorMessage>
           {message.includes("Settings") ? (
             <>
               {message.split("Settings")[0]}
@@ -96,7 +96,7 @@ export function ReplyNotice({
           ) : (
             message
           )}
-        </span>
+        </ErrorMessage>
         {onRetry && (
           <Button
             variant="secondary"

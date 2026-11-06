@@ -34,7 +34,7 @@ test("known reply causes get one useful sentence and unknown failures stay plain
     const html = renderToStaticMarkup(
       createElement(ReplyNotice, { message: replyError(cause), onRetry() {} }),
     );
-    assert.match(html, /reply-error-icon/);
+    assert.match(html, /class="error-message"><svg[^]*reply-error-icon/);
     assert.doesNotMatch(html, /gaia-mark|No reply came back/);
     assert.equal((html.match(/>Try again</g) ?? []).length, 1);
   }
@@ -73,8 +73,8 @@ test("failure second paths offer Settings for unknown causes and reconnection ad
 
 test("reply error retry and helper use the same text edge at every width", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /reply-error \{ display: grid; grid-template-columns: 24px minmax\(0, 1fr\)/);
- assert.match(css, /reply-error > button:not\(.inline-link\) \{ grid-column: 2; justify-self: start; margin-left: 0/);
- assert.match(css, /reply-notice \.failure-path \{ margin-left: 32px/);
- assert.match(css, /reply-error-icon \{ padding: 0; width: 24px; height: 24px/);
+ assert.match(css, /reply-error \{ display: flex; flex-direction: column; align-items: flex-start/);
+ assert.match(css, /reply-error > button:not\(.inline-link\) \{ margin-left: 0/);
+ assert.match(css, /reply-notice \.failure-path \{ margin-left: 0/);
+ assert.match(css, /reply-error-icon \{ display: inline-block;[^}]*width: 16px; height: 16px/);
 });

@@ -1499,10 +1499,10 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .welcome-button:disabled { opacity: .4; }
 .dark .welcome-composition .welcome-button { border-color: var(--color-line-strong); }
 
-.reply-error { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 8px; }
-.reply-error-icon { padding: 0; width: 24px; height: 24px; }
-.reply-error > button:not(.inline-link) { grid-column: 2; justify-self: start; margin-left: 0; }
-.reply-notice .failure-path { margin-left: 32px; }
+.reply-error { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.reply-error-icon { display: inline-block; vertical-align: -3px; margin-right: 6px; padding: 0; width: 16px; height: 16px; }
+.reply-error > button:not(.inline-link) { margin-left: 0; }
+.reply-notice .failure-path { margin-left: 0; }
 .dark .draft-images .image-thumbnail img, .dark .draft-images .image-unavailable { background: var(--color-surface-selected); }
 
 .refresh-changes { display: inline-flex; align-items: center; gap: 4px; }
