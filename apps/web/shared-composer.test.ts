@@ -84,3 +84,13 @@ test("both themes set a composer halo and share one code block border", () => {
  assert.match(css, /\n.code-block \{ border: 1px solid var\(--color-line-strong\)/);
  assert.doesNotMatch(css, /dark \.code-block[^}]*border-color/);
 });
+
+test("narrow attachments stay compact without hiding the empty-chat context", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /composer .draft-images .image-thumbnail img[^}]*width: 56px; height: 56px/);
+ assert.match(css, /composer .composer-field textarea[^}]*min-height: 20px; line-height: 20px/);
+ const source = readFileSync(new URL("./shared-composer.tsx", import.meta.url), "utf8");
+ assert.match(source, /rows=\{1\}\s*autoResize/);
+ const empty = readFileSync(new URL("./empty-chat.tsx", import.meta.url), "utf8");
+ assert.doesNotMatch(empty, /hasDraft|return null/);
+});

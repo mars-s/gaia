@@ -1600,3 +1600,12 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 }
 
 .dark .code-block { --code-surface: var(--color-surface-selected); }
+
+.model-trigger-separator { display: inline-block; padding-inline: 1px; }
+@media (max-width: 479px) {
+ .composer .draft-images .image-thumbnail { width: 56px; }
+ .composer .draft-images .image-thumbnail img, .composer .draft-images .image-unavailable { width: 56px; height: 56px; border-radius: 8px; }
+ .composer .draft-images .remove-image { right: 2px; }
+ .composer .composer-field { padding-block: 4px; }
+ .composer .composer-field textarea { min-height: 20px; line-height: 20px; }
+}

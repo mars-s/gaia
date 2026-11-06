@@ -92,7 +92,7 @@ test("proposal descriptions share content-sized grid columns and model separator
   assert.match(css, /grid-template-columns: 28px max-content minmax\(0, 1fr\)/);
   assert.match(
     read("./composer-controls.tsx"),
-    /model-trigger-effort">\{"\\u202f·\\u202f"\}\{levelText\}/,
+    /model-trigger-separator">\{"\\u2009·\\u2009"\}<\/span>\{levelText\}/,
   );
 });
 
@@ -249,7 +249,7 @@ test("setup status uses the shared pill with no dotted status badges", () => {
 
 test("overflowing code has top breathing room and a right-edge cue until scrolled to the end", () => {
   assert.match(css, /code-block pre[^}]*padding: 16px/);
-  assert.match(css, /data-overflow="true"[^}]*width: 32px[^}]*surface-sunken\) 80%/);
+  assert.match(css, /data-overflow="true"[^}]*width: 32px[^}]*code-surface\) 80%/);
   assert.match(read("./transcript.tsx"), /scrollWidth - element.clientWidth - element.scrollLeft > 1/);
   assert.match(read("./transcript.tsx"), /removeEventListener\("scroll", measure\)/);
 });
