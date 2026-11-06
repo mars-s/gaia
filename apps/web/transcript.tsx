@@ -156,6 +156,7 @@ export function Transcript({
             const source = byId.get(message.id);
             const user = message.role === "user";
             return (
+              <>
               <article
                 aria-label={user ? "You" : "Gaia"}
                 data-role={user ? "user" : "assistant"}
@@ -218,7 +219,6 @@ export function Transcript({
                       disabled={retryDisabled}
                     />
                   ) : null)}
-                {afterMessage?.(message.id)}
                 {!user &&
                   source?.text &&
                   message.status?.type === "complete" &&
@@ -226,6 +226,8 @@ export function Transcript({
                     <div className="reply-actions"><CopyButton label="Copy answer" text={source.text} /></div>
                   )}
               </article>
+              {afterMessage?.(message.id)}
+              </>
             );
           }}
         </ThreadPrimitiveMessages>

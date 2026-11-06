@@ -108,7 +108,7 @@ test("working motion is separate from Gaia identity, including with real activit
   }
 });
 
-test("copy actions have icons without Copy text and setup answers keep their action", () => {
+test("copy actions have a visible label and stay before setup cards", () => {
   const thread: Thread = {
     version: 1,
     id: "local",
@@ -131,7 +131,7 @@ test("copy actions have icons without Copy text and setup answers keep their act
   const html = renderToStaticMarkup(createElement(Transcript, { thread }));
   assert.equal((html.match(/aria-label="Copy answer"/g) ?? []).length, 2);
   assert.equal((html.match(/earlier-answer/g) ?? []).length, 1);
-  assert.doesNotMatch(html, />Copy</);
+  assert.match(html, />Copy</);
   assert.match(html, /<svg/);
   const card = renderToStaticMarkup(
     createElement(Transcript, { thread, hasSetupCard: (id) => id === "new" }),
@@ -175,9 +175,9 @@ test("code scrolls below 640 with a fade and the transcript has a clean top edge
 test("reply actions follow the whole turn and sit eight pixels below its content", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.match(css, /reply-actions \{ margin-top: 8px; display: flex/);
- assert.match(css, /reply-actions .copy-action \{ margin-top: 0/);
+ assert.match(css, /reply-actions .copy-action \{[^}]*margin: 0/);
  const html = renderToStaticMarkup(createElement(Transcript, { thread: { version: 1, id: "local", run: {kind: "idle"}, messages: [{id: "reply", role: "assistant", text: "Reply text", createdAt: "2026-11-05"}] }, afterMessage: () => createElement("aside", null, "Proposal") }));
- assert.match(html, /Reply text[^]*Proposal[^]*reply-actions[^]*Copy answer/);
+ assert.match(html, /Reply text[^]*reply-actions[^]*Copy answer[^]*<\/article>[^]*Proposal/);
 });
 
 test("code overflow measurement covers narrow screens and the thin scrollbar stays visible", () => {
@@ -198,9 +198,15 @@ test("answer section headings use distinct semibold type scale steps", () => {
  assert.match(html, /<h2>Main heading<\/h2>[^]*<h3>Section heading<\/h3>/);
 });
 
-test("both kinds of proposal attach to the reply with twelve pixels of space", () => {
+test("both kinds of proposal use the normal message list gap", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /interview-slot, .proposal-list \{ margin-top: 12px/);
+ assert.match(css, /interview-slot, .proposal-list \{ margin-top: 0/);
  const source = readFileSync(new URL("./experiences/proposal.tsx", import.meta.url), "utf8");
  assert.match(source, /className="proposal-list flex min-w-0 flex-col gap-3"/);
+});
+
+test("older reply actions overlay the turn gap without reserving layout space", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /earlier-answer > .reply-actions \{ position: absolute; top: 100%; left: 0; opacity: 0/);
+ assert.match(css, /earlier-answer:hover > .reply-actions, .earlier-answer:focus-within > .reply-actions \{ opacity: 1/);
 });

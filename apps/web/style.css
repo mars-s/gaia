@@ -761,9 +761,10 @@ a:focus-visible {
   transition: opacity var(--motion-hover);
 }
 .copy-action:hover { background: var(--color-surface-hover); color: var(--color-ink); }
-.earlier-answer > .reply-actions { opacity: 0; }
+.message-text { position: relative; }
+.earlier-answer > .reply-actions { position: absolute; top: 100%; left: 0; opacity: 0; z-index: 1; }
 .earlier-answer:hover > .reply-actions, .earlier-answer:focus-within > .reply-actions { opacity: 1; }
-@media (pointer: coarse) { .earlier-answer > .reply-actions { opacity: 1; } }
+@media (pointer: coarse) { .earlier-answer:focus-within > .reply-actions { opacity: 1; } }
 .code-block { min-width: 0; width: 100%; max-width: 100%; overflow: hidden; margin-block: 16px; border-radius: var(--radius-md); background: var(--color-surface-sunken); }
 .code-header { height: 28px; display: flex; align-items: center; justify-content: space-between; padding-inline: 16px 8px; color: var(--color-ink-2); font-size: 12px; line-height: 16px; border-bottom: 1px solid var(--color-line); }
 .code-header .copy-action { width: 24px; min-height: 24px; height: 24px; margin: 0; }
@@ -1558,8 +1559,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .suggestion-caption { font-size: 12px; line-height: 16px; color: var(--color-ink-2); }
 
 .reply-actions { margin-top: 8px; display: flex; justify-content: flex-start; }
-.reply-actions .copy-action { margin-top: 0; }
-.interview-slot, .proposal-list { margin-top: 12px; }
+.reply-actions .copy-action { width: auto; margin: 0; padding: 0; gap: 4px; color: var(--color-ink-2); font-size: 12px; }
+.interview-slot, .proposal-list { margin-top: 0; }
 
 .settings-plan-row > div:last-child { align-items: center; }
 .settings-plan-row button { height: 28px; min-height: 28px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 13px; line-height: 18px; }

@@ -45,6 +45,7 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
       ) : (
         <RiFileCopyLine className="size-4" aria-hidden />
       )}
+      {label === "Copy answer" && <span aria-hidden="true">Copy</span>}
       <span className="sr-only" aria-live="polite">
         {status}
       </span>
