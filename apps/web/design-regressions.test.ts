@@ -254,8 +254,8 @@ test("overflowing code has top breathing room and a right-edge cue until scrolle
   assert.match(read("./transcript.tsx"), /removeEventListener\("scroll", measure\)/);
 });
 
-test("scrolled transcripts pass under a 32px page gradient with an opaque top", () => {
- assert.match(css, /app-bar::after \{[^}]*top: 100%;[^}]*height: 32px;[^}]*pointer-events: none;[^}]*linear-gradient\(to bottom, var\(--color-surface-page\) 0px, var\(--color-surface-page\) 8px, transparent 32px\)/);
+test("scrolled transcripts pass under a 32px page gradient with a 16px opaque top in both themes", () => {
+ assert.match(css, /app-bar::after \{[^}]*top: 100%;[^}]*height: 32px;[^}]*pointer-events: none;[^}]*linear-gradient\(to bottom, var\(--color-surface-page\) 0px, var\(--color-surface-page\) 16px, transparent 32px\)/);
  assert.doesNotMatch(css, /mask-image|clip-path/);
  assert.match(css, /app-bar.has-side::after \{ left: 240px/);
 });
