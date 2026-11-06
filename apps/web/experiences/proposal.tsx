@@ -1,4 +1,4 @@
-import { StatusPill } from "../status-pill";
+import { ProposalCardContent } from "../proposal-card";
 import { SetupGlyph } from "../setup-glyph";
 import type {
   Experience,
@@ -94,13 +94,10 @@ export function ExperienceProposalNotice({
             <p className="text-text-secondary">Replaced by a newer proposal.</p>
           ) : (
             <>
-              <div className="proposal-heading">
-                <h2 className="text-title-3-semibold">{proposal.plan.title}</h2>
-                <StatusPill>Proposed</StatusPill>
-              </div>
-              <p className="setup-memory-caption text-caption-1-regular text-text-secondary">
-                {setupChange[proposal.plan.layout]}
-              </p>
+              <ProposalCardContent title={proposal.plan.title} status="Proposed" body={setupChange[proposal.plan.layout]}
+                primary={pending?.has(proposal.id) ? "Setting up…" : "Use this setup"}
+                disabled={disabled || pending?.has(proposal.id)}
+                onAccept={() => onUse?.(proposal)} onDismiss={() => onDismiss?.(proposal)}>
               <ul className="proposal-scopes">
                 {proposal.plan.scopes.map((scope, index) => (
                   <li
@@ -129,23 +126,7 @@ export function ExperienceProposalNotice({
                   {errors.get(proposal.id)}
                 </p>
               )}
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  variant="primary"
-                  size="small"
-                  disabled={disabled || pending?.has(proposal.id)}
-                  onClick={() => onUse?.(proposal)}
-                >
-                  {pending?.has(proposal.id) ? "Setting up…" : "Use this setup"}
-                </Button>
-                <button
-                  className="quiet-action text-text-secondary"
-                  disabled={disabled || pending?.has(proposal.id)}
-                  onClick={() => onDismiss?.(proposal)}
-                >
-                  Not now
-                </button>
-              </div>
+              </ProposalCardContent>
               <p className="text-caption-1-regular text-text-secondary">
                 Or tell me what to change.
               </p>

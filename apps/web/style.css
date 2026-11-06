@@ -1281,11 +1281,6 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
   width: 100%;
 }
 
-.interview-offer {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 @media (min-width: 640px) {
   .desktop-sidebar .drawer-switcher {
     display: none;
@@ -1483,8 +1478,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .proposal-scopes .scope-purpose { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; font-size: 13px; line-height: 18px; margin-top: -6px; }
 }
 
-.interview-offer { margin-top: 8px; gap: 12px; padding: 16px; }
-.interview-offer > p:not(.suggestion-caption) { max-width: 56ch; font-size: 14px; line-height: 20px; color: var(--color-ink-2); }
+
 
 .empty-chat { padding-bottom: 8vh; }
 .starter-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: min(640px, 100%); margin-top: 16px; }

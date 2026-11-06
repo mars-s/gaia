@@ -1,3 +1,4 @@
+import { ProposalCardContent } from "./proposal-card";
 import { useState } from "react";
 import { Button } from "@/components/base/buttons/button";
 import {
@@ -43,22 +44,10 @@ export function ProfilePanel({
         aria-label="About you"
         className="setup-card interview-offer flex min-w-0 flex-col gap-4 rounded-xl border border-separator-border p-5 wrap-anywhere"
       >
-        <p className="suggestion-caption">A suggestion from Gaia</p>
-        <p>
-          If you like, I can fit myself around how you work. It takes a minute.
-        </p>
-        <div className="flex flex-wrap items-center gap-4">
-          <Button variant="secondary" size="small" disabled={disabled} onClick={() => onAction("start")}>
-            Start the short interview
-          </Button>
-          <button
-            className="quiet-action"
-            disabled={skipDisabled}
-            onClick={() => onAction("skip")}
-          >
-            Not now
-          </button>
-        </div>
+        <ProposalCardContent title="Fit Gaia around you" status="Suggestion"
+          body="If you like, I can fit myself around how you work."
+          primary="Start the short interview" disabled={disabled} skipDisabled={skipDisabled}
+          onAccept={() => onAction("start")} onDismiss={() => onAction("skip")} />
       </section>
     );
   const details =

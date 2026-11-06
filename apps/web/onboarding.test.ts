@@ -93,6 +93,6 @@ test("empty chat is only its mark and headline; an interview needs a useful answ
 test("interview offer is a proposal-family card in Gaia’s voice", () => {
  const source = readFileSync(new URL("./profile-panel.tsx", import.meta.url), "utf8");
  assert.match(source, /className="setup-card interview-offer [^"]*rounded-xl border/);
- assert.match(source, /suggestion-caption">A suggestion from Gaia/);
- assert.match(source, /If you like, I can fit myself around how you work. It takes a minute./);
+ assert.match(source, /ProposalCardContent title="Fit Gaia around you" status="Suggestion"/);
+ assert.match(source, /If you like, I can fit myself around how you work\./);
 });
