@@ -1,4 +1,4 @@
-const authHosts = new Set(["auth.openai.com", "chatgpt.com"]);
+const authHosts = new Set(["auth.openai.com", "chatgpt.com", "claude.ai"]);
 
 export function externalWebURL(value: unknown): URL {
   if (typeof value !== "string") throw new Error("Expected a web address.");

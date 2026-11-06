@@ -11,7 +11,15 @@ test("auth opens only HTTPS provider hosts, without credentials or custom ports"
     authURL("https://chatgpt.com/auth/login"),
     "https://chatgpt.com/auth/login",
   );
+  assert.equal(
+    authURL("https://claude.ai/oauth/authorize?state=example"),
+    "https://claude.ai/oauth/authorize?state=example",
+  );
   for (const value of [
+    "https://claude.ai.evil.test/oauth/authorize",
+    "http://claude.ai/oauth/authorize",
+    "https://user@claude.ai/oauth/authorize",
+    "https://claude.ai:8443/oauth/authorize",
     undefined,
     {},
     "http://auth.openai.com/",
