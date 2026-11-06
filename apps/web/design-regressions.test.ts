@@ -292,3 +292,8 @@ test("sidebar rows, creation and Original chat share a 24px icon column and text
  assert.match(css, /sidebar-new \{ display: grid; grid-template-columns: 24px minmax\(0, 1fr\) auto; gap: 8px; padding: 8px 10px/);
  assert.match(css, /sidebar-original \{ display: grid; grid-template-columns: 24px minmax\(0, 1fr\); align-items: center; gap: 8px; width: 100%; padding: 8px 10px/);
 });
+
+test("narrow scope artwork centres beside the whole two-line title", () => {
+ assert.match(css, /scope-title \.scope-head > \.avatar-tile[^}]*grid-row: 1 \/ 3; align-self: center/);
+ assert.match(css, /scope-title \.narrow-setup-context \{ grid-column: 2; grid-row: 2/);
+});

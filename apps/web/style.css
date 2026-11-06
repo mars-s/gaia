@@ -1613,3 +1613,11 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .settings-index button[aria-current] { color: var(--color-ink); font-weight: 500; }
 
 .sidebar-new .new-icon, .sidebar-original .sidebar-glyph { width: 24px; flex-shrink: 0; }
+
+@media (max-width: 639px) {
+ .scope-title { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 8px; align-items: center; min-width: 0; }
+ .scope-title .scope-head { display: contents; }
+ .scope-title .scope-head > .avatar-tile, .scope-title .scope-head > svg { grid-column: 1; grid-row: 1 / 3; align-self: center; }
+ .scope-title .scope-head > .truncate { grid-column: 2; grid-row: 1; color: var(--color-ink); font-size: 14px; line-height: 20px; font-weight: 500; }
+ .scope-title .narrow-setup-context { grid-column: 2; grid-row: 2; }
+}
