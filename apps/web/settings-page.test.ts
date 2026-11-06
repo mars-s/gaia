@@ -57,7 +57,9 @@ test("Settings folds the interview offer into About you without a Skip action", 
 test("Settings has an Account group, clear update copy and separated sections", () => {
   const read = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
   assert.match(read("./app.tsx"), /id="plan-title" aria-label="Account" data-label="Account">Plan/);
-  assert.match(read("./app.tsx"), /ChatGPT plan<\/span>[\s\S]*?\\u202f·\\u202f"\}Connected/);
+  assert.match(read("./app.tsx"), /<PlanAccounts/);
+  assert.match(read("./plan-sign-in.tsx"), /\\u202f·\\u202f/);
+  assert.match(read("./plan-sign-in.tsx"), /connected \? "Connected" : "Not connected"/);
   assert.match(read("./managed-settings.tsx"), /Updates Gaia has made to itself. You can undo applied updates here./);
   assert.match(read("./style.css"), /settings-section \+ .settings-section[^}]*border-top: 1px/);
   assert.match(read("./style.css"), /settings-section h2[^}]*var\(--text-headline-medium\)[^}]*font-weight: 600/);

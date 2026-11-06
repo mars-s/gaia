@@ -108,3 +108,14 @@ export function subscribe(
     clearTimeout(timer);
   };
 }
+
+export function connectPlan(
+  provider: import("../protocol/index.ts").PlanProvider,
+) {
+  return command("auth/connect", { provider });
+}
+export function disconnectPlan(
+  provider: import("../protocol/index.ts").PlanProvider,
+) {
+  return command("auth/disconnect", { provider });
+}

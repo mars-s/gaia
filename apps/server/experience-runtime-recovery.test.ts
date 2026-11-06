@@ -17,7 +17,7 @@ for (const terminal of [false, true])
       const dir = await mkdtemp(join(tmpdir(), "gaia-experience-crash-"));
       const requestId = randomUUID();
       const script = `
- import { createPi } from './apps/server/pi.ts';
+  import { createPi } from './apps/server/pi.ts';
  import { createAuth } from './apps/server/auth.ts';
  import { openDatabase } from './apps/server/server.ts';
  import { defineExtension,defineTool } from '@earendil-works/pi-durable';
@@ -31,6 +31,7 @@ for (const terminal of [false, true])
  const dir=${JSON.stringify(dir)};
  const db=await openDatabase(dir),auth=createAuth(db);
  const faux=fauxProvider({provider:'openai-codex',models:[{id:'gpt-6.1-sol',reasoning:true}],tokensPerSecond:100000});faux.models[0].thinkingLevelMap=auth.models.getModel('openai-codex','gpt-6.1-sol')?.thinkingLevelMap;auth.models.setProvider(faux.provider);
+  auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
  const extension=defineExtension({name:'effect-fixture',tools:[defineTool({name:'effect',description:'Owned scratch effect',parameters:{type:'object',properties:{},additionalProperties:false},replay:'unsafe',async execute(){await appendFile(join(dir,'effect.txt'),'once\\n');process.stdout.write('EFFECT\\n');${terminal ? "return {output:[{type:'text',text:'Scratch write completed'}]};" : "await new Promise(()=>{});throw new Error('unreachable');"}}})]});
  const pi=await createPi(join(dir,'pi.sqlite'),auth,[],{}, {experiencesEnabled:true,experiences:{extensions:[extension]}});
  process.stdout.write('SELECTION '+JSON.stringify(pi.controls())+'\\n');

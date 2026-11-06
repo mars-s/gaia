@@ -40,11 +40,34 @@ export const Thread = z.object({
   run: Run,
 });
 export type Thread = z.infer<typeof Thread>;
+export const PlanProvider = z.enum(["openai-codex", "anthropic"]);
+export type PlanProvider = z.infer<typeof PlanProvider>;
+export const AuthConnect = z
+  .object({ provider: PlanProvider.optional() })
+  .strict();
+export const AuthDisconnect = z.object({ provider: PlanProvider }).strict();
+const Plans = z.array(
+  z.object({
+    provider: PlanProvider,
+    connected: z.boolean(),
+    error: z.string().optional(),
+  }),
+);
 export const Connection = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("connected"), model: z.literal("gpt-6.1-sol") }),
-  z.object({ kind: z.literal("disconnected"), message: z.string() }),
+  z.object({
+    kind: z.literal("connected"),
+    model: z.string(),
+    plans: Plans.optional(),
+  }),
+  z.object({
+    kind: z.literal("disconnected"),
+    message: z.string(),
+    plans: Plans.optional(),
+  }),
   z.object({
     kind: z.literal("connecting"),
+    provider: PlanProvider.optional(),
+    plans: Plans.optional(),
     url: z.string().optional(),
     prompt: z.string().optional(),
   }),
@@ -60,6 +83,7 @@ export const Chat = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
+      provider: z.string().optional(),
       contextWindow: z.number(),
       capabilities: z
         .object({

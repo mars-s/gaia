@@ -41,6 +41,7 @@ async function fixture(small = false, realEffort = false) {
   });
   if (realEffort) faux.models[0].thinkingLevelMap = thinkingLevelMap;
   auth.models.setProvider(faux.provider);
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
   const open = () =>
     createPi(
       join(dir, "pi.sqlite"),

@@ -49,7 +49,7 @@ for (const tool of ["mac_shell", "agent_desktop"] as const) {
         const f = await experienceFixture(t, {
           directory: dir,
           extensionsForJob: (binding) => [
-            host.extension({ ...binding, generation: "fixture" }),
+            host.extension({ ...binding, generation: "fixture" }, "openai-codex"),
           ],
         });
         const s = await f.confirm();
@@ -287,7 +287,7 @@ test(
     const f = await experienceFixture(t, {
       directory: dir,
       extensionsForJob: (binding) => [
-        host.extension({ ...binding, generation: "fixture" }),
+        host.extension({ ...binding, generation: "fixture" }, "openai-codex"),
       ],
     });
     const s = await f.confirm("channels");
@@ -416,7 +416,7 @@ test(
     const f = await experienceFixture(t, {
       directory: dir,
       extensionsForJob: (binding) => [
-        host.extension({ ...binding, generation: "fixture" }),
+        host.extension({ ...binding, generation: "fixture" }, "openai-codex"),
       ],
     });
     const s = await f.confirm();

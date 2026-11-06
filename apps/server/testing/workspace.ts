@@ -63,6 +63,7 @@ export async function workspaceFixture(
         "gpt-6.1-sol",
       )?.thinkingLevelMap;
     auth.models.setProvider(faux.provider);
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
     const pi = await createPi(
       join(dir, "pi.sqlite"),
       auth,

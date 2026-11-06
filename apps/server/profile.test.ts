@@ -270,6 +270,7 @@ test("real Pi tool round proposes only, and confirmed context survives reopen wi
     tokensPerSecond: 100000,
   });
   auth.models.setProvider(faux.provider);
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
   const p = openOwnerProfile(db);
   p.action("start");
   const path = join(dir, "pi.sqlite");
@@ -353,6 +354,7 @@ test("sequential Pi setup retains explicit answers across reopen and asks only t
     tokensPerSecond: 100000,
   });
   auth.models.setProvider(faux.provider);
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
   const profile = openOwnerProfile(db);
   profile.action("start");
   let pi = await createPi(join(dir, "pi.sqlite"), auth);

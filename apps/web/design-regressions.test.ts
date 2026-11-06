@@ -243,7 +243,8 @@ test("setup status uses plain dotted text and account separator uses non-breakin
   const status = css.match(/\.setup-status-badge \{([^}]+)\}/)?.[1] ?? "";
   assert.doesNotMatch(status, /border:|background:|padding:/);
   assert.match(css, /setup-status-badge::before[^}]*background: currentColor/);
-  assert.ok(read("./app.tsx").includes('"\\u202f·\\u202f"}Connected'));
+  assert.ok(read("./plan-sign-in.tsx").includes('"\\u202f·\\u202f"}'));
+  assert.match(read("./plan-sign-in.tsx"), /connected \? "Connected" : "Not connected"/);
   assert.match(read("./experiences/proposal.tsx"), /channels: \{ label: "Shared channels"/);
 });
 

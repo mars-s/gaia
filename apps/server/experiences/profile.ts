@@ -1,3 +1,8 @@
+import {
+  planModels,
+  defaultPlanModel,
+  type PlanAvailability,
+} from "../../../core/plan-models.ts";
 import { digest } from "./storage.ts";
 import { createAdmission } from "./admission.ts";
 import { createJobTask, scopeIn, jobIn } from "./jobs.ts";
@@ -42,6 +47,7 @@ import type { OwnerState } from "../../../packages/sdk/onboarding.ts";
 
 export type ProfileOptions = {
   models: Models;
+  planAvailability?: PlanAvailability;
   readOwner?(): OwnerState | undefined;
   env?: HarnessOptions["env"];
   extensions?: Extension[];
@@ -50,6 +56,7 @@ export type ProfileOptions = {
     scopeId: ScopeId;
     jobId: string;
     conversationId: ConversationId;
+    provider?: string;
   }): readonly Extension[] | Promise<readonly Extension[]>;
   capabilities:
     | z.infer<typeof ExperienceCapabilities>
@@ -127,6 +134,7 @@ export async function openProfile(
     anchor,
     readOwner: options.readOwner,
     models: options.models,
+    planAvailability: options.planAvailability,
   });
   const tools = createExperienceTools({
     read,
@@ -155,6 +163,9 @@ export async function openProfile(
         scopeId: job.public.scopeId,
         jobId: job.public.id,
         conversationId: job.workerId,
+        provider: options.models
+          .getModels()
+          .find((model) => model.id === job.selection.modelId)?.provider,
       })) ?? []
     ).map(trackedExtension);
     for (const extension of extensions) registry.install(extension);
@@ -208,15 +219,18 @@ export async function openProfile(
             };
   });
   function liveModels() {
-    return options.models.getModels("openai-codex").map((model) => ({
-      id: model.id,
-      name: model.name,
-      contextWindow: model.contextWindow,
-      capabilities: {
-        images: model.input.includes("image"),
-        thinkingLevels: effortLevels(model),
-      },
-    }));
+    return planModels(options.models, options.planAvailability).map(
+      (model) => ({
+        id: model.id,
+        name: model.name,
+        provider: model.provider,
+        contextWindow: model.contextWindow,
+        capabilities: {
+          images: model.input.includes("image"),
+          thinkingLevels: effortLevels(model),
+        },
+      }),
+    );
   }
   async function addScope(
     state: State,
@@ -226,9 +240,14 @@ export async function openProfile(
     const conversation = await tx.createConversation({
       ownership: { kind: "ownerless" },
     });
-    const selection = state.initialSelection ?? { modelId: "gpt-6.1-sol", thinkingLevel: "high" as const };
+    const selection = state.initialSelection ?? {
+      modelId: defaultPlanModel(options.models, options.planAvailability).modelId,
+      thinkingLevel: "high" as const,
+    };
+    const provider = options.models.getModels().find(model => model.id === selection.modelId)?.provider
+      ?? defaultPlanModel(options.models, options.planAvailability).provider;
     await configure(tx, conversation.id, {
-      model: { provider: "openai-codex", modelId: selection.modelId },
+      model: { provider, modelId: selection.modelId },
       thinkingLevel: selection.thinkingLevel,
       instructions:
         "Passive scope context ledger. Never execute owner inputs here.",
@@ -251,7 +270,7 @@ export async function openProfile(
         // Old GOOD requires this cache. Active reads and validation use Pi's live catalogue.
         models: liveModels(),
         modelId: selection.modelId,
-        thinkingLevel: selection.thinkingLevel,
+        ...(selection.thinkingLevel === undefined ? {} : { thinkingLevel: selection.thinkingLevel }),
         compaction: { kind: "idle" },
       },
       messages: [],
@@ -444,6 +463,7 @@ export async function openProfile(
           harness,
           options.models,
           ctx,
+          options.planAvailability,
         );
         await adapter.configure(input.modelId, input.thinkingLevel);
         await mutate((state) => {
@@ -482,6 +502,7 @@ export async function openProfile(
           harness,
           options.models,
           ctx,
+          options.planAvailability,
         );
         const kind = await adapter.compact(new AbortController().signal);
         const context = await conversation.context(ctx);

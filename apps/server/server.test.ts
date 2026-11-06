@@ -287,3 +287,112 @@ test("raw HTTP preserves split UTF-8 and malformed targets return 400 without cr
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("disconnect during pending login returns a plain 409 without calling logout", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-login-conflict-"));
+  let logoutCalls = 0;
+  const live = await boot(dir, {
+    ...auth,
+    status: () => ({ kind: "connecting", provider: "anthropic" }),
+    async disconnect() {
+      logoutCalls++;
+      throw new Error("Finish signing in before disconnecting a plan.");
+    },
+  });
+  try {
+    const response = await live.request("/api/v1/auth/disconnect", "POST", {
+      provider: "anthropic",
+    });
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), {
+      error: "Finish signing in first.",
+    });
+    assert.equal(logoutCalls, 0);
+  } finally {
+    await live.app.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("disconnect store errors return a safe 503 and concurrent writes get 409", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-disconnect-lock-"));
+  let release = () => {};
+  let started = () => {};
+  const began = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const live = await boot(dir, {
+    ...auth,
+    async disconnect() {
+      started();
+      await hold;
+      throw new Error("synthetic private database detail");
+    },
+  });
+  try {
+    const disconnect = live.request("/api/v1/auth/disconnect", "POST", {
+      provider: "anthropic",
+    });
+    await began;
+    const send = await live.request("/api/v1/messages", "POST", {
+      text: "must not start",
+      requestId: randomUUID(),
+    });
+    assert.equal(send.status, 409);
+    release();
+    const result = await disconnect;
+    assert.equal(result.status, 503);
+    assert.deepEqual(await result.json(), {
+      error: "The plan could not be disconnected. Try again shortly.",
+    });
+    assert.equal((await settled(live.request)).thread.messages.length, 0);
+  } finally {
+    release();
+    await live.app.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("a second connect during pending login returns 409", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-second-connect-"));
+  const live = await boot(dir, {
+    ...auth,
+    status: () => ({ kind: "connecting", provider: "openai-codex" }),
+    connect() {
+      assert.fail("must not start another login");
+    },
+  });
+  try {
+    const result = await live.request("/api/v1/auth/connect", "POST", {
+      provider: "anthropic",
+    });
+    assert.equal(result.status, 409);
+    assert.deepEqual(await result.json(), {
+      error: "Finish signing in first.",
+    });
+  } finally {
+    await live.app.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+import { experienceFixture } from "./testing/experiences.ts";
+test("disconnect refuses active independent jobs", async (t) => {
+  const f = await experienceFixture(t);
+  assert(f.pi.experiences);
+  f.pi.experiences.busy = async () => ({
+    admissionOpen: true,
+    jobs: 1,
+    operations: 0,
+  });
+  const response = await f.request("auth/disconnect", {
+    provider: "anthropic",
+  });
+  assert.equal(response.status, 409);
+  assert.deepEqual(await response.json(), {
+    error: "Wait for active jobs to finish before disconnecting a plan.",
+  });
+});

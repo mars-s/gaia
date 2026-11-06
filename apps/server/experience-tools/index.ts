@@ -3,6 +3,7 @@ import { mkdir, open, readFile, rename, readdir } from "node:fs/promises";
 import { join, isAbsolute } from "node:path";
 import {
   defineExtension,
+  section,
   type ToolExecutionApi,
   type ToolExecutionResult,
 } from "@earendil-works/pi-durable";
@@ -322,10 +323,20 @@ export async function createExperienceToolHost(
       finish();
     }
   }
-  function extension(value: ToolBinding) {
+  function extension(value: ToolBinding, provider?: string) {
     const binding = Object.freeze(Binding.parse(value));
     return defineExtension({
       name: `gaia-experience-tools-${binding.jobId}`,
+      sections:
+        provider === "openai-codex"
+          ? []
+          : [
+              section(
+                "hosted-search-availability",
+                () =>
+                  "Hosted web search is unavailable for this model in Gaia. Choose a ChatGPT model to use hosted search. Do not claim to have searched the web.",
+              ),
+            ],
       tools: [
         defineClassifiedTool("read", {
           name: "search_web",
@@ -483,7 +494,9 @@ export async function createExperienceToolHost(
             );
           },
         }),
-      ],
+      ].filter(
+        (tool) => tool.name !== "search_web" || provider === "openai-codex",
+      ),
     });
   }
   async function quiesce() {

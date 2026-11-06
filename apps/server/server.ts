@@ -10,6 +10,9 @@ import {
   ModelSelection,
   type Chat,
   AuthReply,
+  AuthConnect,
+  AuthDisconnect,
+  type PlanProvider,
   Empty,
   Thread,
   type Snapshot,
@@ -35,7 +38,8 @@ import {
 } from "./workspace-http.ts";
 export interface AuthService {
   status(): Connection;
-  connect(): void;
+  connect(provider?: PlanProvider): void;
+  disconnect?(provider: PlanProvider): Promise<void>;
   reply(value: string): void;
   close(): Promise<void>;
 }
@@ -139,8 +143,10 @@ export function createChatServer({
       }
     | undefined;
   let closing = false;
+  let disconnecting = false;
   function requireIdle() {
     if (closing) throw new HttpError(503, "Gaia is shutting down.");
+    if (disconnecting) throw new HttpError(409, "A plan is disconnecting. Try again shortly.");
     if (active || thread.run.kind === "running")
       throw new HttpError(409, "Work is already running.");
   }
@@ -177,7 +183,7 @@ export function createChatServer({
   ) {
     requireIdle();
     if (auth.status().kind !== "connected")
-      throw new HttpError(409, "Connect ChatGPT before sending.");
+      throw new HttpError(409, "Connect a plan before sending.");
     const model = adapter
       .controls?.()
       .models.find(
@@ -282,7 +288,7 @@ export function createChatServer({
           : {
               kind: "error",
               message:
-                "Sol could not finish this reply. Check your ChatGPT connection, then retry.",
+                "Sol could not finish this reply. Check your plan connection, then retry.",
             };
       })
       .finally(() => {
@@ -367,7 +373,8 @@ export function createChatServer({
       if (req.method === "GET" && url.pathname === "/healthz")
         return json(200, { ok: true });
       if (req.method === "GET") {
-        const experience = await experienceRoutes(req, res, url.pathname);
+        if (disconnecting) throw new HttpError(409, "A plan is disconnecting. Try again shortly.");
+      const experience = await experienceRoutes(req, res, url.pathname);
         if (experience) {
           if ("stream" in experience) return;
           return json(experience.status, experience.value);
@@ -383,7 +390,7 @@ export function createChatServer({
         });
       if (req.method === "GET" && url.pathname === "/api/v1/profile") {
         if (auth.status().kind !== "connected")
-          throw new HttpError(409, "Connect ChatGPT first.");
+          throw new HttpError(409, "Connect a plan first.");
         return json(200, profile.read());
       }
       if (req.method === "GET" && url.pathname === "/api/v1/state")
@@ -393,7 +400,7 @@ export function createChatServer({
         url.pathname.startsWith("/api/v1/attachments/")
       ) {
         if (auth.status().kind !== "connected")
-          throw new HttpError(409, "Connect ChatGPT first.");
+          throw new HttpError(409, "Connect a plan first.");
         const stored = attachments.read(
           url.pathname.slice("/api/v1/attachments/".length),
         );
@@ -444,6 +451,7 @@ export function createChatServer({
         res.setHeader("Retry-After", "2");
         throw new HttpError(503, "Gaia is checking a release. Retry shortly.");
       }
+      if (disconnecting) throw new HttpError(409, "A plan is disconnecting. Try again shortly.");
       const experience = await experienceRoutes(req, res, url.pathname, input);
       if (experience) {
         if ("stream" in experience) return;
@@ -461,7 +469,6 @@ export function createChatServer({
         [
           "/api/v1/stop",
           "/api/v1/retry",
-          "/api/v1/auth/connect",
           "/api/v1/compact",
         ].includes(url.pathname) &&
         !Empty.safeParse(input).success
@@ -481,7 +488,7 @@ export function createChatServer({
               : "Expected an empty object.",
           );
         if (auth.status().kind !== "connected")
-          throw new HttpError(409, "Connect ChatGPT first.");
+          throw new HttpError(409, "Connect a plan first.");
         if (action === "skip" && active?.scope === "home") {
           active.controller.abort();
           await active.done.catch(() => {});
@@ -507,7 +514,7 @@ export function createChatServer({
             );
           requireIdle();
           if (auth.status().kind !== "connected")
-            throw new HttpError(409, "Connect ChatGPT first.");
+            throw new HttpError(409, "Connect a plan first.");
           const controls = adapter.controls?.();
           if (
             !controls?.models.find((model) => model.id === controls.modelId)
@@ -563,7 +570,7 @@ export function createChatServer({
           if (!adapter.controls || !adapter.configure || !adapter.compact)
             throw new HttpError(409, "Chat controls are unavailable.");
           if (auth.status().kind !== "connected")
-            throw new HttpError(409, "Connect ChatGPT before compacting.");
+            throw new HttpError(409, "Connect a plan before compacting.");
           const compact = adapter.compact.bind(adapter);
           compaction = {
             kind: "running",
@@ -652,9 +659,31 @@ export function createChatServer({
           run(last.text, randomUUID(), false, last.selection, last.attachments);
           break;
         }
-        case "/api/v1/auth/connect":
-          auth.connect();
+        case "/api/v1/auth/connect": {
+          const parsed = AuthConnect.safeParse(input);
+          if (!parsed.success) throw new HttpError(400, "Choose ChatGPT or Claude.");
+          if (auth.status().kind === "connecting") throw new HttpError(409, "Finish signing in first.");
+          auth.connect(parsed.data.provider);
           break;
+        }
+        case "/api/v1/auth/disconnect": {
+          const parsed = AuthDisconnect.safeParse(input);
+          if (!parsed.success) throw new HttpError(400, "Choose ChatGPT or Claude.");
+          if (!auth.disconnect) throw new HttpError(409, "Plan disconnect is unavailable.");
+          if (auth.status().kind === "connecting") throw new HttpError(409, "Finish signing in first.");
+          requireIdle();
+          disconnecting = true;
+          try {
+            const busy = await adapter.experiences?.busy();
+            if (busy && (busy.jobs || busy.operations))
+              throw new HttpError(409, "Wait for active jobs to finish before disconnecting a plan.");
+            await auth.disconnect(parsed.data.provider);
+          } catch (error) {
+            if (error instanceof HttpError) throw error;
+            throw new HttpError(503, "The plan could not be disconnected. Try again shortly.");
+          } finally { disconnecting = false; }
+          break;
+        }
         case "/api/v1/auth/reply": {
           const parsed = AuthReply.safeParse(input);
           if (!parsed.success)

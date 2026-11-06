@@ -16,11 +16,18 @@ export async function conformance(stage: string) {
   await mkdir(join(stage, ".scratch"), { recursive: true });
   const dir = await mkdtemp(join(stage, ".scratch/conformance-"));
   const origins: string[] = [];
+  const connections: (string | undefined)[] = [];
+  const disconnections: string[] = [];
   const app = create({
     db: await open(dir),
     auth: {
       status: () => ({ kind: "connected", model: "gpt-6.1-sol" }),
-      connect() {},
+      connect(provider) {
+        connections.push(provider);
+      },
+      async disconnect(provider) {
+        disconnections.push(provider);
+      },
       reply() {},
       async close() {},
     },
@@ -40,6 +47,33 @@ export async function conformance(stage: string) {
   origins.push(base);
   try {
     assert.equal((await fetch(base + "/healthz")).status, 200);
+    const command = (path: string, input: unknown) =>
+      fetch(base + "/api/v1/" + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+    for (const provider of [undefined, "openai-codex", "anthropic"]) {
+      const response = await command(
+        "auth/connect",
+        provider ? { provider } : {},
+      );
+      assert.equal(response.status, 202);
+      Snapshot.parse(await response.json());
+    }
+    assert.deepEqual(connections, [undefined, "openai-codex", "anthropic"]);
+    assert.equal(
+      (await command("auth/connect", { provider: "api-key" })).status,
+      400,
+    );
+    assert.equal((await command("auth/disconnect", {})).status, 400);
+    for (const provider of ["anthropic", "openai-codex"]) {
+      const response = await command("auth/disconnect", { provider });
+      assert.equal(response.status, 202);
+      Snapshot.parse(await response.json());
+    }
+    assert.deepEqual(disconnections, ["anthropic", "openai-codex"]);
+
     const response = await fetch(base + "/api/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

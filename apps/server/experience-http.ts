@@ -30,7 +30,7 @@ export function createExperienceRoutes(
     if (parts[0] !== "api" || parts[1] !== "v1" || parts[2] !== "experiences")
       return undefined;
     if (!runtime) throw new HttpError(404, "Experiences are unavailable.");
-    if (!connected()) throw new HttpError(409, "Connect ChatGPT first.");
+    if (!connected()) throw new HttpError(409, "Connect a plan first.");
     const parse = <T>(schema: z.ZodType<T>) => {
       const value = schema.safeParse(input);
       if (!value.success)

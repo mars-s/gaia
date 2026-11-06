@@ -1,3 +1,4 @@
+import { ClaudeSignIn, PlanAccounts } from "./plan-sign-in";
 import { useTranscriptFollow } from "./use-transcript-follow";
 import { EmptyChat } from "./empty-chat";
 import { OfflineNotice } from "./progress-row";
@@ -411,24 +412,10 @@ export function App() {
               >
                 {/* Plan is the frozen capture text hook. Account is the visible and accessible name. */}
                 <h2 id="plan-title" aria-label="Account" data-label="Account">Plan</h2>
-                <div className="settings-plan-row">
-                  <div className="plan-status">
-                    <span>ChatGPT plan</span>
-                    <span className="text-text-secondary">{"\u202f·\u202f"}Connected</span>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="small"
-                    disabled={pending || running || offline}
-                    onClick={() =>
-                      void act("auth/connect").then((ok) => {
-                        if (ok) setAccountOpen(false);
-                      })
-                    }
-                  >
-                    Reconnect
-                  </Button>
-                </div>
+                <PlanAccounts connection={connection} disabled={pending || running || offline}
+                  onConnect={(provider) => { void act("auth/connect", { provider }); }}
+                  onDisconnect={(provider) => { void act("auth/disconnect", { provider }); }}
+                />
               </section>
               <section
                 className="settings-section"
@@ -500,7 +487,7 @@ export function App() {
                     Finish signing in
                   </h1>
                   <p className="text-text-secondary">
-                    Sign in to ChatGPT in your browser, then come back here.
+                    Sign in to {connection.provider === "anthropic" ? "Claude" : "ChatGPT"} in your browser, then come back here.
                   </p>
                 </div>
                 <Button
@@ -512,7 +499,7 @@ export function App() {
                   Open browser again
                 </Button>
                 <p className="welcome-caption">
-                  Sign in with your ChatGPT plan. No API key needed.
+                  Sign in with your {connection.provider === "anthropic" ? "Claude" : "ChatGPT"} plan. No API key needed.
                 </p>
                 {browserError && (
                   <p role="alert" className="text-text-error-primary">
@@ -520,7 +507,7 @@ export function App() {
                   </p>
                 )}
                 {connection.prompt && (
-                  <details className="auth-help text-text-secondary">
+                  <details open={connection.provider === "anthropic"} className="auth-help text-text-secondary">
                     <summary className="cursor-pointer rounded-md text-caption-1-medium outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring">
                       Having trouble?
                     </summary>
@@ -579,6 +566,7 @@ export function App() {
                 >
                   {pending ? "Connecting…" : "Continue with ChatGPT"}
                 </SocialButton>
+                <ClaudeSignIn disabled={pending || offline} onConnect={() => void act("auth/connect", { provider: "anthropic" })} />
                 {connection?.kind === "disconnected" && connection.message &&
                   connection.message !== "Connect your plan to begin." && (
                     <p className="welcome-caption">{connection.message}</p>

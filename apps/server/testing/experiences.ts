@@ -94,6 +94,7 @@ export async function experienceFixture(
       "gpt-6.1-sol",
     )?.thinkingLevelMap;
     auth.models.setProvider(faux.provider);
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
     const pi = await createPi(
       join(dir, "pi.sqlite"),
       auth,
@@ -122,6 +123,7 @@ export async function experienceFixture(
             ? { kind: "connected", model: "gpt-6.1-sol" }
             : { kind: "disconnected", message: "Connect first" },
         connect() {},
+        disconnect: (provider) => auth.disconnect(provider),
         reply() {},
         close: () => auth.close(),
       },

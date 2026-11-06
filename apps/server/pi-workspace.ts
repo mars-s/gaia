@@ -157,7 +157,12 @@ export async function createWorkspaceChat(
       const result = await workspace.confirm(
         input,
         {
-          model: { provider: "openai-codex", modelId: controls.modelId },
+          model: {
+            provider:
+              controls.models.find((model) => model.id === controls.modelId)
+                ?.provider ?? "openai-codex",
+            modelId: controls.modelId,
+          },
           thinkingLevel: controls.thinkingLevel ?? "off",
         },
         ctx,

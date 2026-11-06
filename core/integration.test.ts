@@ -346,6 +346,7 @@ test(
             tokensPerSecond: 100000,
           });
           auth.models.setProvider(faux.provider);
+          auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
           const reason = "Model-authored source fixture";
           faux.setResponses([
             (context) => {
