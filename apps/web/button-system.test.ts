@@ -11,6 +11,7 @@ import { SetupSettings } from "./experiences";
 import { ExperienceProposalNotice } from "./experiences/proposal";
 import { createExperienceController } from "./experiences/controller";
 import { experienceFixture } from "../server/testing/experiences";
+import { SettingsIndex } from "./settings-index";
 import { AppearancePicker } from "./appearance";
 import { ChatSwitcher } from "./chat-switcher";
 import { homeSnapshot } from "./conversation-fixtures";
@@ -32,6 +33,7 @@ test("main screens render every button with exactly one of the three action clas
   controller.profiles = [{ ...proposal, kind: "ready" }];
   const screens = [
     createElement(AppearancePicker),
+    createElement(SettingsIndex, {current: "plan-title", onSelect() {}}),
     createElement(ChatSwitcher, { profiles: [], currentId: null, mainId: null, onSelect() {} }),
     createElement(SocialButton, { brand: "custom", config: { label: "ChatGPT", icon: "" } }),
     ...[false, true].map(account => createElement(ProfilePanel, {
@@ -50,5 +52,5 @@ test("main screens render every button with exactly one of the three action clas
   ];
   let count = 0;
   for (const screen of screens) count += buttons(renderToStaticMarkup(screen)).length;
-  assert.equal(count, 20);
+  assert.equal(count, 26);
 });
