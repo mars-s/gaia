@@ -1,3 +1,4 @@
+import { planModels, defaultPlanModel } from "../../../core/plan-models.ts";
 import { digest } from "./storage.ts";
 import { createAdmission } from "./admission.ts";
 import { createJobTask, scopeIn, jobIn } from "./jobs.ts";
@@ -208,9 +209,10 @@ export async function openProfile(
             };
   });
   function liveModels() {
-    return options.models.getModels("openai-codex").map((model) => ({
+    return planModels(options.models).map((model) => ({
       id: model.id,
       name: model.name,
+      provider: model.provider,
       contextWindow: model.contextWindow,
       capabilities: {
         images: model.input.includes("image"),
@@ -227,7 +229,7 @@ export async function openProfile(
       ownership: { kind: "ownerless" },
     });
     await configure(tx, conversation.id, {
-      model: { provider: "openai-codex", modelId: "gpt-6.1-sol" },
+      model: defaultPlanModel(options.models),
       thinkingLevel: "high",
       instructions:
         "Passive scope context ledger. Never execute owner inputs here.",
@@ -249,7 +251,7 @@ export async function openProfile(
       chat: {
         // Old GOOD requires this cache. Active reads and validation use Pi's live catalogue.
         models: liveModels(),
-        modelId: "gpt-6.1-sol",
+        modelId: defaultPlanModel(options.models).modelId,
         thinkingLevel: "high",
         compaction: { kind: "idle" },
       },

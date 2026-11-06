@@ -1,3 +1,4 @@
+import type { Models } from "@earendil-works/pi-ai";
 import { z } from "zod";
 import { BACKGROUND_CONTEXT as ctx } from "@earendil-works/chord/context";
 import { defineTask, type Harness, type Tx } from "@earendil-works/pi-durable";
@@ -60,10 +61,18 @@ export function jobIn(state: State, jobId: string) {
   if (!job) throw new HttpError(404, "Unknown experience job.");
   return job;
 }
-async function settle(tx: Tx, jobId: string, outcome: ExperienceJob["state"]) {
+async function settle(
+  tx: Tx,
+  models: Models,
+  jobId: string,
+  outcome: ExperienceJob["state"],
+) {
   const doc = await tx.doc(ProfileDoc);
   const state = State.parse(doc);
   const job = jobIn(state, jobId);
+  const selectedModel = models
+    .getModels()
+    .find((model) => model.id === job.selection.modelId);
   if (terminal(job.public)) return;
   // Use the transaction's current evidence, including receipts written during abort.
   if (job.invocations.length) outcome = uncertain(job);
@@ -122,8 +131,8 @@ async function settle(tx: Tx, jobId: string, outcome: ExperienceJob["state"]) {
             text: JSON.stringify({ jobId, state: outcome, text }),
           },
         ],
-        api: "openai-codex-responses",
-        provider: "openai-codex",
+        api: selectedModel?.api ?? "openai-codex-responses",
+        provider: selectedModel?.provider ?? "openai-codex",
         model: job.selection.modelId,
         usage: {
           input: 0,
@@ -319,6 +328,7 @@ export function createJobTask({
           await runtime.commit(async (tx) => {
             await settle(
               tx,
+              options.models,
               task.input.jobId,
               final.invocations.length
                 ? uncertain(final)
@@ -341,6 +351,7 @@ export function createJobTask({
           await runtime.commit(async (tx) => {
             await settle(
               tx,
+              options.models,
               task.input.jobId,
               final.invocations.length
                 ? uncertain(final)
@@ -378,6 +389,7 @@ export function createJobTask({
         const job = jobIn(state, task.input.jobId);
         await settle(
           tx,
+          options.models,
           task.input.jobId,
           job.invocations.length
             ? {

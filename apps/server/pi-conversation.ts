@@ -1,3 +1,4 @@
+import { planModels, defaultPlanModel } from "../../core/plan-models.ts";
 import type { Context } from "@earendil-works/chord";
 import type {
   Conversation,
@@ -41,16 +42,29 @@ export async function conversationAdapter(
   const agent = await conversation.agent(ctx);
   let modelId = agent.model?.modelId ?? "gpt-6.1-sol";
   let thinkingLevel = agent.thinkingLevel;
-  const selected = models.getModel("openai-codex", modelId);
+  const lookup = (id: string) =>
+    planModels(models).find((model) => model.id === id);
+  const selected = lookup(modelId);
   if (selected) {
     thinkingLevel = supportedEffort(selected, thinkingLevel);
     if (thinkingLevel !== agent.thinkingLevel)
       await conversation.configure({ thinkingLevel }, ctx);
   }
+  async function ensureModel() {
+    if (!lookup(modelId)) {
+      const fallback = defaultPlanModel(models);
+      const model = lookup(fallback.modelId);
+      if (!model) throw new Error("Connect a plan to send a message.");
+      thinkingLevel = supportedEffort(model, thinkingLevel);
+      await conversation.configure({ model: fallback, thinkingLevel }, ctx);
+      modelId = fallback.modelId;
+    }
+  }
   const catalogue = () =>
-    models.getModels("openai-codex").map((model) => ({
+    planModels(models).map((model) => ({
       id: model.id,
       name: model.name,
+      provider: model.provider,
       contextWindow: model.contextWindow,
       capabilities: {
         images: model.input.includes("image"),
@@ -59,23 +73,26 @@ export async function conversationAdapter(
     }));
   return {
     imageLimits() {
-      const limits = models.getModel("openai-codex", modelId)?.inputLimits
-        ?.images?.resize;
+      const limits = lookup(modelId)?.inputLimits?.images?.resize;
       return {
         maxWidth: limits?.maxWidth ?? DEFAULT_IMAGE_LIMITS.maxWidth,
         maxHeight: limits?.maxHeight ?? DEFAULT_IMAGE_LIMITS.maxHeight,
         maxBytes: limits?.maxBytes ?? DEFAULT_IMAGE_LIMITS.maxBytes,
       };
     },
-    controls: () => ({ models: catalogue(), modelId, thinkingLevel }),
+    controls: () => ({
+      models: catalogue(),
+      modelId: lookup(modelId) ? modelId : defaultPlanModel(models).modelId,
+      thinkingLevel: lookup(modelId) ? thinkingLevel : undefined,
+    }),
     async configure(id, effort) {
-      const model = models.getModel("openai-codex", id);
-      if (!model) throw new Error("Unknown OpenAI model.");
+      const model = lookup(id);
+      if (!model) throw new Error("This model is not available now.");
       if (effort !== undefined && !effortLevels(model).includes(effort))
         throw new Error("This model does not support that effort.");
       await conversation.configure(
         {
-          model: { provider: "openai-codex", modelId: id },
+          model: { provider: model.provider, modelId: id },
           thinkingLevel: effort ?? supportedEffort(model, thinkingLevel),
         },
         ctx,
@@ -86,6 +103,7 @@ export async function conversationAdapter(
     },
     async compact(signal) {
       signal.throwIfAborted();
+      await ensureModel();
       const taskId = await conversation.compact(undefined, ctx);
       let stopping: Promise<unknown> | undefined;
       const abort = () => {
@@ -114,10 +132,8 @@ export async function conversationAdapter(
     },
     async run({ text, images = [], requestId, onText, signal }) {
       signal.throwIfAborted();
-      if (
-        images.length &&
-        !models.getModel("openai-codex", modelId)?.input.includes("image")
-      )
+      await ensureModel();
+      if (images.length && !lookup(modelId)?.input.includes("image"))
         throw new Error("This model does not accept images.");
       const submission = await conversation.submit(
         {

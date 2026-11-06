@@ -1,3 +1,4 @@
+import { registerPlanAvailability } from "../../core/plan-models.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
@@ -270,6 +271,7 @@ test("real Pi tool round proposes only, and confirmed context survives reopen wi
     tokensPerSecond: 100000,
   });
   auth.models.setProvider(faux.provider);
+    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
   const p = openOwnerProfile(db);
   p.action("start");
   const path = join(dir, "pi.sqlite");
@@ -353,6 +355,7 @@ test("sequential Pi setup retains explicit answers across reopen and asks only t
     tokensPerSecond: 100000,
   });
   auth.models.setProvider(faux.provider);
+    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
   const profile = openOwnerProfile(db);
   profile.action("start");
   let pi = await createPi(join(dir, "pi.sqlite"), auth);

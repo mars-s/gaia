@@ -10,6 +10,9 @@ import {
   ModelSelection,
   type Chat,
   AuthReply,
+  AuthConnect,
+  AuthDisconnect,
+  type PlanProvider,
   Empty,
   Thread,
   type Snapshot,
@@ -35,7 +38,8 @@ import {
 } from "./workspace-http.ts";
 export interface AuthService {
   status(): Connection;
-  connect(): void;
+  connect(provider?: PlanProvider): void;
+  disconnect?(provider: PlanProvider): Promise<void>;
   reply(value: string): void;
   close(): Promise<void>;
 }
@@ -461,7 +465,6 @@ export function createChatServer({
         [
           "/api/v1/stop",
           "/api/v1/retry",
-          "/api/v1/auth/connect",
           "/api/v1/compact",
         ].includes(url.pathname) &&
         !Empty.safeParse(input).success
@@ -652,9 +655,20 @@ export function createChatServer({
           run(last.text, randomUUID(), false, last.selection, last.attachments);
           break;
         }
-        case "/api/v1/auth/connect":
-          auth.connect();
+        case "/api/v1/auth/connect": {
+          const parsed = AuthConnect.safeParse(input);
+          if (!parsed.success) throw new HttpError(400, "Choose ChatGPT or Claude.");
+          auth.connect(parsed.data.provider);
           break;
+        }
+        case "/api/v1/auth/disconnect": {
+          const parsed = AuthDisconnect.safeParse(input);
+          if (!parsed.success) throw new HttpError(400, "Choose ChatGPT or Claude.");
+          if (!auth.disconnect) throw new HttpError(409, "Plan disconnect is unavailable.");
+          requireIdle();
+          await auth.disconnect(parsed.data.provider);
+          break;
+        }
         case "/api/v1/auth/reply": {
           const parsed = AuthReply.safeParse(input);
           if (!parsed.success)

@@ -1,3 +1,4 @@
+import { defaultPlanModel } from "../../core/plan-models.ts";
 import { SetupProposalPlan, setupPurposeGuidance } from "./setup-proposal.ts";
 import {
   ExperienceCreate,
@@ -238,7 +239,7 @@ export async function createPi(
     ctx,
   );
   const root = await harness.root(ctx, {
-    agent: { model: { provider: "openai-codex", modelId: "gpt-6.1-sol" } },
+    agent: { model: defaultPlanModel(auth.models) },
   });
   const home = await conversationAdapter(root, harness, auth.models, ctx);
   const workspace = await createWorkspaceChat(

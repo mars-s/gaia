@@ -1,3 +1,4 @@
+import { registerPlanAvailability } from "../../core/plan-models.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -41,6 +42,7 @@ async function fixture(small = false, realEffort = false) {
   });
   if (realEffort) faux.models[0].thinkingLevelMap = thinkingLevelMap;
   auth.models.setProvider(faux.provider);
+    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
   const open = () =>
     createPi(
       join(dir, "pi.sqlite"),
