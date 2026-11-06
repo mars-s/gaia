@@ -542,10 +542,6 @@ export function EffortControls({
       </p>
       {adjustable ? (
         <>
-          <div className="effort-ends" aria-hidden>
-            <span>Faster</span>
-            <span>Smarter</span>
-          </div>
           <div
             onKeyDownCapture={(event) => {
               if (event.key === "Home" || event.key === "End") {
@@ -580,6 +576,10 @@ export function EffortControls({
                 </Radio>
               ))}
             </RadioGroup>
+          </div>
+          <div className="effort-ends" aria-hidden>
+            <span>Faster</span>
+            <span>Smarter</span>
           </div>
           {!valid && (
             <p className="effort-caption">

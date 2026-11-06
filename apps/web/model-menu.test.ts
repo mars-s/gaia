@@ -343,3 +343,14 @@ test("narrow sheets dim through theme backdrop tokens and reserve safe bottom sp
  assert.match(css, /max-height: calc\(80dvh - 32px - env\(safe-area-inset-bottom\)\)/);
  assert.doesNotMatch(css, /dark .model-scrim/);
 });
+
+test("model rows select through the radio alone and effort captions follow the segments", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.doesNotMatch(css, /\.model-option\[data-selected\][^{]*\{[^}]*background:/);
+ const html = renderToStaticMarkup(createElement(EffortControls, {
+ model: {id: "test", name: "Test", contextWindow: 1000, capabilities: {images: true, thinkingLevels: ["low", "high"]}},
+ level: "low", disabled: false, onSelect() {},
+ }));
+ assert.match(html, /effort-header[^]*Effort[^]*effort-segments[^]*effort-ends[^]*Faster[^]*Smarter/);
+ assert.match(css, /effort-ends \{[^}]*font-size: 12px/);
+});
