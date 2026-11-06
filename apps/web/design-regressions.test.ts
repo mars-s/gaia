@@ -66,14 +66,12 @@ test("settings hierarchy, actions and status use the content grid", () => {
     /settings-content .quiet-action[^}]*text-decoration: none/,
   );
 });
-test("Gaia artwork has fixed pink and white pixels and is never a theme mask", () => {
-  const svg = read("./public/gaia-mark.svg");
-  assert.match(svg, /fill="#fa29a0"/);
-  assert.match(svg, /fill="white"/);
-  assert.doesNotMatch(
-    css,
-    /mask: url\("\/gaia-mark.svg"\)|gaia-mark \{ background: var/,
-  );
+test("Gaia orb, focus and effort selection share the primary accent", () => {
+  assert.match(css, /gaia-mark[^}]*radial-gradient[^}]*var\(--color-primary-fill\)/);
+  assert.match(css, /effort-cell\[data-selected\][^}]*background: var\(--color-primary-fill\);[^}]*color: var\(--color-primary-ink\)/);
+  const theme = read("./styles/theme.css");
+  assert.equal((theme.match(/--color-accent: var\(--color-primary-fill\)/g) ?? []).length, 2);
+  assert.equal((theme.match(/--color-focus: var\(--color-primary-fill\)/g) ?? []).length, 2);
 });
 test("setup shells have a sidebar header and identity-aware placeholder", () => {
   const view = read("./experiences/view.tsx");

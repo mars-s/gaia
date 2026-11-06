@@ -396,7 +396,8 @@ body {
   width: 28px;
   height: 28px;
   flex-shrink: 0;
-  background: url("/gaia-mark.svg") center / contain no-repeat;
+  border-radius: var(--radius-full);
+  background: radial-gradient(circle at 75% 25%, var(--color-primary-ink) 0 10%, transparent 11%), var(--color-primary-fill);
 }
 
 
@@ -1024,8 +1025,8 @@ a:focus-visible {
   color: var(--color-ink);
 }
 .effort-cell[data-selected] {
-  background: var(--color-surface-selected);
-  color: var(--color-ink);
+  background: var(--color-primary-fill);
+  color: var(--color-primary-ink);
   font-weight: 500;
 }
 .effort-cell[data-focus-visible] {
