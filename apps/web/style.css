@@ -1569,7 +1569,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 .reply-actions { margin-top: 8px; display: flex; justify-content: flex-start; }
 .reply-actions .copy-action { margin-top: 0; }
-.interview-slot { margin-top: var(--space-turn-gap); }
+.interview-slot, .proposal-list { margin-top: var(--space-turn-gap); }
 
 .settings-plan-row > div:last-child { align-items: center; }
 .settings-plan-row button { height: 28px; min-height: 28px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 13px; line-height: 18px; }

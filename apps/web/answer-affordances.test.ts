@@ -197,3 +197,10 @@ test("answer section headings use distinct semibold type scale steps", () => {
  const html = renderToStaticMarkup(createElement(MessageMarkdown, {text: "## Main heading\n\nBody\n\n### Section heading"}));
  assert.match(html, /<h2>Main heading<\/h2>[^]*<h3>Section heading<\/h3>/);
 });
+
+test("both kinds of proposal follow reply actions with normal turn spacing", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /interview-slot, .proposal-list \{ margin-top: var\(--space-turn-gap\)/);
+ const source = readFileSync(new URL("./experiences/proposal.tsx", import.meta.url), "utf8");
+ assert.match(source, /className="proposal-list flex min-w-0 flex-col gap-3"/);
+});

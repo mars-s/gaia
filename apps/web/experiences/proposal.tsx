@@ -59,7 +59,7 @@ export function ExperienceProposalNotice({
   return (
     <section
       aria-label="Proposed chat setup"
-      className="flex min-w-0 flex-col gap-3 py-4"
+      className="proposal-list flex min-w-0 flex-col gap-3"
     >
       {visible.map((proposal) => (
         <article
