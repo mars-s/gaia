@@ -1488,7 +1488,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .reply-error { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .reply-error-icon { display: inline-block; vertical-align: -3px; margin-right: 6px; padding: 0; width: 16px; height: 16px; }
 .reply-error > button:not(.inline-link) { margin-left: 0; }
-.reply-notice .failure-path { margin-left: 0; }
+.reply-notice .failure-path { margin-left: 0; margin-top: 8px; }
 .dark .draft-images .image-thumbnail img, .dark .draft-images .image-unavailable { background: var(--color-surface-selected); }
 
 .refresh-changes { display: inline-flex; align-items: center; gap: 4px; }

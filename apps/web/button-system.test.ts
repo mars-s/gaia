@@ -40,7 +40,7 @@ test("main screens render every button with exactly one of the three action clas
     createElement(ManagedSettings, { runtime: undefined }),
     createElement(SetupSettings, { controller, onOpen() {}, onBack() {}, onReviewConversation() {} }),
     createElement(ExperienceProposalNotice, { proposals: [proposal], disabled: false }),
-    createElement(ReplyNotice, { message: "Gaia couldn’t finish that reply.", onRetry() {}, onSettings() {} }),
+    createElement(ReplyNotice, { message: "Couldn’t finish that reply.", onRetry() {}, onSettings() {} }),
     ...[false, true].map(stopping => createElement(SharedComposer, {
       label: "Message Gaia", placeholder: "Message Gaia…", draft: "Hello", images: [], ready: true,
       supportsImages: true, actionsDisabled: false, modelDisabled: stopping, canSend: true,

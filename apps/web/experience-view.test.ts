@@ -451,7 +451,7 @@ test("failed, stopped, interrupted and uncertain jobs retain recovery controls",
     assert.match(markup, /Try again/);
     assert.doesNotMatch(markup, /job-avatar-pulse|aria-label="Stop PRIVATE/);
     assert.doesNotMatch(markup, /PRIVATE OWNER PROMPT/);
-    if (state.kind === "failed") assert.match(markup, /Gaia couldn’t finish that reply/);
+    if (state.kind === "failed") assert.match(markup, /Couldn’t finish that reply/);
     if (state.kind === "uncertain") assert.match(markup, /This may already have happened/);
     if (state.kind === "interrupted") assert.match(markup, /Interrupted. Not repeated automatically/);
     if (state.kind === "stopped") assert.match(markup, /Stopped/);

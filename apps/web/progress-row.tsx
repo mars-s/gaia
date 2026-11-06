@@ -120,7 +120,7 @@ export function FailurePath({
   message: string;
   onSettings?: () => void;
 }) {
-  if (message === "Gaia couldn’t finish that reply.")
+  if (message === "Couldn’t finish that reply.")
     return (
       <p className="failure-path">
         If this keeps happening, check your plan in{" "}
@@ -154,7 +154,7 @@ export function replyError(message: string): string {
     )
   )
     return "That model isn’t available now. Choose another to send.";
-  return "Gaia couldn’t finish that reply.";
+  return "Couldn’t finish that reply.";
 }
 
 export function OfflineNotice() {
