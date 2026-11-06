@@ -44,12 +44,14 @@ test("Settings rows separate names and layout text, identify exactly one main ch
     /Shared workspace 2 channels with shared memoryProposed/,
   );
   assert.match(text(rows()[3]), /My sessions 2 sessions with separate historiesHidden/);
-  assert.match(text(rows()[0]), /Original chat One conversationMainOpen now/);
+  assert.match(text(rows()[0]), /Original chat One conversationMainCurrent/);
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main</g) ?? []).length, 1);
-  assert.equal((render().match(/class="setup-open-now"><svg[^]*?<\/svg>Open now</g) ?? []).length, 1);
-  assert.doesNotMatch(render(), /Created|setup-status-badge|status-pill[^>]*>Open now/);
+  assert.equal((render().match(/class="setup-open-now"><svg[^]*?<\/svg>Current</g) ?? []).length, 1);
+  assert.doesNotMatch(render(), /Created|setup-status-badge|status-pill[^>]*>Current/);
   assert.match(rows()[1], /<button[^>]*class="[^"]*secondary-action[^"]*"[^]*Make main/);
   assert.doesNotMatch(rows()[0], /<button/);
+  assert.match(render(), /<li class="setup-list-row" data-current="true"/);
+  assert.doesNotMatch(rows()[1], /data-current/);
   assert.equal((render().match(/class="[^"]*\bsetup-layout-icon\b[^"]*"/g) ?? []).length, 4);
   assert.match(rows()[1], /Open/);
   assert.match(rows()[1], /Make main/);
@@ -57,7 +59,7 @@ test("Settings rows separate names and layout text, identify exactly one main ch
   assert.doesNotMatch(rows()[2], /Make main/);
   controller.mainId = bots.id;
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main</g) ?? []).length, 1);
-  assert.equal((render().match(/class="setup-open-now"><svg[^]*?<\/svg>Open now</g) ?? []).length, 1);
+  assert.equal((render().match(/class="setup-open-now"><svg[^]*?<\/svg>Current</g) ?? []).length, 1);
   assert.match(text(rows()[1]), /2 Bots with separate memoryMain/);
   assert.doesNotMatch(rows()[1], /Make main/);
   assert.match(rows()[0], /secondary-action[^]*Make main/);

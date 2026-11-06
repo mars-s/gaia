@@ -1572,3 +1572,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 .settings-plan-row > div:last-child { align-items: center; }
 .settings-plan-row button { height: 28px; min-height: 28px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 13px; line-height: 18px; }
+
+.setup-list-row[data-current="true"] { background: var(--color-surface-selected); border-radius: var(--radius-sm); }
