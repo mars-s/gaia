@@ -418,10 +418,11 @@ export function App() {
           <div className="reading-column">
             <section className="settings-content" aria-label="Settings">
               {settingsSection === "plan-title" && <section
-                className="settings-section"
+                className="settings-section account-section"
                 aria-labelledby="plan-title"
               >
                 <h2 tabIndex={-1} id="plan-title">Account</h2>
+                <p className="section-explainer">Gaia signs in with your own plan. No API keys. Saved sign-ins stay on this machine.</p>
                 <PlanAccounts connection={connection} disabled={pending || running || offline}
                   onConnect={(provider) => { void act("auth/connect", { provider }); }}
                   onDisconnect={(provider) => { void act("auth/disconnect", { provider }); }}

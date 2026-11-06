@@ -1535,7 +1535,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .setup-settings > ul { flex: none; }
 .setup-row-actions .status-pill { flex-shrink: 0; }
 
-.settings-plan-row { grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; column-gap: 12px; }
+.settings-plan-row { grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; column-gap: 12px; }
 .plan-mark svg { width: 20px; height: 20px; }
 .plan-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .plan-status > [role="alert"] { flex-basis: 100%; }
@@ -1559,3 +1559,10 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 @media (min-width: 640px) {
  .app-shell:has(.conversation-scroll[data-scrolled="true"]) .app-bar.has-side::after { left: 240px; }
 }
+
+.account-section { width: 100%; max-width: 640px; }
+.account-section .settings-plan-row { padding-block: 16px; border-bottom: 1px solid var(--color-line); }
+.plan-connection { display: inline-flex; align-items: center; gap: 6px; color: var(--color-ink-2); }
+.connection-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: var(--radius-full); background: var(--color-ink-3); }
+.plan-connection[data-connected="true"] .connection-dot { background: var(--color-notification-success-foreground); }
+.settings-content .plan-disconnect.quiet-action { color: var(--color-danger); }
