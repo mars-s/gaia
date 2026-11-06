@@ -19,7 +19,7 @@ for (const onlyClaude of [false, true]) {
       provider: "anthropic",
       models: [
         {
-          id: "synthetic-claude",
+          id: "claude-opus-5-5",
           name: "Synthetic Claude",
           input: ["text", "image"],
           reasoning: true,
@@ -44,8 +44,8 @@ for (const onlyClaude of [false, true]) {
     const pi = await createPi(join(dir, "pi.sqlite"), auth);
     try {
       assert.equal(pi.controls?.().models.length, onlyClaude ? 1 : 2);
-      if (!onlyClaude) await pi.configure?.("synthetic-claude");
-      assert.equal(pi.controls?.().modelId, "synthetic-claude");
+      if (!onlyClaude) await pi.configure?.("claude-opus-5-5");
+      assert.equal(pi.controls?.().modelId, "claude-opus-5-5");
       await pi.run({
         text: "hello",
         requestId: randomUUID(),
@@ -79,7 +79,7 @@ test("Claude-only setups admit and complete independent jobs through Pi", async 
   const claude = fauxProvider({
     provider: "anthropic",
     models: [
-      { id: "synthetic-claude", name: "Synthetic Claude", reasoning: true },
+      { id: "claude-opus-5-5", name: "Synthetic Claude", reasoning: true },
     ],
     tokensPerSecond: 100000,
   });
@@ -93,10 +93,10 @@ test("Claude-only setups admit and complete independent jobs through Pi", async 
   const profile = state.profile.id;
   const scope = state.scopes[0].id;
   const initial = await f.scope(profile, scope);
-  assert.equal(initial.chat.modelId, "synthetic-claude");
+  assert.equal(initial.chat.modelId, "claude-opus-5-5");
   assert.deepEqual(
     initial.chat.models.map((model) => model.id),
-    ["synthetic-claude"],
+    ["claude-opus-5-5"],
   );
   const admission = await f.send(profile, scope, "hello Claude");
   const job = await f.settled(profile, admission.jobId);

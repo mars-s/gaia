@@ -15,12 +15,25 @@ export function planModels(models: Models) {
 }
 export function defaultPlanModel(models: Models) {
   const catalogue = planModels(models);
-  const model =
-    catalogue.find(
-      (model) =>
-        model.provider === "openai-codex" && model.id === "gpt-6.1-sol",
-    ) ?? catalogue[0];
-  return model
-    ? { provider: model.provider, modelId: model.id }
-    : { provider: "openai-codex", modelId: "gpt-6.1-sol" };
+  const preferences = [
+    ["openai-codex", "gpt-6.1-sol"],
+    ["anthropic", "claude-opus-5-5"],
+    ["anthropic", "claude-sonnet-5-5"],
+    ["anthropic", "claude-opus-5"],
+    ["anthropic", "claude-sonnet-5"],
+    ["anthropic", "claude-opus-4-8"],
+    ["anthropic", "claude-sonnet-4-6"],
+    ["anthropic", "claude-haiku-4-5"],
+  ] as const;
+  for (const [provider, modelId] of preferences) {
+    if (
+      catalogue.some(
+        (model) => model.provider === provider && model.id === modelId,
+      )
+    )
+      return { provider, modelId };
+  }
+  if (catalogue.length)
+    throw new Error("Choose an available model before continuing.");
+  return { provider: "openai-codex", modelId: "gpt-6.1-sol" };
 }
