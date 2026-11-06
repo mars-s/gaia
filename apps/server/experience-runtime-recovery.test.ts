@@ -30,9 +30,10 @@ for (const terminal of [false, true])
  process.on("message",value=>{if(value==="crash")process.kill(process.pid,"SIGKILL");if(value==="close")process.exit(0);});
  const dir=${JSON.stringify(dir)};
  const db=await openDatabase(dir),auth=createAuth(db);
- const faux=fauxProvider({provider:'openai-codex',models:[{id:'gpt-6.1-sol',reasoning:true}],tokensPerSecond:100000});auth.models.setProvider(faux.provider);
+ const faux=fauxProvider({provider:'openai-codex',models:[{id:'gpt-6.1-sol',reasoning:true}],tokensPerSecond:100000});faux.models[0].thinkingLevelMap=auth.models.getModel('openai-codex','gpt-6.1-sol')?.thinkingLevelMap;auth.models.setProvider(faux.provider);
  const extension=defineExtension({name:'effect-fixture',tools:[defineTool({name:'effect',description:'Owned scratch effect',parameters:{type:'object',properties:{},additionalProperties:false},replay:'unsafe',async execute(){await appendFile(join(dir,'effect.txt'),'once\\n');process.stdout.write('EFFECT\\n');${terminal ? "return {output:[{type:'text',text:'Scratch write completed'}]};" : "await new Promise(()=>{});throw new Error('unreachable');"}}})]});
  const pi=await createPi(join(dir,'pi.sqlite'),auth,[],{}, {experiencesEnabled:true,experiences:{extensions:[extension]}});
+ process.stdout.write('SELECTION '+JSON.stringify(pi.controls())+'\\n');
  const proposal=await pi.experiences.create({requestId:${JSON.stringify(requestId)},plan:{layout:'single',title:'Crash fixture',assistantName:'Gaia',purpose:'Crash fixture',scopes:[{label:'Main',purpose:'Scratch crash fixture'}]}});
  const profile=await pi.experiences.resolve(proposal.id);const state=await profile.confirm(1);
  faux.setResponses([fauxAssistantMessage(fauxToolCall('effect',{}),{stopReason:'toolUse'}),fauxAssistantMessage('Durable actual result')]);
@@ -81,6 +82,12 @@ for (const terminal of [false, true])
       assert.equal(s.jobs.length, 1);
       const job = s.jobs[0];
       assert.equal(job.state.kind, terminal ? "completed" : "uncertain");
+      const selectionLine = output.split("\n").find((line) => line.startsWith("SELECTION "));
+      assert(selectionLine);
+      const sourceSelection = JSON.parse(selectionLine.slice("SELECTION ".length));
+      const restoredChat = (await f.scope(requestId, s.scopes[0].id)).chat;
+      assert.equal(restoredChat.modelId, sourceSelection.modelId);
+      assert.equal(restoredChat.thinkingLevel, sourceSelection.thinkingLevel);
       const runtime = await f.pi.experiences!.resolve(requestId);
       const stored = await runtime.read();
       assert.equal(
