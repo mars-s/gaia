@@ -592,7 +592,7 @@ test("setup sidebars explain memory and leave Original chat to the switcher", ()
   ] as const) {
     const html = fixture(layout).html();
     assert.ok(html.includes(caption));
-    assert.match(html, /sidebar-footer[^]*sidebar-settings[^]*Settings/);
+    assert.doesNotMatch(html, /sidebar-footer|sidebar-settings/);
     assert.doesNotMatch(html, /sidebar-original/);
     assert.doesNotMatch(html, /session-recency/);
   }
@@ -621,10 +621,11 @@ test("Sessions use one glyph and show recency only when dates distinguish rows",
   controller.pause();
 });
 
-test("Original chat footer passes through the app navigation callback", () => {
+test("Original chat stays in app navigation and Settings stays in the title bar", () => {
   const view = readFileSync(new URL("./experiences/view.tsx", import.meta.url), "utf8");
   const app = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
-  assert.match(view, /sidebar-footer/);
+  assert.doesNotMatch(view, /sidebar-footer|sidebar-settings/);
+  assert.match(view, /\{accountControl\}/);
   assert.match(app, /onOriginal=\{\(\) => \{[^]*experiences.original\(\);[^]*setExperienceView\("original"\)/);
 });
 
@@ -656,7 +657,7 @@ test("sidebar previews use the last real message, omit empty histories and keep 
    controller.receive(controller.selected!, {...parsed, revision: 2, messages: []});
    if (layout === "bots") assert.match(nav(), /scope-preview[^>]*>Test</);
    else assert.doesNotMatch(nav(), /scope-preview/);
-   assert.match(nav(), /sidebar-settings[^]*Settings/);
+   assert.doesNotMatch(nav(), /sidebar-settings/);
    controller.pause();
  }
 });

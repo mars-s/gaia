@@ -15,7 +15,6 @@ import {
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  RiSettings3Line,
   RiMenuLine,
   RiHashtag,
   RiAddLine,
@@ -241,12 +240,6 @@ export function ExperienceConversation({
         </form>
       )}
 
-      <div className="sidebar-footer">
-        <button type="button" className="quiet-action sidebar-settings" onClick={() => { setNavigation(false); onSettings?.(); }}>
-          <span className="sidebar-glyph"><RiSettings3Line aria-hidden="true" /></span>
-          <span>Settings</span>
-        </button>
-      </div>
     </nav>
   );
   return (

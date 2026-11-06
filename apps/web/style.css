@@ -1365,7 +1365,6 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 .experience-sidebar { display: flex; flex-direction: column; }
 .sidebar-section { padding: 4px 10px 12px; color: var(--color-ink-2); font-size: 12px; line-height: 16px; }
-.sidebar-footer { margin-top: auto; padding-top: 24px; }
 .sidebar-original { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; }
 .scope-row-copy { text-align: left; }
 .session-recency { display: block; color: var(--color-ink-2); font-size: 12px; line-height: 16px; }
@@ -1576,6 +1575,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .setup-list-row[aria-current="page"] { background: var(--color-surface-selected); border-radius: var(--radius-sm); }
 
 .scope-preview { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-2); font-size: 12px; line-height: 16px; margin-top: 2px; }
-.sidebar-settings { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; width: 100%; padding: 8px 10px; text-align: left; }
 
 .dark .model-scrim { background: var(--backdrop); }
