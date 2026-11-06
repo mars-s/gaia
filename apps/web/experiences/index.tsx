@@ -139,7 +139,7 @@ export function SetupSettings({
           <div className="setup-row-meta">
           {controller.mainId === null ? <StatusPill tone="accent">Main</StatusPill> : <span />}
           <div className="setup-row-actions">
-            {!controller.profile && <span className="setup-current">Current</span>}
+            {!controller.profile && <StatusPill>Open now</StatusPill>}
             {controller.profile && (
               <Button
                 variant="secondary"
@@ -152,13 +152,14 @@ export function SetupSettings({
                 Open
               </Button>
             )}
-            {controller.profile && controller.mainId !== null && (
-              <button
-                className="quiet-action"
+            {controller.mainId !== null && (
+              <Button
+                variant="secondary"
+                size="small"
                 onClick={() => void controller.makeMain(null)}
               >
                 Make main
-              </button>
+              </Button>
             )}
           </div>
           </div>
@@ -177,7 +178,7 @@ export function SetupSettings({
             <div className="setup-row-meta">
             {controller.mainId === item.id ? <StatusPill tone="accent">Main</StatusPill> : item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
             <div className="setup-row-actions">
-              {controller.profile?.profile.id === item.id && <span className="setup-current">Current</span>}
+              {controller.profile?.profile.id === item.id && <StatusPill>Open now</StatusPill>}
               {(item.kind === "proposed" ||
                 controller.profile?.profile.id !== item.id) && (
                 <Button
@@ -206,14 +207,15 @@ export function SetupSettings({
                   {item.kind === "proposed" ? "Review" : "Open"}
                 </Button>
               )}
-              {item.kind === "ready" && controller.profile?.profile.id !== item.id && controller.mainId !== item.id && (
-                <button
-                  className="quiet-action"
+              {item.kind === "ready" && controller.mainId !== item.id && (
+                <Button
+                  variant="secondary"
+                  size="small"
                   disabled={pending}
                   onClick={() => void controller.makeMain(item.id)}
                 >
                   Make main
-                </button>
+                </Button>
               )}
             </div>
             </div>

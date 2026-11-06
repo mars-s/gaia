@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -43,11 +44,11 @@ test("Settings rows separate names and layout text, identify exactly one main ch
     /Shared workspace 2 channels with shared memoryProposed/,
   );
   assert.match(text(rows()[3]), /My sessions 2 sessions with separate historiesHidden/);
-  assert.match(text(rows()[0]), /Original chat One conversationMainCurrent/);
+  assert.match(text(rows()[0]), /Original chat One conversationMainOpen now/);
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main</g) ?? []).length, 1);
-  assert.equal((render().match(/class="setup-current">Current</g) ?? []).length, 1);
+  assert.equal((render().match(/class="status-pill" data-tone="neutral">Open now</g) ?? []).length, 1);
   assert.doesNotMatch(render(), /Created|setup-status-badge/);
-  assert.match(rows()[1], /<button class="quiet-action"[^]*Make main/);
+  assert.match(rows()[1], /<button[^>]*class="[^"]*secondary-action[^"]*"[^]*Make main/);
   assert.doesNotMatch(rows()[0], /<button/);
   assert.equal((render().match(/class="[^"]*\bsetup-layout-icon\b[^"]*"/g) ?? []).length, 4);
   assert.match(rows()[1], /Open/);
@@ -56,12 +57,18 @@ test("Settings rows separate names and layout text, identify exactly one main ch
   assert.doesNotMatch(rows()[2], /Make main/);
   controller.mainId = bots.id;
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main</g) ?? []).length, 1);
-  assert.equal((render().match(/class="setup-current">Current</g) ?? []).length, 1);
+  assert.equal((render().match(/class="status-pill" data-tone="neutral">Open now</g) ?? []).length, 1);
   assert.match(text(rows()[1]), /2 Bots with separate memoryMain/);
   assert.doesNotMatch(rows()[1], /Make main/);
-  assert.doesNotMatch(rows()[0], /<button/);
+  assert.match(rows()[0], /secondary-action[^]*Make main/);
   assert.doesNotMatch(
     render(),
     /Everyday BotsBots|Shared workspaceChannels|My sessionsSessions/,
   );
+});
+
+test("only Original chat keeps the manual creation action directly after its list", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /setup-settings > ul \{ flex: none/);
+ assert.match(css, /setup-create[^}]*margin-top: 12px/);
 });
