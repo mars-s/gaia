@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -68,4 +69,12 @@ test("failure second paths offer Settings for unknown causes and reconnection ad
     const html = renderToStaticMarkup(createElement(ReplyNotice, { message }));
     assert.doesNotMatch(html, /failure-path/);
   }
+});
+
+test("reply error retry and helper use the same text edge at every width", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /reply-error \{ display: grid; grid-template-columns: 24px minmax\(0, 1fr\)/);
+ assert.match(css, /reply-error > button:not\(.inline-link\) \{ grid-column: 2; justify-self: start; margin-left: 0/);
+ assert.match(css, /reply-notice \.failure-path \{ margin-left: 32px/);
+ assert.match(css, /reply-error-icon \{ padding: 0; width: 24px; height: 24px/);
 });
