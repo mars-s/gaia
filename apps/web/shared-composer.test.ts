@@ -77,6 +77,8 @@ test("composer focus is neutral with a visible halo, shared by both conversation
 test("both themes set a composer halo and share one code block border", () => {
  const theme = readFileSync(new URL("./styles/theme.css", import.meta.url), "utf8");
  assert.equal((theme.match(/--color-composer-halo:/g) ?? []).length, 2);
+ assert.doesNotMatch(theme, /--shadow-level-1: none/);
+ assert.match(theme, /--shadow-level-1: 0 0 0 transparent/);
  assert.match(theme, /--color-composer-halo: color-mix\(in oklab, var\(--color-ink\) 14%, transparent\)/);
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.match(css, /\n.code-block \{ border: 1px solid var\(--color-line-strong\)/);
