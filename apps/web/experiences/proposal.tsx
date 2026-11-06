@@ -86,7 +86,7 @@ export function ExperienceProposalNotice({
                   disabled={disabled || pending?.has(proposal.id)}
                   onClick={() => onUse?.(proposal)}
                 >
-                  Try making it main again
+                  Try making it your main chat again
                 </Button>
               )}
             </div>

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -209,4 +210,10 @@ test("every proposal explains the actual memory boundary and preserves the origi
   assert.match(html, /class="status-pill" data-tone="neutral">Proposed/);
   assert.ok(html.indexOf("Or tell me what to change.") > html.indexOf("Use this setup"));
  }
+});
+
+test("setup recovery action names the main chat explicitly", () => {
+ const source = readFileSync(new URL("./experiences/proposal.tsx", import.meta.url), "utf8");
+ assert.match(source, /Try making it your main chat again/);
+ assert.doesNotMatch(source, /making it main again/);
 });
