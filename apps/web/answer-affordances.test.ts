@@ -108,7 +108,7 @@ test("working motion is separate from Gaia identity, including with real activit
   }
 });
 
-test("copy actions have icons without Copy text and setup answers suppress their action", () => {
+test("copy actions have icons without Copy text and setup answers keep their action", () => {
   const thread: Thread = {
     version: 1,
     id: "local",
@@ -136,7 +136,7 @@ test("copy actions have icons without Copy text and setup answers suppress their
   const card = renderToStaticMarkup(
     createElement(Transcript, { thread, hasSetupCard: (id) => id === "new" }),
   );
-  assert.equal((card.match(/aria-label="Copy answer"/g) ?? []).length, 1);
+  assert.equal((card.match(/aria-label="Copy answer"/g) ?? []).length, 2);
 });
 
 test("code copy has a separate 28px header above the bounded scroll area", async () => {
@@ -152,7 +152,7 @@ test("code copy has a separate 28px header above the bounded scroll area", async
   assert.match(css, /code-block \{[^}]*max-width: 100%; overflow: hidden/);
   assert.match(css, /padding: 16px; border-radius: 0; overflow-x: auto/);
   assert.match(css, /code-block\[data-overflow="true"\] .code-scroll-area::after/);
-  assert.match(css, /earlier-answer:focus-within > .copy-action/);
+  assert.match(css, /earlier-answer:focus-within > .reply-actions/);
   assert.match(css, /@media \(pointer: coarse\)/);
 });
 
@@ -170,4 +170,12 @@ test("code wraps below 640 without a fade and the transcript has a clean top edg
  assert.doesNotMatch(css, /mask-image/);
  assert.match(css, /code-block pre \{ white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible/);
  assert.match(css, /owner-bubble \{ background: var\(--color-surface-selected\)/);
+});
+
+test("reply actions precede proposal content and sit eight pixels below the text", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /reply-actions \{ margin-top: 8px; display: flex/);
+ assert.match(css, /reply-actions .copy-action \{ margin-top: 0/);
+ const html = renderToStaticMarkup(createElement(Transcript, { thread: { version: 1, id: "local", run: {kind: "idle"}, messages: [{id: "reply", role: "assistant", text: "Reply text", createdAt: "2026-11-05"}] }, afterMessage: () => createElement("aside", null, "Proposal") }));
+ assert.match(html, /Reply text[^]*reply-actions[^]*Copy answer[^]*Proposal/);
 });

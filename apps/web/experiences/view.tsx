@@ -457,7 +457,7 @@ function ScopeConversation({
                     {message.role === "assistant" &&
                       message.text &&
                       jobs.every((job) => job.state.kind === "completed") && (
-                        <CopyButton label="Copy answer" text={message.text} />
+                        <div className="reply-actions"><CopyButton label="Copy answer" text={message.text} /></div>
                       )}
                   </article>
                   {jobs.map((job) => (

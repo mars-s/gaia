@@ -130,7 +130,6 @@ export function Transcript({
   afterMessage,
   onRetry,
   retryDisabled,
-  hasSetupCard,
   onSettings,
 }: {
   thread: Thread;
@@ -205,8 +204,8 @@ export function Transcript({
                 {!user &&
                   source?.text &&
                   message.status?.type === "complete" &&
-                  !hasSetupCard?.(message.id) && (
-                    <CopyButton label="Copy answer" text={source.text} />
+                  (
+                    <div className="reply-actions"><CopyButton label="Copy answer" text={source.text} /></div>
                   )}
                 {!user &&
                   message.id === thread.messages.at(-1)?.id &&
