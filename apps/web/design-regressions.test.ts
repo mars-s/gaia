@@ -259,3 +259,11 @@ test("scrolled transcripts pass under a 32px page gradient with a 16px opaque to
  assert.doesNotMatch(css, /mask-image|clip-path/);
  assert.match(css, /app-bar.has-side::after \{ left: 240px/);
 });
+
+test("settings panes and close control share one measure and account buttons share geometry", () => {
+ assert.match(css, /settings-page > .reading-column, .settings-bar .app-bar-column \{ max-width: var\(--column-box\)/);
+ assert.doesNotMatch(css, /account-section[^}]*max-width/);
+ assert.match(css, /settings-plan-row > div:last-child \{ align-items: center/);
+ assert.match(css, /settings-plan-row button \{ height: 28px; min-height: 28px; padding: 4px 8px; border-radius: var\(--radius-sm\)/);
+ assert.match(css, /plan-disconnect.quiet-action \{ color: var\(--color-danger\)/);
+});

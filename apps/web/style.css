@@ -1553,7 +1553,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .app-shell:has(.conversation-scroll[data-scrolled="true"]) .app-bar.has-side::after { left: 240px; }
 }
 
-.account-section { width: 100%; max-width: 640px; }
+.settings-page > .reading-column, .settings-bar .app-bar-column { max-width: var(--column-box); }
+.account-section { width: 100%; }
 .account-section .settings-plan-row { padding-block: 16px; border-bottom: 1px solid var(--color-line); }
 .plan-connection { display: inline-flex; align-items: center; gap: 6px; color: var(--color-ink-2); }
 .connection-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: var(--radius-full); background: var(--color-ink-3); }
@@ -1568,3 +1569,6 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .reply-actions { margin-top: 8px; display: flex; justify-content: flex-start; }
 .reply-actions .copy-action { margin-top: 0; }
 .interview-slot { margin-top: var(--space-turn-gap); }
+
+.settings-plan-row > div:last-child { align-items: center; }
+.settings-plan-row button { height: 28px; min-height: 28px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 13px; line-height: 18px; }
