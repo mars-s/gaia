@@ -267,3 +267,11 @@ test("settings panes and close control share one measure and account buttons sha
  assert.match(css, /settings-plan-row button \{ height: 28px; min-height: 28px; padding: 4px 8px; border-radius: var\(--radius-sm\)/);
  assert.match(css, /plan-disconnect.quiet-action \{ color: var\(--color-danger\)/);
 });
+
+test("model sheets use the light 24 percent and dark 48 percent backdrop tokens directly", () => {
+ const theme = read("./styles/theme.css");
+ assert.match(theme, /--backdrop: rgb\(0 0 0 \/ 0.24\)/);
+ assert.match(theme, /--backdrop: rgb\(0 0 0 \/ 0.48\)/);
+ assert.match(css, /model-scrim \{[^}]*background: var\(--backdrop\)/);
+ assert.doesNotMatch(css, /color-mix\(in srgb, var\(--backdrop\)/);
+});

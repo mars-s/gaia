@@ -1065,7 +1065,7 @@ a:focus-visible {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: color-mix(in srgb, var(--backdrop) 62.5%, transparent);
+  background: var(--backdrop);
   display: flex;
   align-items: flex-end;
   transition: opacity var(--motion-drawer);
@@ -1570,6 +1570,3 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 .setup-list-row { padding-inline: 12px; }
 .setup-list-row[aria-current="page"] { background: var(--color-surface-selected); border-radius: var(--radius-sm); }
-
-
-.dark .model-scrim { background: var(--backdrop); }

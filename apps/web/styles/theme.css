@@ -1289,7 +1289,7 @@
   --shadow-level-1: 0 1px 2px rgb(0 0 0 / 0.04);
   --shadow-level-2: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.1);
   --shadow-level-3: 0 16px 48px rgb(0 0 0 / 0.18);
-  --backdrop: rgb(0 0 0 / 0.32);
+  --backdrop: rgb(0 0 0 / 0.24);
   --motion-hover: 150ms ease;
   --motion-popover: 150ms ease-out;
   --motion-exit: 120ms ease-in;
@@ -1327,5 +1327,5 @@
   --shadow-level-1: 0 0 0 transparent;
   --shadow-level-2: 0 12px 32px rgb(0 0 0 / 0.55);
   --shadow-level-3: 0 16px 48px rgb(0 0 0 / 0.65);
-  --backdrop: rgb(0 0 0 / 0.56);
+  --backdrop: rgb(0 0 0 / 0.48);
 }

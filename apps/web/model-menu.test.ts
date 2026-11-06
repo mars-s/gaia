@@ -336,10 +336,10 @@ test("model sheet dims with the shared backdrop and radios keep one centre token
  assert.match(html, /data-selected/);
  });
 
-test("narrow light sheet dims with reduced backdrop alpha and reserves safe bottom space", () => {
+test("narrow sheets dim through theme backdrop tokens and reserve safe bottom space", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /model-scrim[^}]*background: color-mix\(in srgb, var\(--backdrop\) 62.5%, transparent\)/);
+ assert.match(css, /model-scrim[^}]*background: var\(--backdrop\)/);
  assert.match(css, /model-sheet \{[^}]*padding: 0 16px calc\(32px \+ env\(safe-area-inset-bottom\)\)/);
  assert.match(css, /max-height: calc\(80dvh - 32px - env\(safe-area-inset-bottom\)\)/);
- assert.match(css, /dark .model-scrim \{ background: var\(--backdrop\)/);
+ assert.doesNotMatch(css, /dark .model-scrim/);
 });
