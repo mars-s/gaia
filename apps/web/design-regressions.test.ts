@@ -242,3 +242,10 @@ test("setup status uses plain dotted text and account separator uses non-breakin
   assert.ok(read("./app.tsx").includes('"\\u202f·\\u202f"}Connected'));
   assert.match(read("./experiences/proposal.tsx"), /channels: \{ label: "Shared channels"/);
 });
+
+test("overflowing code has top breathing room and a right-edge cue until scrolled to the end", () => {
+  assert.match(css, /code-block pre[^}]*padding: 16px/);
+  assert.match(css, /data-overflow="true"[^}]*width: 40px[^}]*surface-sunken\) 80%/);
+  assert.match(read("./transcript.tsx"), /scrollWidth - element.clientWidth - element.scrollLeft > 1/);
+  assert.match(read("./transcript.tsx"), /removeEventListener\("scroll", measure\)/);
+});

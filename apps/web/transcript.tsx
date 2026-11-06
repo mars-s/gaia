@@ -98,11 +98,15 @@ export function CodeBlock({ children }: { children: ReactNode }) {
     const element = pre.current;
     if (!element) return;
     const measure = () =>
-      setOverflow(element.scrollWidth > element.clientWidth);
+      setOverflow(element.scrollWidth - element.clientWidth - element.scrollLeft > 1);
     measure();
+    element.addEventListener("scroll", measure, { passive: true });
     const observer = new ResizeObserver(measure);
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      element.removeEventListener("scroll", measure);
+    };
   }, [children]);
   return (
     <div className="code-block" data-overflow={overflow}>
