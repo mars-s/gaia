@@ -83,6 +83,7 @@ export function App() {
   const state = controller.home;
   const scope = controller.selected;
   const active = controller.view(scope);
+  const currentDraft = controller.session(scope).draftState;
   const error = controller.session(homeScope).error;
   const pending = Boolean(controller.pending || controller.selectionPending);
   const running = Boolean(controller.busyScope());
@@ -639,7 +640,14 @@ export function App() {
                   Loading conversation…
                 </p>
               ) : active.thread.messages.length === 0 ? (
-                <EmptyChat />
+                <EmptyChat onStarter={currentDraft.kind === "ready" && !currentDraft.draft.text && !currentDraft.draft.images.length ? text => {
+                  controller.session(scope).draft.update(draft => ({ ...draft, text }));
+                  requestAnimationFrame(() => {
+                    const input = document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message Gaia"]');
+                    input?.focus();
+                    input?.setSelectionRange(text.length, text.length);
+                  });
+                } : undefined} />
               ) : (
                 <Transcript
                   key={scopeKey(scope)}
@@ -664,7 +672,7 @@ export function App() {
                   }
                   afterMessage={
                     scope.kind === "home" && !controller.safeMode
-                      ? setupCards
+                      ? id => <>{setupCards(id)}{profile?.kind === "new" && id === active.thread.messages.at(-1)?.id && active.thread.run.kind === "idle" && interviewOfferAllowed(experiences.profiles, id) && <div className="interview-slot">{profilePanel()}</div>}</>
                       : undefined
                   }
                 />
@@ -675,7 +683,7 @@ export function App() {
                     profileError ||
                     profile.kind === "interview" ||
                     profile.kind === "proposed" ||
-                    (profile.kind === "new" &&
+                    (profile.kind !== "new" &&
                       interviewOfferAllowed(
                         experiences.profiles,
                         active?.thread.messages.findLast(

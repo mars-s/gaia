@@ -1491,3 +1491,9 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 .interview-offer { margin-top: 16px; gap: 8px; border: 0; background: transparent; border-radius: 0; padding: 0; }
 .interview-offer > p { max-width: 56ch; font-size: 14px; line-height: 20px; color: var(--color-ink-2); }
+
+.empty-chat { padding-bottom: 8vh; }
+.starter-list { display: flex; flex-direction: column; gap: 4px; width: min(360px, 100%); margin-top: 16px; }
+.starter { width: 100%; min-height: 36px; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 14px; line-height: 20px; color: var(--color-ink-2); text-align: center; }
+.starter:hover { color: var(--color-ink); background: var(--color-surface-hover); }
+.starter:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
