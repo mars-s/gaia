@@ -1488,3 +1488,6 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .proposal-scopes .setup-scope-copy > p { grid-column: 2; }
  .proposal-scopes .scope-purpose { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; font-size: 13px; line-height: 18px; margin-top: -6px; }
 }
+
+.interview-offer { margin-top: 16px; gap: 8px; border: 0; background: transparent; border-radius: 0; padding: 0; }
+.interview-offer > p { max-width: 56ch; font-size: 14px; line-height: 20px; color: var(--color-ink-2); }

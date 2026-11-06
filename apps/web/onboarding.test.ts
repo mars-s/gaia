@@ -76,7 +76,7 @@ test("legacy owner states load and answered setup prompts disappear without re-a
 
 test("new owners get the optional offer after an answer, with a permanent skip action", () => {
  const html = renderToStaticMarkup(createElement(ProfilePanel, {state: {kind: "new"}, failed: false, account: false, disabled: false, onAction() {}, onRetry() {}}));
- assert.match(html, /Want me to fit Gaia around how you work/);
+ assert.match(html, /If you like, I can fit myself around how you work/);
  assert.match(html, />Start the short interview</);
  assert.match(html, />Not now</);
 });
@@ -88,4 +88,11 @@ test("empty chat is only its mark and headline; an interview needs a useful answ
  assert.doesNotMatch(html, /interview|Skip|button/);
  const app = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
  assert.match(app, /profile.kind === "new"[\s\S]*?active.thread.messages.some/);
+});
+
+test("interview offer is a borderless aside in Gaia’s voice", () => {
+ const source = readFileSync(new URL("./profile-panel.tsx", import.meta.url), "utf8");
+ assert.match(source, /className="interview-offer"/);
+ assert.doesNotMatch(source, /setup-card/);
+ assert.match(source, /If you like, I can fit myself around how you work. It takes a minute./);
 });

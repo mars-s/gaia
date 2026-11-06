@@ -41,13 +41,12 @@ export function ProfilePanel({
     return (
       <section
         aria-label="About you"
-        className="setup-card interview-offer rounded-xl border border-separator-border p-3"
+        className="interview-offer"
       >
         <p>
-          Want me to fit Gaia around how you work? It takes a minute, and you
-          can skip it.
+          If you like, I can fit myself around how you work. It takes a minute.
         </p>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           <Button variant="secondary" size="small" disabled={disabled} onClick={() => onAction("start")}>
             Start the short interview
           </Button>
