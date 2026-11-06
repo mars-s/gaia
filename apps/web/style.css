@@ -1286,7 +1286,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .interview-offer {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  border-color: color-mix(in oklab, var(--color-line) 65%, transparent);
 }
 @media (min-width: 640px) {
   .desktop-sidebar .drawer-switcher {

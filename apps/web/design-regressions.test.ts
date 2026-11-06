@@ -42,6 +42,11 @@ test("interview offer uses the card frame and skipped interviews stay hidden", (
     );
   assert.match(render("new"), /setup-card interview-offer/);
   assert.match(render("new"), />Start the short interview</);
+  const offer = render("new");
+  assert.match(offer, /interview-offer[^"]*p-3/);
+  assert.match(offer, /secondary-action[^]*Start the short interview/);
+  assert.doesNotMatch(offer, /primary-action/);
+  assert.match(css, /interview-offer[^}]*border-color: color-mix/);
   assert.match(render("new"), />Not now</);
   assert.doesNotMatch(render("skipped"), /Start the short interview|Not now|fit Gaia/);
 });
