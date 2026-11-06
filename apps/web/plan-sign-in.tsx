@@ -104,7 +104,7 @@ export function disconnectWithConfirmation(
   const label = provider === "anthropic" ? "Claude" : "ChatGPT";
   if (
     confirm(
-      `Disconnect your ${label} plan? Gaia will remove this plan's saved sign-in. You can reconnect later.`,
+      `Disconnect your ${label} plan? Gaia will remove the saved sign-in for this plan. You can reconnect later.`,
     )
   )
     disconnect(provider);
