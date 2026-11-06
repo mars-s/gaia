@@ -1652,3 +1652,12 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .session-monogram[data-hue="amber"] { background: var(--color-session-amber-bg); color: var(--color-session-amber-ink); }
 .session-monogram[data-hue="lilac"] { background: var(--color-session-lilac-bg); color: var(--color-session-lilac-ink); }
 .session-monogram[data-hue="slate"] { background: var(--color-session-slate-bg); color: var(--color-session-slate-ink); }
+
+.interview-offer { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: center; padding: 16px; }
+.interview-offer .proposal-heading { justify-content: flex-start; gap: 8px; }
+.interview-offer h2 { font-size: 15px; line-height: 22px; font-weight: 600; }
+.interview-offer .setup-memory-caption { margin-top: 4px; font-size: 14px; line-height: 20px; color: var(--color-ink-2); }
+.interview-offer .proposal-actions { flex-wrap: nowrap; gap: 12px; }
+@media (max-width: 639px) {
+ .interview-offer { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+}

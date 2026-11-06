@@ -40,14 +40,14 @@ test("interview offer shares the proposal frame and skipped interviews stay hidd
         onRetry() {},
       }),
     );
-  assert.match(render("new"), /class="setup-card interview-offer [^"]*rounded-xl border border-separator-border p-5/);
-  assert.match(render("new"), />Start the short interview</);
+  assert.match(render("new"), /class="setup-card interview-offer [^"]*rounded-xl border border-separator-border p-4/);
+  assert.match(render("new"), /aria-label="Start the short interview"/);
   const offer = render("new");
-  assert.match(offer, /class="setup-card interview-offer [^"]*rounded-xl border border-separator-border p-5/);
+  assert.match(offer, /class="setup-card interview-offer [^"]*rounded-xl border border-separator-border p-4/);
   assert.match(offer, /primary-action[^]*Start the short interview/);
-  assert.match(offer, /proposal-heading[^]*Fit Gaia around you[^]*status-pill[^]*Suggestion/);
-  assert.match(offer, /If you like, I can fit myself around how you work\./);
-  assert.doesNotMatch(css, /interview-offer \{/);
+  assert.match(offer, /proposal-heading[^]*Fit Gaia around you[^]*status-pill[^]*Optional/);
+  assert.match(offer, /Answer three quick questions and Gaia will shape itself around how you work\./);
+  assert.match(css, /interview-offer \{ display: grid/);
   assert.doesNotMatch(css, /interview-offer[^}]*border: 0/);
   assert.match(render("new"), />Not now</);
   assert.doesNotMatch(render("skipped"), /Start the short interview|Not now|fit Gaia/);

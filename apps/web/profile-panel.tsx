@@ -42,11 +42,11 @@ export function ProfilePanel({
     return (
       <section
         aria-label="About you"
-        className="setup-card interview-offer flex min-w-0 flex-col gap-4 rounded-xl border border-separator-border p-5 wrap-anywhere"
+        className="setup-card interview-offer flex min-w-0 flex-col gap-4 rounded-xl border border-separator-border p-4 wrap-anywhere"
       >
-        <ProposalCardContent title="Fit Gaia around you" status="Suggestion"
-          body="If you like, I can fit myself around how you work."
-          primary="Start the short interview" disabled={disabled} skipDisabled={skipDisabled}
+        <ProposalCardContent title="Fit Gaia around you" status="Optional" compact
+          body="Answer three quick questions and Gaia will shape itself around how you work."
+          primary="Start" primaryLabel="Start the short interview" disabled={disabled} skipDisabled={skipDisabled}
           onAccept={() => onAction("start")} onDismiss={() => onAction("skip")} />
       </section>
     );
