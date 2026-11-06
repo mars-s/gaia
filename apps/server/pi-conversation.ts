@@ -1,4 +1,8 @@
-import { planModels, defaultPlanModel } from "../../core/plan-models.ts";
+import {
+  planModels,
+  defaultPlanModel,
+  type PlanAvailability,
+} from "../../core/plan-models.ts";
 import type { Context } from "@earendil-works/chord";
 import type {
   Conversation,
@@ -38,12 +42,13 @@ export async function conversationAdapter(
   harness: Harness,
   models: Models,
   ctx: Context,
+  availability?: PlanAvailability,
 ): Promise<ConversationAdapter> {
   const agent = await conversation.agent(ctx);
   let modelId = agent.model?.modelId ?? "gpt-6.1-sol";
   let thinkingLevel = agent.thinkingLevel;
   const lookup = (id: string) =>
-    planModels(models).find((model) => model.id === id);
+    planModels(models, availability).find((model) => model.id === id);
   const selected = lookup(modelId);
   if (selected) {
     thinkingLevel = supportedEffort(selected, thinkingLevel);
@@ -52,7 +57,7 @@ export async function conversationAdapter(
   }
   async function ensureModel() {
     if (!lookup(modelId)) {
-      const fallback = defaultPlanModel(models);
+      const fallback = defaultPlanModel(models, availability);
       const model = lookup(fallback.modelId);
       if (!model) throw new Error("Connect a plan to send a message.");
       thinkingLevel = supportedEffort(model, thinkingLevel);
@@ -61,7 +66,7 @@ export async function conversationAdapter(
     }
   }
   const catalogue = () =>
-    planModels(models).map((model) => ({
+    planModels(models, availability).map((model) => ({
       id: model.id,
       name: model.name,
       provider: model.provider,
@@ -82,7 +87,9 @@ export async function conversationAdapter(
     },
     controls: () => ({
       models: catalogue(),
-      modelId: lookup(modelId) ? modelId : defaultPlanModel(models).modelId,
+      modelId: lookup(modelId)
+        ? modelId
+        : defaultPlanModel(models, availability).modelId,
       thinkingLevel: lookup(modelId) ? thinkingLevel : undefined,
     }),
     async configure(id, effort) {

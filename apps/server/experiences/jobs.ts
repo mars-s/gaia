@@ -214,6 +214,7 @@ export function createJobTask({
             getHarness(),
             options.models,
             ctx,
+            options.planAvailability,
           );
           const images = await getHarness().snapshot(Images, ctx);
           const files = (initial.input.attachments ?? []).map((fileId) => {

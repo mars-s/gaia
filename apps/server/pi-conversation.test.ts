@@ -1,4 +1,3 @@
-import { registerPlanAvailability } from "../../core/plan-models.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -27,7 +26,7 @@ test(
       tokensPerSecond: 100000,
     });
     auth.models.setProvider(faux.provider);
-    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
     const harness = await Harness.open(
       await openNodeSqliteStorage(join(dir, "pi.sqlite")),
       {
@@ -52,7 +51,7 @@ test(
       db.close();
       await rm(dir, { recursive: true, force: true });
     });
-    const adapter = await conversationAdapter(area, harness, auth.models, ctx);
+    const adapter = await conversationAdapter(area, harness, auth.models, ctx, auth.planAvailability);
     const started = deferred();
     let cancelled = false;
     faux.setResponses([

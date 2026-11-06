@@ -1,4 +1,3 @@
-import { registerPlanAvailability } from "../../core/plan-models.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -25,7 +24,7 @@ test(
       tokensPerSecond: 10,
     });
     auth.models.setProvider(faux.provider);
-    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
     const path = join(dir, "pi.sqlite");
     const harness = await Harness.open(
       await openNodeSqliteStorage(path),
@@ -111,7 +110,7 @@ test("real Pi Durable SQLite adapter streams a test-only provider and reloads co
     tokenSize: { min: 2, max: 2 },
   });
   auth.models.setProvider(faux.provider);
-    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
   faux.setResponses([
     fauxAssistantMessage("Deterministic Pi adapter test response."),
   ]);
@@ -171,7 +170,7 @@ test("Pi abort stops model work and retains committed partial text", async () =>
     tokenSize: { min: 2, max: 2 },
   });
   auth.models.setProvider(faux.provider);
-    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
   faux.setResponses([
     fauxAssistantMessage(
       "This reply should be stopped before it reaches the end of the sentence.",

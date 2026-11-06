@@ -108,9 +108,9 @@ for (const provider of ["openai-codex", "anthropic"] as const) {
       await new Promise((resolve) => setTimeout(resolve, 1));
     assert.equal(auth.status().kind, "connected");
     assert(
-      planModels(auth.models).every((model) => model.provider === provider),
+      planModels(auth.models, auth.planAvailability).every((model) => model.provider === provider),
     );
-    assert.equal(defaultPlanModel(auth.models).provider, provider);
+    assert.equal(defaultPlanModel(auth.models, auth.planAvailability).provider, provider);
     const resolutions = await Promise.all([
       auth.models.getAuth(provider),
       auth.models.getAuth(provider),
@@ -130,10 +130,10 @@ for (const provider of ["openai-codex", "anthropic"] as const) {
     }));
     assert.equal((await auth.store.list()).length, 2);
     assert.equal(
-      new Set(planModels(auth.models).map((model) => model.provider)).size,
+      new Set(planModels(auth.models, auth.planAvailability).map((model) => model.provider)).size,
       2,
     );
-    assert.equal(defaultPlanModel(auth.models).modelId, "gpt-6.1-sol");
+    assert.equal(defaultPlanModel(auth.models, auth.planAvailability).modelId, "gpt-6.1-sol");
     const reopened = createAuth(db);
     await reopened.initialise(false);
     assert.equal(
@@ -144,10 +144,10 @@ for (const provider of ["openai-codex", "anthropic"] as const) {
     await auth.disconnect(provider);
     assert.equal(await auth.store.read(provider), undefined);
     assert(await auth.store.read(other));
-    assert(planModels(auth.models).every((model) => model.provider === other));
+    assert(planModels(auth.models, auth.planAvailability).every((model) => model.provider === other));
     await auth.disconnect(other);
     assert.equal(auth.status().kind, "disconnected");
-    assert.equal(planModels(auth.models).length, 0);
+    assert.equal(planModels(auth.models, auth.planAvailability).length, 0);
     await auth.close();
     await reopened.close();
     db.close();

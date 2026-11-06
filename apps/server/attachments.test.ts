@@ -1,4 +1,3 @@
-import { registerPlanAvailability } from "../../core/plan-models.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -49,7 +48,7 @@ async function fixture(dir: string) {
     tokensPerSecond: 100000,
   });
   auth.models.setProvider(faux.provider);
-    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
   const pi = await createPi(join(dir, "pi.sqlite"), auth);
   const origins: string[] = [];
   let allowed = true;

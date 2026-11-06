@@ -1,4 +1,7 @@
-import { planModels } from "../../../core/plan-models.ts";
+import {
+  planModels,
+  type PlanAvailability,
+} from "../../../core/plan-models.ts";
 import type { Models } from "@earendil-works/pi-ai";
 import { effortLevels } from "../model-effort.ts";
 import { randomUUID } from "node:crypto";
@@ -23,6 +26,7 @@ export function createAdmission({
   anchor,
   readOwner,
   models,
+  planAvailability,
 }: {
   id: ExperienceId;
   gate(): void;
@@ -32,6 +36,7 @@ export function createAdmission({
   anchor: ReturnType<typeof createJobTask>;
   readOwner?(): OwnerState | undefined;
   models: Models;
+  planAvailability?: PlanAvailability;
 }) {
   function admission(job: StoredJob) {
     return {
@@ -86,7 +91,7 @@ export function createAdmission({
           state.jobs.filter((j) => j.public.parentId === parentId).length >= 8)
       )
         throw new HttpError(409, "Subordinate limit reached.");
-      const model = planModels(models).find(
+      const model = planModels(models, planAvailability).find(
         (model) => model.id === scope.chat.modelId,
       );
       if (!model)

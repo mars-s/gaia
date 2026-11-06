@@ -1,8 +1,6 @@
 import { defaultPlanModel } from "../../core/plan-models.ts";
 import { SetupProposalPlan, setupPurposeGuidance } from "./setup-proposal.ts";
-import {
-  ExperienceCreate,
-} from "../../packages/protocol/experiences.ts";
+import { ExperienceCreate } from "../../packages/protocol/experiences.ts";
 import { randomUUID } from "node:crypto";
 import { dirname } from "node:path";
 import {
@@ -239,16 +237,28 @@ export async function createPi(
     ctx,
   );
   const root = await harness.root(ctx, {
-    agent: { model: defaultPlanModel(auth.models) },
+    agent: { model: defaultPlanModel(auth.models, auth.planAvailability) },
   });
-  const home = await conversationAdapter(root, harness, auth.models, ctx);
+  const home = await conversationAdapter(
+    root,
+    harness,
+    auth.models,
+    ctx,
+    auth.planAvailability,
+  );
   const workspace = await createWorkspaceChat(
     {
       harness,
       home: root,
       adapter: home,
       createAdapter: (conversation) =>
-        conversationAdapter(conversation, harness, auth.models, ctx),
+        conversationAdapter(
+          conversation,
+          harness,
+          auth.models,
+          ctx,
+          auth.planAvailability,
+        ),
       areasEnabled: options.areasEnabled === true,
     },
     ctx,
@@ -271,16 +281,20 @@ export async function createPi(
           models: auth.models,
           settings,
           ...options.experiences,
+          planAvailability: auth.planAvailability,
           readOwner: () => readOwnerState(dirname(path)),
           capabilities: experienceCapabilities,
           extensionsForJob: async (binding) => [
             ...((await options.experiences?.extensionsForJob?.(binding)) ?? []),
             ...(toolHost && options.tools
               ? [
-                  toolHost.extension({
-                    ...binding,
-                    generation: options.tools.generation,
-                  }),
+                  toolHost.extension(
+                    {
+                      ...binding,
+                      generation: options.tools.generation,
+                    },
+                    binding.provider,
+                  ),
                 ]
               : []),
           ],
@@ -301,13 +315,19 @@ export async function createPi(
         : undefined;
       const machineExtension =
         toolHost && options.tools
-          ? toolHost.extension({
-              profileId: "00000000-0000-4000-8000-000000000001",
-              scopeId: "00000000-0000-4000-8000-000000000002",
-              jobId: input.requestId,
-              conversationId: root.id,
-              generation: options.tools.generation,
-            })
+          ? toolHost.extension(
+              {
+                profileId: "00000000-0000-4000-8000-000000000001",
+                scopeId: "00000000-0000-4000-8000-000000000002",
+                jobId: input.requestId,
+                conversationId: root.id,
+                generation: options.tools.generation,
+              },
+              auth.models
+                .getModels()
+                .find((model) => model.id === home.controls().modelId)
+                ?.provider,
+            )
           : undefined;
       try {
         if (machineExtension) {

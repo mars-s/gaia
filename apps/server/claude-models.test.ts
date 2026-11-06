@@ -8,7 +8,6 @@ import { fauxProvider, fauxAssistantMessage } from "@earendil-works/pi-ai";
 import { createAuth } from "./auth.ts";
 import { openDatabase } from "./server.ts";
 import { createPi } from "./pi.ts";
-import { registerPlanAvailability } from "../../core/plan-models.ts";
 
 for (const onlyClaude of [false, true]) {
   test(`real Pi adapter routes Claude with ${onlyClaude ? "only Claude" : "both plans"} available`, async () => {
@@ -34,14 +33,36 @@ for (const onlyClaude of [false, true]) {
     });
     auth.models.setProvider(claude.provider);
     auth.models.setProvider(codex.provider);
-    claude.setResponses([fauxAssistantMessage("Synthetic Claude reply")]);
+    claude.setResponses([
+      (context) => {
+        assert.doesNotMatch(JSON.stringify(context), /"name":"search_web"/);
+        assert.match(
+          JSON.stringify(context),
+          /Hosted web search is unavailable for this model/,
+        );
+        return fauxAssistantMessage("Synthetic Claude reply");
+      },
+    ]);
     codex.setResponses([fauxAssistantMessage("Synthetic ChatGPT reply")]);
     let available = onlyClaude ? "anthropic" : "both";
-    registerPlanAvailability(
-      auth.models,
-      (provider) => available === "both" || provider === available,
+    auth.planAvailability.connectedProviders = () =>
+      new Set(
+        available === "both" ? ["openai-codex", "anthropic"] : [available],
+      );
+    const pi = await createPi(
+      join(dir, "pi.sqlite"),
+      auth,
+      [],
+      {},
+      {
+        tools: {
+          receiptDirectory: join(dir, "receipts"),
+          generation: "fixture",
+          mode: "stable",
+          enabled: () => true,
+        },
+      },
     );
-    const pi = await createPi(join(dir, "pi.sqlite"), auth);
     try {
       assert.equal(pi.controls?.().models.length, onlyClaude ? 1 : 2);
       if (!onlyClaude) await pi.configure?.("claude-opus-5-5");
@@ -85,10 +106,7 @@ test("Claude-only setups admit and complete independent jobs through Pi", async 
   });
   claude.setResponses([fauxAssistantMessage("Synthetic Claude setup reply")]);
   f.auth.models.setProvider(claude.provider);
-  registerPlanAvailability(
-    f.auth.models,
-    (provider) => provider === "anthropic",
-  );
+  f.auth.planAvailability.connectedProviders = () => new Set(["anthropic"]);
   const state = await f.confirm();
   const profile = state.profile.id;
   const scope = state.scopes[0].id;

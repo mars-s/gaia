@@ -15,7 +15,7 @@ test("Claude-only default is Opus 5.5 from Pi's real catalogue", async () => {
       expires: Date.now() + 3600000,
     }));
     assert(auth.models.getModel("anthropic", "claude-opus-5-5"));
-    assert.deepEqual(defaultPlanModel(auth.models), {
+    assert.deepEqual(defaultPlanModel(auth.models, auth.planAvailability), {
       provider: "anthropic",
       modelId: "claude-opus-5-5",
     });
@@ -44,7 +44,7 @@ test("Claude fallback follows explicit preferences when Pi's primary model is ab
       refresh: "synthetic",
       expires: Date.now() + 3600000,
     }));
-    assert.deepEqual(defaultPlanModel(auth.models), {
+    assert.deepEqual(defaultPlanModel(auth.models, auth.planAvailability), {
       provider: "anthropic",
       modelId: "claude-sonnet-5-5",
     });
@@ -52,4 +52,20 @@ test("Claude fallback follows explicit preferences when Pi's primary model is ab
     await auth.close();
     db.close();
   }
+});
+
+import { createModels } from "@earendil-works/pi-ai";
+import { planModels } from "../../core/plan-models.ts";
+test("model availability fails closed unless an explicit plan source allows it", () => {
+  const models = createModels();
+  models.setProvider(anthropicProvider());
+  assert.deepEqual(planModels(models), []);
+  assert.deepEqual(
+    planModels(models, { connectedProviders: () => new Set() }),
+    [],
+  );
+  assert(
+    planModels(models, { connectedProviders: () => new Set(["anthropic"]) })
+      .length > 0,
+  );
 });

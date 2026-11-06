@@ -14,7 +14,7 @@ The provider supplies the real catalogue through `dist/providers/anthropic.model
 
 ## Implementation plan
 
-Keep the existing ChatGPT command body and connection states valid. Add optional provider metadata and per-plan connection flags to protocol v1. Add a provider argument to connect and a provider-specific disconnect command. Retain ChatGPT's existing model default; select the first Pi Claude catalogue entry when Claude is the only connected plan. Show only connected providers in the catalogue and route each selected model through its owning Pi provider.
+Keep the existing ChatGPT command body and connection states valid. Add optional provider metadata and per-plan connection flags to protocol v1. Add a provider argument to connect and a provider-specific disconnect command. Retain ChatGPT's existing model default; select Claude Opus 5.5 when Claude is the only connected plan, with explicit ordered model preferences if it is absent. Show only connected providers in the catalogue and route each selected model through its owning Pi provider.
 
 The work uses temporary databases and `initialise(false)`. It does not read the owner's Pi credentials or touch the owner runtime.
 
@@ -37,3 +37,12 @@ To finish, the owner selects Continue with Claude, or Connect beside Claude plan
 This branch owns plan sign-in only. The welcome change adds one component beside the existing ChatGPT button, without changing its action or accessible name. Settings replaces the single hard-coded plan row with `PlanAccounts`. Expect conflicts in `apps/web/app.tsx`, `apps/web/welcome.test.ts` and `apps/web/settings-page.test.ts` when merging the design round. Preserve its layout and place the Claude action beside ChatGPT, keeping the provider-aware sign-in copy and expanded Claude code prompt. The added `apps/web/plan-sign-in.tsx` holds the small shared rendering pieces.
 
 The exact `claude.ai` host is added to Electron's HTTPS sign-in allowlist. No other desktop behaviour changes. Auth and the model availability helper remain in protected core and must be integrated through the owner-reviewed core upgrade process. No push, merge, deployment or owner runtime changes are part of this task.
+
+
+## Provider capability boundaries
+
+Model availability is supplied explicitly by auth to each adapter and setup runtime. A missing availability source offers no models. The source reads connected provider IDs once per catalogue read, rather than querying SQLite for every model.
+
+Hosted web search currently uses Pi's Codex-specific implementation. Claude models are not offered `search_web`; their prompt explains that hosted search is unavailable and that the owner can choose a ChatGPT model to use it. Gaia does not call the unsupported search path or claim that Claude searched the web. Native Claude hosted search remains unimplemented.
+
+The existing automatic Pi credential import remains ChatGPT-only. Claude always uses its explicit Connect action. Tests and this task use `initialise(false)` and never inspect the owner's import file. Login errors deliberately use Gaia's own plain messages and do not log Pi's token-endpoint exception text.

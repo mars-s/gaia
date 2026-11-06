@@ -1,20 +1,19 @@
 import type { Models } from "@earendil-works/pi-ai";
 
-const availability = new WeakMap<Models, (provider: string) => boolean>();
-export function registerPlanAvailability(
+export type PlanAvailability = { connectedProviders(): ReadonlySet<string> };
+const noPlans: PlanAvailability = { connectedProviders: () => new Set() };
+export function planModels(
   models: Models,
-  connected: (provider: string) => boolean,
+  availability: PlanAvailability = noPlans,
 ) {
-  availability.set(models, connected);
+  const connected = availability.connectedProviders();
+  return models.getModels().filter((model) => connected.has(model.provider));
 }
-export function planModels(models: Models) {
-  const connected = availability.get(models);
-  return models
-    .getModels()
-    .filter((model) => !connected || connected(model.provider));
-}
-export function defaultPlanModel(models: Models) {
-  const catalogue = planModels(models);
+export function defaultPlanModel(
+  models: Models,
+  availability: PlanAvailability = noPlans,
+) {
+  const catalogue = planModels(models, availability);
   const preferences = [
     ["openai-codex", "gpt-6.1-sol"],
     ["anthropic", "claude-opus-5-5"],

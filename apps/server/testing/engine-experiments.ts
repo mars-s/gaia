@@ -89,7 +89,7 @@ async function measure(layout: "family" | "shared") {
         ctx,
       );
       adapters.push(
-        await conversationAdapter(conversation, harness, models, ctx),
+        await conversationAdapter(conversation, harness, models, ctx, { connectedProviders: () => new Set(["openai-codex"]) }),
       );
     }
     await harness.commit(async (tx) => {

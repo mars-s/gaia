@@ -1,4 +1,8 @@
-import { planModels, defaultPlanModel } from "../../../core/plan-models.ts";
+import {
+  planModels,
+  defaultPlanModel,
+  type PlanAvailability,
+} from "../../../core/plan-models.ts";
 import { digest } from "./storage.ts";
 import { createAdmission } from "./admission.ts";
 import { createJobTask, scopeIn, jobIn } from "./jobs.ts";
@@ -43,6 +47,7 @@ import type { OwnerState } from "../../../packages/sdk/onboarding.ts";
 
 export type ProfileOptions = {
   models: Models;
+  planAvailability?: PlanAvailability;
   readOwner?(): OwnerState | undefined;
   env?: HarnessOptions["env"];
   extensions?: Extension[];
@@ -51,6 +56,7 @@ export type ProfileOptions = {
     scopeId: ScopeId;
     jobId: string;
     conversationId: ConversationId;
+    provider?: string;
   }): readonly Extension[] | Promise<readonly Extension[]>;
   capabilities:
     | z.infer<typeof ExperienceCapabilities>
@@ -128,6 +134,7 @@ export async function openProfile(
     anchor,
     readOwner: options.readOwner,
     models: options.models,
+    planAvailability: options.planAvailability,
   });
   const tools = createExperienceTools({
     read,
@@ -156,6 +163,9 @@ export async function openProfile(
         scopeId: job.public.scopeId,
         jobId: job.public.id,
         conversationId: job.workerId,
+        provider: options.models
+          .getModels()
+          .find((model) => model.id === job.selection.modelId)?.provider,
       })) ?? []
     ).map(trackedExtension);
     for (const extension of extensions) registry.install(extension);
@@ -209,16 +219,18 @@ export async function openProfile(
             };
   });
   function liveModels() {
-    return planModels(options.models).map((model) => ({
-      id: model.id,
-      name: model.name,
-      provider: model.provider,
-      contextWindow: model.contextWindow,
-      capabilities: {
-        images: model.input.includes("image"),
-        thinkingLevels: effortLevels(model),
-      },
-    }));
+    return planModels(options.models, options.planAvailability).map(
+      (model) => ({
+        id: model.id,
+        name: model.name,
+        provider: model.provider,
+        contextWindow: model.contextWindow,
+        capabilities: {
+          images: model.input.includes("image"),
+          thinkingLevels: effortLevels(model),
+        },
+      }),
+    );
   }
   async function addScope(
     state: State,
@@ -229,7 +241,7 @@ export async function openProfile(
       ownership: { kind: "ownerless" },
     });
     await configure(tx, conversation.id, {
-      model: defaultPlanModel(options.models),
+      model: defaultPlanModel(options.models, options.planAvailability),
       thinkingLevel: "high",
       instructions:
         "Passive scope context ledger. Never execute owner inputs here.",
@@ -251,7 +263,8 @@ export async function openProfile(
       chat: {
         // Old GOOD requires this cache. Active reads and validation use Pi's live catalogue.
         models: liveModels(),
-        modelId: defaultPlanModel(options.models).modelId,
+        modelId: defaultPlanModel(options.models, options.planAvailability)
+          .modelId,
         thinkingLevel: "high",
         compaction: { kind: "idle" },
       },
@@ -444,6 +457,7 @@ export async function openProfile(
           harness,
           options.models,
           ctx,
+          options.planAvailability,
         );
         await adapter.configure(input.modelId, input.thinkingLevel);
         await mutate((state) => {
@@ -482,6 +496,7 @@ export async function openProfile(
           harness,
           options.models,
           ctx,
+          options.planAvailability,
         );
         const kind = await adapter.compact(new AbortController().signal);
         const context = await conversation.context(ctx);

@@ -471,3 +471,14 @@ test("intent recovery is unknown, disabled modes have no capability and PNG is m
   assert.equal(findDesktopImage({ screenshot: { base64: png } }), png);
   assert.equal(findDesktopImage({ path: "/tmp/cannot-see.png" }), undefined);
 });
+
+for (const provider of ["anthropic", undefined, "openai-codex"]) {
+  test(`hosted search is offered only to a supported calling provider: ${provider}`, async (t) => {
+    const dir = await mkdtemp(join(tmpdir(), "gaia-search-capability-"));
+    const host = await createExperienceToolHost({ receiptDirectory: dir, generation: "fixture", mode: "stable", enabled: () => true });
+    t.after(async () => { await host.close(); await rm(dir, { recursive: true, force: true }); });
+    const extension = host.extension({ profileId: randomUUID(), scopeId: randomUUID(), jobId: randomUUID(), conversationId: 0, generation: "fixture" }, provider);
+    assert.equal(extension.tools?.some((tool) => tool.name === "search_web"), provider === "openai-codex");
+    assert.equal(extension.sections?.length, provider === "openai-codex" ? 0 : 1);
+  });
+}

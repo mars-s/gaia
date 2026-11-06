@@ -1,4 +1,3 @@
-import { registerPlanAvailability } from "../../../core/plan-models.ts";
 import assert from "node:assert/strict";
 import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -95,7 +94,7 @@ export async function experienceFixture(
       "gpt-6.1-sol",
     )?.thinkingLevelMap;
     auth.models.setProvider(faux.provider);
-    registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
+    auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
     const pi = await createPi(
       join(dir, "pi.sqlite"),
       auth,

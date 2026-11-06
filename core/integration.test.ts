@@ -1,4 +1,3 @@
-import { registerPlanAvailability } from "./plan-models.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -347,7 +346,7 @@ test(
             tokensPerSecond: 100000,
           });
           auth.models.setProvider(faux.provider);
-          registerPlanAvailability(auth.models, (provider) => provider === "openai-codex");
+          auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
           const reason = "Model-authored source fixture";
           faux.setResponses([
             (context) => {

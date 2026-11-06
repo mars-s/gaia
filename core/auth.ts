@@ -7,7 +7,7 @@ import { createModels } from "@earendil-works/pi-ai/models";
 import type { CredentialStore } from "@earendil-works/pi-ai";
 import { openaiCodexProvider } from "@earendil-works/pi-ai/providers/openai-codex";
 import { anthropicProvider } from "@earendil-works/pi-ai/providers/anthropic";
-import { registerPlanAvailability, defaultPlanModel } from "./plan-models.ts";
+import { defaultPlanModel } from "./plan-models.ts";
 import type { Connection, PlanProvider } from "../packages/protocol/index.ts";
 const OAuth = z
   .object({
@@ -71,19 +71,27 @@ export function createAuth(db: DatabaseSync) {
   models.setProvider(openaiCodexProvider());
   const anthropic = anthropicProvider();
   models.setProvider({ ...anthropic, auth: { oauth: anthropic.auth.oauth } });
-  const connected = (provider: string) =>
-    Boolean(
-      db.prepare("SELECT 1 FROM credentials WHERE provider=?").get(provider),
+  const connectedProviders = () =>
+    new Set(
+      db
+        .prepare("SELECT provider FROM credentials")
+        .all()
+        .map((row) => String(row.provider)),
     );
-  registerPlanAvailability(models, connected);
-  const plans = () =>
-    (["openai-codex", "anthropic"] as const).map((provider) => ({
+  const planAvailability = { connectedProviders };
+  const plans = () => {
+    const connected = connectedProviders();
+    return (["openai-codex", "anthropic"] as const).map((provider) => ({
       provider,
-      connected: connected(provider),
+      connected: connected.has(provider),
     }));
+  };
   const settled = (): Connection =>
     plans().some((plan) => plan.connected)
-      ? { kind: "connected", model: defaultPlanModel(models).modelId }
+      ? {
+          kind: "connected",
+          model: defaultPlanModel(models, planAvailability).modelId,
+        }
       : {
           kind: "disconnected",
           message: "Connect your ChatGPT or Claude subscription to start.",
@@ -97,6 +105,7 @@ export function createAuth(db: DatabaseSync) {
   const controller = new AbortController();
   return {
     models,
+    planAvailability,
     store,
     async initialise(importPi = true) {
       if (importPi && !(await store.read("openai-codex"))) {
