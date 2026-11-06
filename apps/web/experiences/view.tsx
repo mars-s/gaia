@@ -1,3 +1,4 @@
+import { sessionTiles } from "../session-tiles";
 import { setupContext } from "../setup-context";
 import { SetupGlyph } from "../setup-glyph";
 import { useTranscriptFollow } from "../use-transcript-follow";
@@ -125,6 +126,7 @@ export function ExperienceConversation({
       <p className="sidebar-section">{setupContext[layout].section}</p>
       <div className="flex flex-col gap-1">
         {profile.scopes.map((item) => {
+          const tile = sessionTiles(profile.scopes).get(item.id);
           return (
           <Button
             key={item.id}
@@ -151,7 +153,7 @@ export function ExperienceConversation({
                 />
               </span>
             )}
-            {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <span className="session-monogram" aria-hidden="true">{Array.from(item.label.trim())[0]?.toLocaleUpperCase()}</span>}</span>}
+            {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <span className="session-monogram" data-hue={tile?.hue} aria-hidden="true">{tile?.text}</span>}</span>}
             <span className="scope-row-copy min-w-0">
               <span className="block truncate">{item.label}</span>
             </span>

@@ -1329,3 +1329,20 @@
   --shadow-level-3: 0 16px 48px rgb(0 0 0 / 0.65);
   --backdrop: rgb(0 0 0 / 0.48);
 }
+
+:root {
+  --color-session-sky-bg: #d8e8f6; --color-session-sky-ink: #1f4f7a;
+  --color-session-rose-bg: #f6dbe3; --color-session-rose-ink: #8a1f45;
+  --color-session-sage-bg: #dcebdc; --color-session-sage-ink: #2f5d35;
+  --color-session-amber-bg: #f6e6c8; --color-session-amber-ink: #7a4e12;
+  --color-session-lilac-bg: #e6def5; --color-session-lilac-ink: #4d3a7a;
+  --color-session-slate-bg: #e1e4e8; --color-session-slate-ink: #3b4350;
+}
+.dark {
+  --color-session-sky-bg: #1f3447; --color-session-sky-ink: #b5d3ef;
+  --color-session-rose-bg: #4a2431; --color-session-rose-ink: #f2b8cb;
+  --color-session-sage-bg: #23382a; --color-session-sage-ink: #b9dcbf;
+  --color-session-amber-bg: #43341c; --color-session-amber-ink: #f0d29c;
+  --color-session-lilac-bg: #332a48; --color-session-lilac-ink: #d3c6f0;
+  --color-session-slate-bg: #2c3036; --color-session-slate-ink: #c9ced6;
+}

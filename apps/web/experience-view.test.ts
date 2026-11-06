@@ -610,8 +610,8 @@ test("Sessions fill the icon column with a name monogram", () => {
   const nav = html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
   const rows = [...nav.matchAll(/<button[^]*?<\/button>/g)].filter(row => row[0].includes("experience-nav-row"));
   assert.equal(rows.length, 2);
-  for (const row of rows) {
-    assert.match(row[0], /sidebar-glyph[^]*session-monogram[^]*>M<\/span>/);
+  for (const [index, row] of rows.entries()) {
+    assert.match(row[0], index === 0 ? /session-monogram[^]*>Ma<\/span>/ : /session-monogram[^]*>M<\/span>/);
     assert.doesNotMatch(row[0], /setup-layout-icon/);
   }
   controller.profile!.scopes[1].createdAt = first.createdAt;

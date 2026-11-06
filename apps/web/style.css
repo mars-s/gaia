@@ -1644,3 +1644,11 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .settings-section-trigger:hover::before, .settings-section-trigger:active::before { background: var(--color-surface-hover); }
  .settings-section-trigger:focus-visible::before { outline: 2px solid var(--color-focus); }
 }
+
+.session-monogram { font-weight: 600; letter-spacing: 0; }
+.session-monogram[data-hue="sky"] { background: var(--color-session-sky-bg); color: var(--color-session-sky-ink); }
+.session-monogram[data-hue="rose"] { background: var(--color-session-rose-bg); color: var(--color-session-rose-ink); }
+.session-monogram[data-hue="sage"] { background: var(--color-session-sage-bg); color: var(--color-session-sage-ink); }
+.session-monogram[data-hue="amber"] { background: var(--color-session-amber-bg); color: var(--color-session-amber-ink); }
+.session-monogram[data-hue="lilac"] { background: var(--color-session-lilac-bg); color: var(--color-session-lilac-ink); }
+.session-monogram[data-hue="slate"] { background: var(--color-session-slate-bg); color: var(--color-session-slate-ink); }
