@@ -5,6 +5,7 @@ import { RiArrowDownSLine, RiCheckLine, RiAddLine } from "@remixicon/react";
 import { SetupGlyph } from "../setup-glyph";
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -112,6 +113,13 @@ export function SetupSettings({
   }, [controller]);
   const mainTrigger = useRef<HTMLButtonElement>(null);
   const [makingMain, setMakingMain] = useState(false);
+  const restoreMainFocus = useRef(false);
+  useLayoutEffect(() => {
+    if (!makingMain && restoreMainFocus.current) {
+      restoreMainFocus.current = false;
+      mainTrigger.current?.focus();
+    }
+  }, [makingMain]);
   const mainName = controller.profiles.find(item => item.id === controller.mainId)?.plan.title ?? "Original chat";
   const review = controller.profiles.find((item) => item.id === reviewing);
   return (
@@ -122,18 +130,20 @@ export function SetupSettings({
       <SettingsHeading id="setups-title">Setups</SettingsHeading>
       <div className="main-chat-setting">
         <div><p className="main-chat-label">Main chat</p><p className="main-chat-helper">Opens when Gaia starts.</p></div>
-        <Menu.Root>
+        <Menu.Root onOpenChange={open => {
+          if (!open && !restoreMainFocus.current) requestAnimationFrame(() => mainTrigger.current?.focus());
+        }}>
           <Menu.Trigger ref={mainTrigger} disabled={makingMain} aria-label={`Main chat: ${mainName}`} render={<Button variant="secondary" size="small" />}>
             <span className="truncate">{mainName}</span><RiArrowDownSLine className="size-4 shrink-0" aria-hidden />
           </Menu.Trigger>
-          <Menu.Portal><Menu.Positioner sideOffset={4} align="end" className="z-50"><Menu.Popup className="chat-switcher-menu" aria-label="Main chat">
+          <Menu.Portal><Menu.Positioner sideOffset={4} align="end" className="z-50"><Menu.Popup finalFocus={false} className="chat-switcher-menu" aria-label="Main chat">
             <Menu.RadioGroup value={controller.mainId ?? "original"}>
               {[{ id: null, name: "Original chat" }, ...controller.profiles.filter(item => item.kind === "ready").map(item => ({ id: item.id, name: item.plan.title }))].map(item => (
-                <Menu.RadioItem key={item.id ?? "original"} value={item.id ?? "original"} className="chat-switcher-row" onClick={() => {
+                <Menu.RadioItem closeOnClick key={item.id ?? "original"} value={item.id ?? "original"} className="chat-switcher-row" onClick={() => {
+                  restoreMainFocus.current = true;
                   setMakingMain(true);
                   void controller.makeMain(item.id).finally(() => {
                     setMakingMain(false);
-                    requestAnimationFrame(() => mainTrigger.current?.focus());
                   });
                 }}>
                   <span className="min-w-0 flex-1">{item.name}</span><Menu.RadioItemIndicator><RiCheckLine className="size-4" aria-hidden /></Menu.RadioItemIndicator>

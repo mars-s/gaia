@@ -83,6 +83,10 @@ test("setup rows use unfilled rows, visible actions and wrapping descriptions", 
  const source = readFileSync(new URL("./experiences/index.tsx", import.meta.url), "utf8");
  assert.doesNotMatch(source, /More actions|Make main chat|You’re here/);
  assert.match(source, /controller.makeMain\(item.id\)/);
+ assert.match(source, /<Menu.RadioItem closeOnClick/);
+ assert.match(source, /Menu.Popup finalFocus=\{false\}/);
+ assert.match(source, /useLayoutEffect\(\(\) => \{[^]*if \(!makingMain && restoreMainFocus.current\)/);
+ assert.match(source, /mainTrigger.current\?\.focus\(\)/);
  assert.equal((source.match(/Main chat: /g) ?? []).length, 1);
 });
 
