@@ -15,6 +15,7 @@ import {
 import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  RiSettings3Line,
   RiMenuLine,
   RiHashtag,
   RiAddLine,
@@ -50,6 +51,21 @@ export function ExperienceConversation({
   const [purpose, setPurpose] = useState("");
   const [creating, setCreating] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
+  const previewProfileId = profile?.profile.id;
+  const previewScopeIds = profile?.scopes.map(item => item.id).join(",");
+  useEffect(() => {
+    const current = controller.profile;
+    if (!current || !["sessions", "channels"].includes(current.profile.plan.layout)) return;
+    const request = new AbortController();
+    for (const item of current.scopes) {
+      const target = { profileId: current.profile.id, scopeId: item.id };
+      void controller.client.scope(target.profileId, target.scopeId, request.signal).then(value => {
+        if (!request.signal.aborted && controller.profile?.profile.id === target.profileId) controller.receive(target, value);
+      }).catch(() => {});
+    }
+    return () => request.abort();
+  }, [controller, previewProfileId, previewScopeIds]);
+
   if (!profile || !scope)
     return (
       <p role="status" className="p-6 text-text-secondary">
@@ -109,13 +125,15 @@ export function ExperienceConversation({
       </div>
       <p className="sidebar-section">{setupContext[layout].section}</p>
       <div className="flex flex-col gap-1">
-        {profile.scopes.map((item) => (
+        {profile.scopes.map((item) => {
+          const preview = layout === "bots" ? item.purpose : controller.entry({ profileId: profile.profile.id, scopeId: item.id }).state?.messages.findLast(message => message.text.trim())?.text.replace(/\s+/g, " ").trim();
+          return (
           <Button
             key={item.id}
             variant="secondary"
             size="small"
             className="experience-nav-row w-full justify-start"
-            data-two-lines={showSessionRecency && Boolean(sessionRecency(item.createdAt))}
+            data-two-lines={Boolean(preview) || (showSessionRecency && Boolean(sessionRecency(item.createdAt)))}
             aria-current={item.id === scope.scopeId ? "page" : undefined}
             onClick={() => {
               controller.select({
@@ -139,7 +157,8 @@ export function ExperienceConversation({
             {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <SetupGlyph layout={layout} />}</span>}
             <span className="scope-row-copy min-w-0">
               <span className="block truncate">{item.label}</span>
-              {showSessionRecency && sessionRecency(item.createdAt) && (
+              {preview && <span className="scope-preview" title={preview}>{preview}</span>}
+              {!preview && showSessionRecency && sessionRecency(item.createdAt) && (
                 <span className="session-recency">Started {sessionRecency(item.createdAt)}</span>
               )}
             </span>
@@ -152,7 +171,7 @@ export function ExperienceConversation({
               />
             )}
           </Button>
-        ))}
+        ); })}
       </div>
       <button
         type="button"
@@ -222,6 +241,12 @@ export function ExperienceConversation({
         </form>
       )}
 
+      <div className="sidebar-footer">
+        <button type="button" className="quiet-action sidebar-settings" onClick={() => { setNavigation(false); onSettings?.(); }}>
+          <span className="sidebar-glyph"><RiSettings3Line aria-hidden="true" /></span>
+          <span>Settings</span>
+        </button>
+      </div>
     </nav>
   );
   return (

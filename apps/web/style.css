@@ -1575,3 +1575,6 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .settings-plan-row button { height: 28px; min-height: 28px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 13px; line-height: 18px; }
 
 .setup-list-row[data-current="true"] { background: var(--color-surface-selected); border-radius: var(--radius-sm); }
+
+.scope-preview { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-2); font-size: 12px; line-height: 16px; margin-top: 2px; }
+.sidebar-settings { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; width: 100%; padding: 8px 10px; text-align: left; }

@@ -592,7 +592,8 @@ test("setup sidebars explain memory and leave Original chat to the switcher", ()
   ] as const) {
     const html = fixture(layout).html();
     assert.ok(html.includes(caption));
-    assert.doesNotMatch(html, /sidebar-footer|sidebar-original/);
+    assert.match(html, /sidebar-footer[^]*sidebar-settings[^]*Settings/);
+    assert.doesNotMatch(html, /sidebar-original/);
     assert.doesNotMatch(html, /session-recency/);
   }
 });
@@ -605,7 +606,7 @@ test("Sessions use one glyph and show recency only when dates distinguish rows",
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   controller.profile!.scopes.push({ ...first, id: ScopeId.parse("33333333-3333-4333-8333-333333333333"), createdAt: yesterday.toISOString() });
-  assert.match(html(), /session-recency">Started today/);
+  assert.match(html(), /scope-preview[^>]*>I will check both\./);
   assert.match(html(), /session-recency">Started yesterday/);
   const nav = html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
   const rows = [...nav.matchAll(/<button[^]*?<\/button>/g)].filter(row => row[0].includes("experience-nav-row"));
@@ -623,7 +624,7 @@ test("Sessions use one glyph and show recency only when dates distinguish rows",
 test("Original chat footer passes through the app navigation callback", () => {
   const view = readFileSync(new URL("./experiences/view.tsx", import.meta.url), "utf8");
   const app = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(view, /sidebar-footer/);
+  assert.match(view, /sidebar-footer/);
   assert.match(app, /onOriginal=\{\(\) => \{[^]*experiences.original\(\);[^]*setExperienceView\("original"\)/);
 });
 
@@ -644,5 +645,18 @@ test("narrow setup headers keep context and channels use the Gaia placeholder", 
   assert.match(html(), /narrow-setup-context">Test/);
   assert.match(html(), layout === "bots" ? /placeholder="Message Main…"/ : /placeholder="Message Gaia…"/);
   controller.pause();
+ }
+});
+
+test("sidebar previews use the last real message, omit empty histories and keep Bot purposes", () => {
+ for (const layout of ["sessions", "channels", "bots"] as const) {
+   const {controller, parsed, html} = fixture(layout);
+   const nav = () => html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
+   assert.match(nav(), layout === "bots" ? /scope-preview[^>]*>Test</ : /scope-preview[^>]*>I will check both\.</);
+   controller.receive(controller.selected!, {...parsed, revision: 2, messages: []});
+   if (layout === "bots") assert.match(nav(), /scope-preview[^>]*>Test</);
+   else assert.doesNotMatch(nav(), /scope-preview/);
+   assert.match(nav(), /sidebar-settings[^]*Settings/);
+   controller.pause();
  }
 });
