@@ -111,7 +111,7 @@ test("narrow account rows stack status and actions, and secondary text shares bo
 
 test("settings use main chat consistently and explain change history truthfully", () => {
  const setups = readFileSync(new URL("./experiences/index.tsx", import.meta.url), "utf8");
- assert.match(setups, /Your main chat opens when Gaia starts\./);
+ assert.match(setups, /Opens when Gaia starts\./);
  assert.doesNotMatch(setups, /main setup|>Main</);
  const history = readFileSync(new URL("./managed-settings.tsx", import.meta.url), "utf8");
  assert.match(history, />Change history</);

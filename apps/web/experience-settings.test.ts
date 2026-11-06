@@ -46,23 +46,23 @@ test("Settings rows separate names and layout text, identify exactly one main ch
   assert.match(text(rows()[3]), /My sessions 2 sessions with separate historiesHidden/);
   assert.match(text(rows()[0]), /Original chatMain chat One conversation/);
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main chat</g) ?? []).length, 1);
-  assert.doesNotMatch(render(), /setup-open-now|>Current</);
+  assert.match(render(), /aria-label="Main chat: /);
+  assert.equal((render().match(/>Open</g) ?? []).length, 4);
+  assert.doesNotMatch(render(), /setup-open-now|>Current<|Make main chat|You’re here/);
   assert.doesNotMatch(render(), /Created|setup-status-badge|status-pill[^>]*>Current/);
-  assert.match(rows()[1], /<button[^>]*class="[^"]*secondary-action[^"]*"[^]*Make main/);
-  assert.match(rows()[0], /setup-row-actions[^]*You’re here[^]*<button[^]*Open/);
   assert.match(render(), /<li class="setup-list-row" aria-current="page"/);
   assert.doesNotMatch(rows()[1], /aria-current/);
   assert.equal((render().match(/class="[^"]*\bsetup-layout-icon\b[^"]*"/g) ?? []).length, 4);
   assert.match(rows()[1], /Open/);
-  assert.match(rows()[1], /Make main/);
   assert.match(rows()[2], /Open/);
   assert.doesNotMatch(rows()[2], /Make main/);
   controller.mainId = bots.id;
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main chat</g) ?? []).length, 1);
-  assert.doesNotMatch(render(), /setup-open-now|>Current</);
+  assert.match(render(), /aria-label="Main chat: /);
+  assert.equal((render().match(/>Open</g) ?? []).length, 4);
+  assert.doesNotMatch(render(), /setup-open-now|>Current<|Make main chat|You’re here/);
   assert.match(text(rows()[1]), /Everyday BotsMain chat 2 Bots with separate memory/);
   assert.doesNotMatch(rows()[1], /Make main/);
-  assert.match(rows()[0], /secondary-action[^]*Make main/);
   assert.doesNotMatch(
     render(),
     /Everyday BotsBots|Shared workspaceChannels|My sessionsSessions/,
@@ -81,6 +81,7 @@ test("setup rows use unfilled rows, visible actions and wrapping descriptions", 
  assert.match(css, /setup-name \+ p \{ white-space: normal; overflow-wrap: anywhere/);
  assert.match(css, /setup-row-actions \{ justify-content: flex-start/);
  const source = readFileSync(new URL("./experiences/index.tsx", import.meta.url), "utf8");
- assert.doesNotMatch(source, /Menu|More actions/);
- assert.equal((source.match(/You’re here/g) ?? []).length, 2);
+ assert.doesNotMatch(source, /More actions|Make main chat|You’re here/);
+ assert.match(source, /controller.makeMain\(item.id\)/);
+ assert.equal((source.match(/Main chat: /g) ?? []).length, 1);
 });

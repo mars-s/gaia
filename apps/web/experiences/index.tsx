@@ -1,5 +1,6 @@
 import { StatusPill } from "../status-pill";
-import { RiAddLine } from "@remixicon/react";
+import { Menu } from "@base-ui/react/menu";
+import { RiArrowDownSLine, RiCheckLine, RiAddLine } from "@remixicon/react";
 import { SetupGlyph } from "../setup-glyph";
 import {
   useEffect,
@@ -108,6 +109,9 @@ export function SetupSettings({
       active.current = false;
     };
   }, [controller]);
+  const mainTrigger = useRef<HTMLButtonElement>(null);
+  const [makingMain, setMakingMain] = useState(false);
+  const mainName = controller.profiles.find(item => item.id === controller.mainId)?.plan.title ?? "Original chat";
   const review = controller.profiles.find((item) => item.id === reviewing);
   return (
     <section
@@ -115,7 +119,30 @@ export function SetupSettings({
       aria-labelledby="setups-title"
     >
       <h2 tabIndex={-1} id="setups-title">Setups</h2>
-      <p className="section-explainer">Your main chat opens when Gaia starts.</p>
+      <div className="main-chat-setting">
+        <div><p className="main-chat-label">Main chat</p><p className="main-chat-helper">Opens when Gaia starts.</p></div>
+        <Menu.Root>
+          <Menu.Trigger ref={mainTrigger} disabled={makingMain} aria-label={`Main chat: ${mainName}`} render={<Button variant="secondary" size="small" />}>
+            <span className="truncate">{mainName}</span><RiArrowDownSLine className="size-4 shrink-0" aria-hidden />
+          </Menu.Trigger>
+          <Menu.Portal><Menu.Positioner sideOffset={4} align="end" className="z-50"><Menu.Popup className="chat-switcher-menu" aria-label="Main chat">
+            <Menu.RadioGroup value={controller.mainId ?? "original"}>
+              {[{ id: null, name: "Original chat" }, ...controller.profiles.filter(item => item.kind === "ready").map(item => ({ id: item.id, name: item.plan.title }))].map(item => (
+                <Menu.RadioItem key={item.id ?? "original"} value={item.id ?? "original"} className="chat-switcher-row" onClick={() => {
+                  setMakingMain(true);
+                  void controller.makeMain(item.id).finally(() => {
+                    setMakingMain(false);
+                    requestAnimationFrame(() => mainTrigger.current?.focus());
+                  });
+                }}>
+                  <span className="min-w-0 flex-1">{item.name}</span><Menu.RadioItemIndicator><RiCheckLine className="size-4" aria-hidden /></Menu.RadioItemIndicator>
+                </Menu.RadioItem>
+              ))}
+            </Menu.RadioGroup>
+          </Menu.Popup></Menu.Positioner></Menu.Portal>
+        </Menu.Root>
+      </div>
+      <p className="your-setups-label">Your setups</p>
       {controller.error && (
         <p role="alert" className="text-text-error-primary">
           {controller.error}{" "}
@@ -139,7 +166,7 @@ export function SetupSettings({
           <div className="setup-row-meta">
           
           <div className="setup-row-actions">
-            {!controller.profile && <span className="setup-current">You’re here</span>}
+
             {(
               <Button
                 variant="secondary"
@@ -152,15 +179,7 @@ export function SetupSettings({
                 Open
               </Button>
             )}
-            {controller.mainId !== null && (
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={() => void controller.makeMain(null)}
-              >
-                Make main chat
-              </Button>
-            )}
+
           </div>
           </div>
         </li>
@@ -179,7 +198,7 @@ export function SetupSettings({
             <div className="setup-row-meta">
             {item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
             <div className="setup-row-actions">
-              {controller.profile?.profile.id === item.id && <span className="setup-current">You’re here</span>}
+
               {(
                 <Button
                   variant="secondary"
@@ -207,16 +226,7 @@ export function SetupSettings({
                   Open
                 </Button>
               )}
-              {item.kind === "ready" && controller.mainId !== item.id && (
-                <Button
-                  variant="secondary"
-                  size="small"
-                  disabled={pending}
-                  onClick={() => void controller.makeMain(item.id)}
-                >
-                  Make main chat
-                </Button>
-              )}
+
             </div>
             </div>
           </li>
