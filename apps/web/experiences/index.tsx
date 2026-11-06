@@ -1,4 +1,3 @@
-import { RiCheckLine } from "@remixicon/react";
 import { StatusPill } from "../status-pill";
 import { RiAddLine } from "@remixicon/react";
 import { SetupGlyph } from "../setup-glyph";
@@ -116,7 +115,7 @@ export function SetupSettings({
       aria-labelledby="setups-title"
     >
       <h2 tabIndex={-1} id="setups-title">Setups</h2>
-      <p className="section-explainer">Your main chat is the one Gaia opens at start.</p>
+      <p className="section-explainer">Your main chat opens when Gaia starts.</p>
       {controller.error && (
         <p role="alert" className="text-text-error-primary">
           {controller.error}{" "}
@@ -129,7 +128,7 @@ export function SetupSettings({
         </p>
       )}
       <ul className="flex w-full min-w-0 flex-col divide-y divide-separator-border">
-        <li className="setup-list-row" data-current={!controller.profile || undefined}>
+        <li className="setup-list-row" aria-current={!controller.profile ? "page" : undefined}>
           <span className="avatar-tile"><SetupGlyph layout="single" /></span>
           <div className="min-w-0 flex-1">
             <p className="text-body-medium setup-name">Original chat</p>{" "}
@@ -140,7 +139,6 @@ export function SetupSettings({
           <div className="setup-row-meta">
           {controller.mainId === null ? <StatusPill tone="accent">Main chat</StatusPill> : <span />}
           <div className="setup-row-actions">
-            {!controller.profile && <span className="setup-open-now"><RiCheckLine aria-hidden="true" />Current</span>}
             {controller.profile && (
               <Button
                 variant="secondary"
@@ -166,7 +164,7 @@ export function SetupSettings({
           </div>
         </li>
         {controller.profiles.map((item) => (
-          <li key={item.id} className="setup-list-row" data-current={controller.profile?.profile.id === item.id || undefined}>
+          <li key={item.id} className="setup-list-row" aria-current={controller.profile?.profile.id === item.id ? "page" : undefined}>
             <span className="avatar-tile"><SetupGlyph layout={item.plan.layout} /></span>
             <div className="min-w-0 flex-1">
               <p className="text-body-medium wrap-anywhere setup-name">
@@ -179,7 +177,6 @@ export function SetupSettings({
             <div className="setup-row-meta">
             {controller.mainId === item.id ? <StatusPill tone="accent">Main chat</StatusPill> : item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
             <div className="setup-row-actions">
-              {controller.profile?.profile.id === item.id && <span className="setup-open-now"><RiCheckLine aria-hidden="true" />Current</span>}
               {(item.kind === "proposed" ||
                 controller.profile?.profile.id !== item.id) && (
                 <Button

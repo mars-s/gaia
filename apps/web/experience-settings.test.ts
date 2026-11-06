@@ -44,14 +44,14 @@ test("Settings rows separate names and layout text, identify exactly one main ch
     /Shared workspace 2 channels with shared memoryProposed/,
   );
   assert.match(text(rows()[3]), /My sessions 2 sessions with separate historiesHidden/);
-  assert.match(text(rows()[0]), /Original chat One conversationMain chatCurrent/);
+  assert.match(text(rows()[0]), /Original chat One conversationMain chat/);
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main chat</g) ?? []).length, 1);
-  assert.equal((render().match(/class="setup-open-now"><svg[^]*?<\/svg>Current</g) ?? []).length, 1);
+  assert.doesNotMatch(render(), /setup-open-now|>Current</);
   assert.doesNotMatch(render(), /Created|setup-status-badge|status-pill[^>]*>Current/);
   assert.match(rows()[1], /<button[^>]*class="[^"]*secondary-action[^"]*"[^]*Make main/);
   assert.doesNotMatch(rows()[0], /<button/);
-  assert.match(render(), /<li class="setup-list-row" data-current="true"/);
-  assert.doesNotMatch(rows()[1], /data-current/);
+  assert.match(render(), /<li class="setup-list-row" aria-current="page"/);
+  assert.doesNotMatch(rows()[1], /aria-current/);
   assert.equal((render().match(/class="[^"]*\bsetup-layout-icon\b[^"]*"/g) ?? []).length, 4);
   assert.match(rows()[1], /Open/);
   assert.match(rows()[1], /Make main/);
@@ -59,7 +59,7 @@ test("Settings rows separate names and layout text, identify exactly one main ch
   assert.doesNotMatch(rows()[2], /Make main/);
   controller.mainId = bots.id;
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main chat</g) ?? []).length, 1);
-  assert.equal((render().match(/class="setup-open-now"><svg[^]*?<\/svg>Current</g) ?? []).length, 1);
+  assert.doesNotMatch(render(), /setup-open-now|>Current</);
   assert.match(text(rows()[1]), /2 Bots with separate memoryMain chat/);
   assert.doesNotMatch(rows()[1], /Make main/);
   assert.match(rows()[0], /secondary-action[^]*Make main/);
@@ -73,4 +73,10 @@ test("only Original chat keeps the manual creation action directly after its lis
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.match(css, /setup-settings > ul \{ flex: none/);
  assert.match(css, /setup-create[^}]*margin-top: 12px/);
+});
+
+test("setup rows keep equal inner padding around their selection fill", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /setup-list-row \{ padding-inline: 12px/);
+ assert.match(css, /setup-list-row\[aria-current="page"\][^}]*background: var\(--color-surface-selected\)/);
 });
