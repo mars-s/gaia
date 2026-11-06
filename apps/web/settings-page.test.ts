@@ -85,7 +85,9 @@ test("Settings navigation selects exactly one pane and retains five owner choice
   const html = renderToStaticMarkup(createElement(SettingsIndex, { current, onSelect() {} }));
   assert.equal((html.match(/aria-current="page"/g) ?? []).length, 1);
   assert.match(html, new RegExp('aria-current="page" aria-controls="' + current + '"'));
-  assert.match(html, /Settings section/);
+  assert.match(html, /Settings sections/);
+  assert.doesNotMatch(html, /combobox|settings-picker/);
+  assert.equal((html.match(/<button/g) ?? []).length, 5);
  }
  const source = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
  for (const [id] of settingsSections) assert.ok(source.includes('settingsSection === "' + id + '"'));
@@ -116,4 +118,11 @@ test("settings use main chat consistently and explain change history truthfully"
  assert.match(history, /Updates Gaia has made to itself/);
  const nav = readFileSync(new URL("./settings-index.tsx", import.meta.url), "utf8");
  assert.match(nav, /"Change history"/);
+});
+
+test("narrow settings wraps all five tabs and removes duplicate pane headings", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /settings-index \{ display: flex; flex-direction: row; flex-wrap: wrap/);
+ assert.match(css, /settings-content > .settings-section > h2[^}]*clip: rect/);
+ assert.match(css, /settings-index button:focus-visible[^}]*outline: 2px/);
 });

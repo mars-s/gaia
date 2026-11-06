@@ -1586,3 +1586,12 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .setup-settings .setup-list-row > .setup-row-meta:last-child { grid-column: 2; justify-self: start; }
  .setup-row-actions { justify-content: flex-start; }
 }
+
+@media (max-width: 639px) {
+ .settings-index { display: flex; flex-direction: row; flex-wrap: wrap; flex-shrink: 0; gap: 4px; padding: 8px 16px; border-bottom: 1px solid var(--color-line); }
+ .settings-index button { flex: 0 0 auto; padding: 6px 10px; border-radius: var(--radius-sm); font-size: 13px; line-height: 20px; color: var(--color-ink-2); }
+ .settings-index button[aria-current] { color: var(--color-ink); background: var(--color-surface-selected); }
+ .settings-index button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+ .settings-content > .settings-section > h2, .settings-content > .settings-section > div > #changes-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+ .settings-section .section-explainer { margin-top: 0; }
+}
