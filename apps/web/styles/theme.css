@@ -1243,6 +1243,7 @@
 }
 
 :root {
+  --color-composer-halo: color-mix(in oklab, var(--color-ink) 6%, transparent);
   --color-surface-page: var(--color-white);
   --color-surface-raised: var(--color-white);
   --color-surface-sunken: var(--color-neutral-100);
@@ -1299,6 +1300,7 @@
 }
 
 .dark {
+  --color-composer-halo: color-mix(in oklab, var(--color-ink) 14%, transparent);
   --color-surface-page: var(--color-neutral-925);
   --color-surface-raised: var(--color-neutral-900);
   --color-surface-sunken: var(--color-neutral-900);
