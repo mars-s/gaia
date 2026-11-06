@@ -44,23 +44,23 @@ test("Settings rows separate names and layout text, identify exactly one main ch
     /Shared workspace 2 channels with shared memoryProposed/,
   );
   assert.match(text(rows()[3]), /My sessions 2 sessions with separate historiesHidden/);
-  assert.match(text(rows()[0]), /Original chat One conversationMain chat/);
+  assert.match(text(rows()[0]), /Original chatMain chat One conversation/);
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main chat</g) ?? []).length, 1);
   assert.doesNotMatch(render(), /setup-open-now|>Current</);
   assert.doesNotMatch(render(), /Created|setup-status-badge|status-pill[^>]*>Current/);
   assert.match(rows()[1], /<button[^>]*class="[^"]*secondary-action[^"]*"[^]*Make main/);
-  assert.doesNotMatch(rows()[0], /<button/);
+  assert.match(rows()[0], /setup-row-actions[^]*You’re here[^]*<button[^]*Open/);
   assert.match(render(), /<li class="setup-list-row" aria-current="page"/);
   assert.doesNotMatch(rows()[1], /aria-current/);
   assert.equal((render().match(/class="[^"]*\bsetup-layout-icon\b[^"]*"/g) ?? []).length, 4);
   assert.match(rows()[1], /Open/);
   assert.match(rows()[1], /Make main/);
-  assert.match(rows()[2], /Review/);
+  assert.match(rows()[2], /Open/);
   assert.doesNotMatch(rows()[2], /Make main/);
   controller.mainId = bots.id;
   assert.equal((render().match(/class="status-pill" data-tone="accent">Main chat</g) ?? []).length, 1);
   assert.doesNotMatch(render(), /setup-open-now|>Current</);
-  assert.match(text(rows()[1]), /2 Bots with separate memoryMain chat/);
+  assert.match(text(rows()[1]), /Everyday BotsMain chat 2 Bots with separate memory/);
   assert.doesNotMatch(rows()[1], /Make main/);
   assert.match(rows()[0], /secondary-action[^]*Make main/);
   assert.doesNotMatch(
@@ -75,14 +75,12 @@ test("only Original chat keeps the manual creation action directly after its lis
  assert.match(css, /setup-create[^}]*margin-top: 12px/);
 });
 
-test("setup rows keep equal inner padding around their selection fill", () => {
+test("setup rows use unfilled rows, visible actions and wrapping descriptions", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /setup-list-row \{ padding-inline: 12px/);
- assert.match(css, /setup-list-row\[aria-current="page"\][^}]*background: var\(--color-surface-selected\)/);
-});
-
-test("the main chat marker reaches the same inner edge when its action slot is empty", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /setup-row-actions:empty \{ display: none/);
- assert.match(css, /setup-list-row:has\(.setup-row-actions:empty\) .status-pill \{ grid-column: 3 \/ -1; justify-self: end/);
+ assert.doesNotMatch(css, /setup-list-row\[aria-current="page"\][^}]*background/);
+ assert.match(css, /setup-name \+ p \{ white-space: normal; overflow-wrap: anywhere/);
+ assert.match(css, /setup-row-actions \{ justify-content: flex-start/);
+ const source = readFileSync(new URL("./experiences/index.tsx", import.meta.url), "utf8");
+ assert.doesNotMatch(source, /Menu|More actions/);
+ assert.equal((source.match(/You’re here/g) ?? []).length, 2);
 });

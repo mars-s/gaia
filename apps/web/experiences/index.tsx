@@ -131,15 +131,16 @@ export function SetupSettings({
         <li className="setup-list-row" aria-current={!controller.profile ? "page" : undefined}>
           <span className="avatar-tile"><SetupGlyph layout="single" /></span>
           <div className="min-w-0 flex-1">
-            <p className="text-body-medium setup-name">Original chat</p>{" "}
+            <p className="text-body-medium setup-name">Original chat{controller.mainId === null && <StatusPill tone="accent">Main chat</StatusPill>}</p>{" "}
             <p className="text-caption-1-regular text-text-secondary">
               One conversation
             </p>
           </div>
           <div className="setup-row-meta">
-          {controller.mainId === null ? <StatusPill tone="accent">Main chat</StatusPill> : <span />}
+          
           <div className="setup-row-actions">
-            {controller.profile && (
+            {!controller.profile && <span className="setup-current">You’re here</span>}
+            {(
               <Button
                 variant="secondary"
                 size="small"
@@ -169,16 +170,17 @@ export function SetupSettings({
             <div className="min-w-0 flex-1">
               <p className="text-body-medium wrap-anywhere setup-name">
                 {item.plan.title}
+                {controller.mainId === item.id && <StatusPill tone="accent">Main chat</StatusPill>}
               </p>{" "}
               <p className="text-caption-1-regular text-text-secondary">
                 {setupSubtitle(item.plan.layout, item.plan.scopes.length)}
               </p>
             </div>
             <div className="setup-row-meta">
-            {controller.mainId === item.id ? <StatusPill tone="accent">Main chat</StatusPill> : item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
+            {item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
             <div className="setup-row-actions">
-              {(item.kind === "proposed" ||
-                controller.profile?.profile.id !== item.id) && (
+              {controller.profile?.profile.id === item.id && <span className="setup-current">You’re here</span>}
+              {(
                 <Button
                   variant="secondary"
                   size="small"
@@ -202,7 +204,7 @@ export function SetupSettings({
                     });
                   }}
                 >
-                  {item.kind === "proposed" ? "Review" : "Open"}
+                  Open
                 </Button>
               )}
               {item.kind === "ready" && controller.mainId !== item.id && (
