@@ -1,4 +1,5 @@
-import { RiClaudeFill } from "@remixicon/react";
+import { RiClaudeFill, RiOpenaiFill } from "@remixicon/react";
+import { StatusPill } from "./status-pill";
 import { Button } from "@/components/base/buttons/button";
 import { SocialButton } from "@/components/base/social-button/social-button";
 import type {
@@ -55,11 +56,10 @@ export function PlanAccounts({
       (provider === "openai-codex" && connection.kind === "connected");
     return (
       <div className="settings-plan-row" key={provider}>
+        <span className="plan-mark" aria-hidden="true">{provider === "openai-codex" ? <RiOpenaiFill /> : <RiClaudeFill />}</span>
         <div className="plan-status">
           <span>{label} plan</span>
-          <span className="text-text-secondary">
-            {"\u202f·\u202f"}{connected ? "Connected" : "Not connected"}
-          </span>
+          <StatusPill>{connected ? "Connected" : "Not connected"}</StatusPill>
           {plan?.error && (
             <span role="alert" className="text-text-error-primary">
               {plan.error}

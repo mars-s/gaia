@@ -95,7 +95,7 @@ test("Settings navigation selects exactly one pane and retains five owner choice
 
 test("narrow account rows stack status and actions, and secondary text shares body tracking", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /settings-plan-row \{ grid-template-columns: minmax\(0, 1fr\); gap: 8px/);
+ assert.match(css, /settings-plan-row \{ grid-template-columns: 20px minmax\(0, 1fr\);/);
  assert.match(css, /plan-status \{ display: flex; flex-direction: column/);
  assert.match(css, /text-text-secondary[^}]*letter-spacing: 0/);
 });

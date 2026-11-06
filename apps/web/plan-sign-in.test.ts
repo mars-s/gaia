@@ -35,6 +35,9 @@ for (const connected of ["openai-codex", "anthropic", "both"] as const) {
     );
     assert.match(html, /ChatGPT plan/);
     assert.match(html, /Claude plan/);
+    assert.equal((html.match(/class="plan-mark"/g) ?? []).length, 2);
+    assert.equal((html.match(/class="status-pill" data-tone="neutral"/g) ?? []).length, 2);
+    assert.doesNotMatch(html, /·/);
     assert.equal(
       (html.match(/>Reconnect</g) ?? []).length,
       connected === "both" ? 2 : 1,
