@@ -80,3 +80,9 @@ test("setup rows keep equal inner padding around their selection fill", () => {
  assert.match(css, /setup-list-row \{ padding-inline: 12px/);
  assert.match(css, /setup-list-row\[aria-current="page"\][^}]*background: var\(--color-surface-selected\)/);
 });
+
+test("the main chat marker reaches the same inner edge when its action slot is empty", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /setup-row-actions:empty \{ display: none/);
+ assert.match(css, /setup-list-row:has\(.setup-row-actions:empty\) .status-pill \{ grid-column: 3 \/ -1; justify-self: end/);
+});
