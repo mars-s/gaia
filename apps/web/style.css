@@ -768,7 +768,7 @@ a:focus-visible {
 .earlier-answer:hover > .reply-actions, .earlier-answer:focus-within > .reply-actions { opacity: 1; }
 @media (pointer: coarse) { .earlier-answer:focus-within > .reply-actions { opacity: 1; } }
 .code-block { min-width: 0; width: 100%; max-width: 100%; overflow: hidden; margin-block: 16px; border-radius: var(--radius-md); --code-surface: var(--color-surface-sunken); background: var(--code-surface); }
-.code-header { height: 28px; display: flex; align-items: center; justify-content: space-between; padding-inline: 16px 8px; color: var(--color-ink-2); font-size: 12px; line-height: 16px; border-bottom: 1px solid var(--color-line); }
+.code-header { height: 28px; display: flex; align-items: center; justify-content: space-between; padding-inline: 16px 8px; color: var(--color-ink-2); font-size: 12px; line-height: 16px; border-bottom: 1px solid var(--color-line-strong); }
 .code-header .copy-action { width: 24px; min-height: 24px; height: 24px; margin: 0; }
 .code-scroll-area { position: relative; min-width: 0; }
 .message-markdown .code-block pre { margin: 0; padding: 16px; border-radius: 0; background: var(--code-surface); overflow-x: auto; scrollbar-width: thin; }

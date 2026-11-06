@@ -282,3 +282,7 @@ test("desktop Settings keeps a 560px content measure aligned to the pane gutter"
  assert.match(app, /className="settings-page[^]*?<div className="reading-column">\s*<section className="settings-content"/);
  assert.match(app, /<SettingsIndex current=\{settingsSection\}/);
 });
+
+test("code headers retain a visible divider in both themes", () => {
+ assert.match(css, /\.code-header \{[^}]*border-bottom: 1px solid var\(--color-line-strong\)/);
+});
