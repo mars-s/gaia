@@ -1,3 +1,4 @@
+import { RiCheckLine } from "@remixicon/react";
 import { StatusPill } from "../status-pill";
 import { RiAddLine } from "@remixicon/react";
 import { SetupGlyph } from "../setup-glyph";
@@ -139,7 +140,7 @@ export function SetupSettings({
           <div className="setup-row-meta">
           {controller.mainId === null ? <StatusPill tone="accent">Main</StatusPill> : <span />}
           <div className="setup-row-actions">
-            {!controller.profile && <StatusPill>Open now</StatusPill>}
+            {!controller.profile && <span className="setup-open-now"><RiCheckLine aria-hidden="true" />Open now</span>}
             {controller.profile && (
               <Button
                 variant="secondary"
@@ -178,7 +179,7 @@ export function SetupSettings({
             <div className="setup-row-meta">
             {controller.mainId === item.id ? <StatusPill tone="accent">Main</StatusPill> : item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
             <div className="setup-row-actions">
-              {controller.profile?.profile.id === item.id && <StatusPill>Open now</StatusPill>}
+              {controller.profile?.profile.id === item.id && <span className="setup-open-now"><RiCheckLine aria-hidden="true" />Open now</span>}
               {(item.kind === "proposed" ||
                 controller.profile?.profile.id !== item.id) && (
                 <Button

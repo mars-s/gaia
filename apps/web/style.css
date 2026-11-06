@@ -1566,3 +1566,6 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .connection-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: var(--radius-full); background: var(--color-ink-3); }
 .plan-connection[data-connected="true"] .connection-dot { background: var(--color-notification-success-foreground); }
 .settings-content .plan-disconnect.quiet-action { color: var(--color-danger); }
+
+.setup-open-now { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; color: var(--color-ink-2); white-space: nowrap; }
+.setup-open-now svg { width: 14px; height: 14px; }
