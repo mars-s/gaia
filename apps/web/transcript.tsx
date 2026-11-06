@@ -98,7 +98,7 @@ export function CodeBlock({ children }: { children: ReactNode }) {
     const element = pre.current;
     if (!element) return;
     const measure = () =>
-      setOverflow(window.innerWidth >= 640 && element.scrollWidth - element.clientWidth - element.scrollLeft > 1);
+      setOverflow(element.scrollWidth - element.clientWidth - element.scrollLeft > 1);
     measure();
     element.addEventListener("scroll", measure, { passive: true });
     const observer = new ResizeObserver(measure);

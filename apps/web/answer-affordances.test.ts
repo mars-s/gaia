@@ -165,10 +165,10 @@ test("code headers label known languages and keep copy outside the pre", () => {
   }
 });
 
-test("code wraps below 640 without a fade and the transcript has a clean top edge", () => {
+test("code scrolls below 640 with a fade and the transcript has a clean top edge", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.doesNotMatch(css, /mask-image/);
- assert.match(css, /code-block pre \{ white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible/);
+ assert.match(css, /code-block pre \{ white-space: pre; overflow-wrap: normal/);
  assert.match(css, /owner-bubble \{ background: var\(--color-surface-selected\)/);
 });
 
@@ -178,4 +178,13 @@ test("reply actions precede proposal content and sit eight pixels below the text
  assert.match(css, /reply-actions .copy-action \{ margin-top: 0/);
  const html = renderToStaticMarkup(createElement(Transcript, { thread: { version: 1, id: "local", run: {kind: "idle"}, messages: [{id: "reply", role: "assistant", text: "Reply text", createdAt: "2026-11-05"}] }, afterMessage: () => createElement("aside", null, "Proposal") }));
  assert.match(html, /Reply text[^]*reply-actions[^]*Copy answer[^]*Proposal/);
+});
+
+test("code overflow measurement covers narrow screens and the thin scrollbar stays visible", () => {
+ const source = readFileSync(new URL("./transcript.tsx", import.meta.url), "utf8");
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.doesNotMatch(source, /window.innerWidth >= 640/);
+ assert.doesNotMatch(css, /pre-wrap; overflow-wrap: anywhere; overflow-x: visible/);
+ assert.match(css, /pre::-webkit-scrollbar \{ height: 4px/);
+ assert.match(css, /pre::-webkit-scrollbar-thumb \{ background: var\(--color-line-strong\)/);
 });

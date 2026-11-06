@@ -1443,10 +1443,9 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .owner-bubble { background: var(--color-surface-selected); }
 .message-markdown .code-block pre { scrollbar-color: var(--color-line-strong) transparent; }
 .code-block { border: 1px solid var(--color-line-strong); }
-@media (max-width: 639px) {
- .message-markdown .code-block pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; }
- .code-block[data-overflow="true"] .code-scroll-area::after { display: none; }
-}
+.message-markdown .code-block pre { white-space: pre; overflow-wrap: normal; }
+.message-markdown .code-block pre::-webkit-scrollbar { height: 4px; }
+.message-markdown .code-block pre::-webkit-scrollbar-thumb { background: var(--color-line-strong); border-radius: var(--radius-full); }
 
 .experience-nav-row.secondary-action { padding: 8px 10px; height: 36px; }
 .experience-nav-row > span { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: 8px; }
