@@ -110,7 +110,7 @@ test("session selection reload restores the exact confirmed pair and keeps draft
   assert.equal(selectedState.chat.modelId, "second");
   assert.equal(selectedState.chat.thinkingLevel, "low");
   assert.equal((await f.scope(p, first.id)).chat.modelId, "gpt-6.1-sol");
-  assert.equal((await f.scope(p, first.id)).chat.thinkingLevel, "high");
+  assert.equal((await f.scope(p, first.id)).chat.thinkingLevel, "medium");
   controller.select(
     Object.assign({}, b, { transcript: "Do not store transcript bytes" }),
   );

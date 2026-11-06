@@ -145,11 +145,11 @@ test("code copy has a separate 28px header above the bounded scroll area", async
     new URL("./transcript.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(source, /element.scrollWidth > element.clientWidth/);
+  assert.match(source, /element.scrollWidth - element.clientWidth - element.scrollLeft > 1/);
   assert.match(source, /observer.observe\(element\)/);
   assert.match(css, /code-header \{ height: 28px/);
   assert.match(css, /code-block \{[^}]*max-width: 100%; overflow: hidden/);
-  assert.match(css, /padding: 12px 16px; border-radius: 0; overflow-x: auto/);
+  assert.match(css, /padding: 16px; border-radius: 0; overflow-x: auto/);
   assert.match(css, /code-block\[data-overflow="true"\] .code-scroll-area::after/);
   assert.match(css, /earlier-answer:focus-within > .copy-action/);
   assert.match(css, /@media \(pointer: coarse\)/);
