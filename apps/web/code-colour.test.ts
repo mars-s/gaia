@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -20,3 +21,12 @@ test("code colouring preserves exact copy text and safely renders strings and co
   assert.equal(languageLabel("rust"), "Rust");
   assert.equal(renderToStaticMarkup(createElement(ColourCode, { text: "const plain", language: "unknown" })), "const plain");
 });
+
+ test("strings use primary ink while comments use secondary ink in both themes", () => {
+ const theme = readFileSync(new URL("./styles/theme.css", import.meta.url), "utf8");
+ assert.match(theme, /--color-code-string: var\(--color-ink\)/);
+ assert.match(theme, /--color-code-comment: var\(--color-ink-2\)/);
+ assert.doesNotMatch(theme, /--color-code-string: var\(--color-ink-[23]\)/);
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /code-string \{ color: var\(--color-code-string\)/);
+ });

@@ -1260,7 +1260,7 @@
   --color-link-hover: var(--color-accent-800);
   --color-accent-ink: var(--color-white);
   --color-code-keyword: var(--color-link);
-  --color-code-string: var(--color-ink-2);
+  --color-code-string: var(--color-ink);
   --color-code-number: var(--color-link);
   --color-code-comment: var(--color-ink-2);
   --color-primary-fill: var(--color-accent-700);
