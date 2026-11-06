@@ -163,7 +163,7 @@ body {
 }
 
 .composer:focus-within {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary-fill);
 }
 
 .composer-dragging {
@@ -621,7 +621,7 @@ a:focus-visible {
   outline: 2px solid var(--color-focus);
 }
 .composer:focus-within {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary-fill);
   box-shadow: none;
 }
 @media (max-width: 639px) {
@@ -711,7 +711,7 @@ a:focus-visible {
   color: var(--color-primary-ink);
 }
 .composer-dragging {
-  border-color: var(--color-accent);
+  border-color: var(--color-primary-fill);
   background: var(--color-accent-soft);
 }
 .chat-notice {
@@ -1207,6 +1207,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 @media (min-width: 640px) { .desktop-sidebar { display: flex; flex-shrink: 0; } }
 .assistant-head { display: flex; align-items: center; gap: 8px; height: 24px; margin-bottom: 6px; }
 .assistant-head .gaia-mark, .assistant-head .avatar-tile { width: 24px; height: 24px; border-radius: 8px; }
+
+.assistant-head .gaia-mark { border-radius: var(--radius-full); }
 
 .assistant-name { font-size: 13px; line-height: 18px; color: var(--color-ink-2); }
 .assistant-head .progress-row { margin-left: 4px; }

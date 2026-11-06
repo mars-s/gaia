@@ -72,6 +72,7 @@ test("settings hierarchy, actions and status use the content grid", () => {
   );
 });
 test("Gaia orb, focus and effort selection share the primary accent", () => {
+  assert.match(css, /assistant-head \.gaia-mark \{ border-radius: var\(--radius-full\)/);
   assert.match(css, /gaia-mark[^}]*radial-gradient[^}]*var\(--color-primary-fill\)/);
   assert.match(css, /effort-cell\[data-selected\][^}]*background: var\(--color-primary-fill\);[^}]*color: var\(--color-primary-ink\)/);
   const theme = read("./styles/theme.css");
@@ -164,7 +165,7 @@ test("Bot art is clipped to one shared tile radius and welcome lines are balance
   assert.match(css, /welcome-intro p \{ text-wrap: balance/);
 });
 test("composer focus has a single accent edge and both actions share the same fill and shape", () => {
-  assert.match(css, /composer:focus-within[^}]*border-color: var\(--color-accent\);\s*box-shadow: none/);
+  assert.match(css, /composer:focus-within[^}]*border-color: var\(--color-primary-fill\);\s*box-shadow: none/);
   assert.match(css, /composer-stop \{\s*background: var\(--color-primary-fill\)/);
   assert.match(css, /primary-action, .secondary-action, .quiet-action[^}]*border-radius: var\(--radius-sm\);\s*background-image: none/);
 });
