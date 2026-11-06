@@ -145,12 +145,12 @@ test("model facts include only supported facts and explain image incompatibility
     contextWindow: 500000,
     capabilities: { images: true, thinkingLevels: [] },
   };
-  assert.equal(modelFacts(model, false), "Reads images · 500k context");
+  assert.equal(modelFacts(model, false), "Reads images\u202f·\u202f500k context");
   model.capabilities.images = false;
-  assert.equal(modelFacts(model, false), "Text only · 500k context");
+  assert.equal(modelFacts(model, false), "Text only\u202f·\u202f500k context");
   assert.equal(
     modelFacts(model, true),
-    "Can’t read your images · 500k context",
+    "Can’t read your images\u202f·\u202f500k context",
   );
   assert.equal(
     modelFacts({ id: "legacy", name: "Legacy", contextWindow: 1 }, false),
@@ -195,7 +195,7 @@ test("trigger effort reflects supported, fixed, unsupported and unavailable sele
         },
       }),
     );
-    assert.match(html, new RegExp(`model-trigger-effort">· ${text}`));
+    assert.match(html, new RegExp(`model-trigger-effort">\u202f·\u202f${text}`));
     assert.match(html, /GPT-6.1 Sol/);
   }
   assert.equal(
@@ -293,20 +293,20 @@ test("model facts disappear for identical choices, differ when useful and always
   const smaller = { ...terra, contextWindow: 128000 };
   assert.equal(
     modelChoiceFacts(sol, [sol, smaller], false),
-    "Reads images · 500k context",
+    "Reads images\u202f·\u202f500k context",
   );
   assert.equal(
     modelChoiceFacts(smaller, [sol, smaller], false),
-    "Reads images · 128k context",
+    "Reads images\u202f·\u202f128k context",
   );
   const text = { ...sol, capabilities: { ...sol.capabilities, images: false } };
   assert.equal(
     modelChoiceFacts(text, [text], true),
-    "Can’t read your images · 500k context",
+    "Can’t read your images\u202f·\u202f500k context",
   );
   assert.equal(
     modelChoiceFacts(sol, [sol, text], false),
-    "Reads images · 500k context",
+    "Reads images\u202f·\u202f500k context",
   );
 });
 

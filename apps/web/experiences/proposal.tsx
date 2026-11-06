@@ -9,7 +9,7 @@ import { Button } from "../components/base/buttons/button";
 export const setupLayouts = {
   single: { label: "One conversation" },
   bots: { label: "Separate Bots" },
-  channels: { label: "One assistant with channels" },
+  channels: { label: "Shared channels" },
   sessions: { label: "Separate sessions" },
 };
 

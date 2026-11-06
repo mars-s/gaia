@@ -86,7 +86,7 @@ test("proposal descriptions share fixed grid columns and model separator has no 
   assert.match(css, /grid-template-columns: 92px minmax\(0, 1fr\)/);
   assert.match(
     read("./composer-controls.tsx"),
-    /model-trigger-effort">· \{levelText\}/,
+    /model-trigger-effort">\{"\\u202f·\\u202f"\}\{levelText\}/,
   );
 });
 
@@ -233,4 +233,12 @@ test("welcome paragraph and action share a measure and omit the repeated connect
 test("all shell titles use the primary ink instead of quiet action ink", () => {
   assert.match(css, /app-bar .chat-switcher-trigger \{ color: var\(--color-ink\)/);
   assert.match(css, /scope-head \{[^}]*color: var\(--color-ink\)/);
+});
+
+test("setup status uses plain dotted text and account separator uses non-breaking thin spaces", () => {
+  const status = css.match(/\.setup-status-badge \{([^}]+)\}/)?.[1] ?? "";
+  assert.doesNotMatch(status, /border:|background:|padding:/);
+  assert.match(css, /setup-status-badge::before[^}]*background: currentColor/);
+  assert.ok(read("./app.tsx").includes('"\\u202f·\\u202f"}Connected'));
+  assert.match(read("./experiences/proposal.tsx"), /channels: \{ label: "Shared channels"/);
 });

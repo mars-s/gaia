@@ -40,7 +40,7 @@ test("Settings rows separate names and layout text, identify exactly one main ch
   assert.match(text(rows()[1]), /Everyday Bots Separate Bots/);
   assert.match(
     text(rows()[2]),
-    /Shared workspace One assistant with channels · Proposed/,
+    /Shared workspace Shared channels · Proposed/,
   );
   assert.match(text(rows()[3]), /My sessions Separate sessions · Hidden/);
   assert.match(text(rows()[0]), /Original chat One conversationMainCurrent/);

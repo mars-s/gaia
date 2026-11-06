@@ -47,7 +47,7 @@ export function contextCount(count: number) {
 }
 export function modelFacts(model: Model, images: boolean) {
   if (!model.capabilities) return undefined;
-  return `${model.capabilities.images ? "Reads images" : images ? "Can’t read your images" : "Text only"} · ${contextCount(model.contextWindow)} context`;
+  return `${model.capabilities.images ? "Reads images" : images ? "Can’t read your images" : "Text only"}\u202f·\u202f${contextCount(model.contextWindow)} context`;
 }
 export function modelChoiceFacts(
   model: Model,
@@ -484,7 +484,7 @@ export function ComposerControls({
           {loading ? "Loading models…" : name}
         </span>
         {levelText && (
-          <span className="model-trigger-effort">· {levelText}</span>
+          <span className="model-trigger-effort">{"\u202f·\u202f"}{levelText}</span>
         )}
         <RiArrowDownSLine className="size-4 shrink-0" aria-hidden />
       </AriaButton>

@@ -414,7 +414,7 @@ export function App() {
                 <div className="settings-plan-row">
                   <div className="plan-status">
                     <span>ChatGPT plan</span>
-                    <span className="text-text-secondary">· Connected</span>
+                    <span className="text-text-secondary">{"\u202f·\u202f"}Connected</span>
                   </div>
                   <Button
                     variant="secondary"
