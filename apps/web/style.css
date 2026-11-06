@@ -710,9 +710,11 @@ a:focus-visible {
   opacity: 1;
 }
 .composer-send.composer-stop {
-  background: var(--color-ink-2);
-  color: var(--color-surface-page);
+  background: var(--color-primary-fill);
+  color: var(--color-primary-ink);
 }
+.composer-stop svg { display: none; }
+.composer-stop::after { content: ""; width: 12px; height: 12px; border-radius: 2px; background: var(--color-white); }
 .composer-dragging {
   border-color: var(--color-accent);
   background: var(--color-accent-soft);
@@ -802,9 +804,7 @@ a:focus-visible {
 .composer-send:not(:disabled):hover {
   background: var(--color-primary-fill);
 }
-.composer-send.composer-stop:not(:disabled):hover {
-  background: var(--color-ink);
-}
+
 
 /* Model and effort picker. */
 .model-trigger {

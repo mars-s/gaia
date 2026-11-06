@@ -166,9 +166,9 @@ test("Bot art is clipped to one shared tile radius and welcome lines are balance
   assert.match(css, /avatar-tile img \{ border-radius: inherit/);
   assert.match(css, /welcome-intro p \{ text-wrap: balance/);
 });
-test("composer focus has a neutral edge and Stop keeps the shared shape with a quiet ink fill", () => {
+test("composer focus has a neutral edge and Stop keeps the shared send shape and primary fill", () => {
   assert.match(css, /composer:focus-within[^}]*border-color: var\(--color-line-strong\);\s*box-shadow: var\(--shadow-level-1\), 0 0 0 3px/);
-  assert.match(css, /composer-send\.composer-stop \{\s*background: var\(--color-ink-2\);\s*color: var\(--color-surface-page\)/);
+  assert.match(css, /composer-send\.composer-stop \{\s*background: var\(--color-primary-fill\);\s*color: var\(--color-primary-ink\)/);
   assert.match(css, /primary-action, .secondary-action, .quiet-action[^}]*border-radius: var\(--radius-sm\);\s*background-image: none/);
 });
 
