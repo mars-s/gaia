@@ -1,6 +1,6 @@
 import { ClaudeSignIn, PlanAccounts } from "./plan-sign-in";
 import { useTranscriptFollow } from "./use-transcript-follow";
-import { SettingsIndex, type SettingsSection } from "./settings-index";
+import { SettingsHeading, SettingsNavigation, SettingsIndex, type SettingsSection } from "./settings-index";
 import { EmptyChat } from "./empty-chat";
 import { OfflineNotice } from "./progress-row";
 import { ChatSwitcher } from "./chat-switcher";
@@ -416,12 +416,13 @@ export function App() {
           className="settings-page min-h-0 flex-1 overflow-y-auto"
         >
           <div className="reading-column">
+            <SettingsNavigation.Provider value={section => { setSettingsSection(section); document.querySelector(".settings-page")?.scrollTo(0, 0); }}>
             <section className="settings-content" aria-label="Settings">
               {settingsSection === "plan-title" && <section
                 className="settings-section account-section"
                 aria-labelledby="plan-title"
               >
-                <h2 tabIndex={-1} id="plan-title">Account</h2>
+                <SettingsHeading id="plan-title">Account</SettingsHeading>
                 <p className="section-explainer">Gaia signs in with your own plan. No API keys. Saved sign-ins stay on this machine.</p>
                 <PlanAccounts connection={connection} disabled={pending || running || offline}
                   onConnect={(provider) => { void act("auth/connect", { provider }); }}
@@ -432,7 +433,7 @@ export function App() {
                 className="settings-section"
                 aria-labelledby="appearance-title"
               >
-                <h2 tabIndex={-1} id="appearance-title">Appearance</h2>
+                <SettingsHeading id="appearance-title">Appearance</SettingsHeading>
                 <div className="w-60 max-w-full">
                   <AppearancePicker />
                 </div>
@@ -462,7 +463,7 @@ export function App() {
                 className="settings-section"
                 aria-labelledby="about-title"
               >
-                <h2 tabIndex={-1} id="about-title">About you</h2>
+                <SettingsHeading id="about-title">About you</SettingsHeading>
                 {profilePanel(true)}
               </section>}
               {settingsSection === "changes-title" && <ManagedSettings runtime={state?.runtime} />}
@@ -472,6 +473,7 @@ export function App() {
                 </p>
               )}
             </section>
+            </SettingsNavigation.Provider>
           </div>
         </main>
         </div>

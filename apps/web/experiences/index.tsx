@@ -1,3 +1,4 @@
+import { SettingsHeading } from "../settings-index";
 import { StatusPill } from "../status-pill";
 import { Menu } from "@base-ui/react/menu";
 import { RiArrowDownSLine, RiCheckLine, RiAddLine } from "@remixicon/react";
@@ -118,7 +119,7 @@ export function SetupSettings({
       className="setup-settings settings-section"
       aria-labelledby="setups-title"
     >
-      <h2 tabIndex={-1} id="setups-title">Setups</h2>
+      <SettingsHeading id="setups-title">Setups</SettingsHeading>
       <div className="main-chat-setting">
         <div><p className="main-chat-label">Main chat</p><p className="main-chat-helper">Opens when Gaia starts.</p></div>
         <Menu.Root>

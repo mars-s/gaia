@@ -1,3 +1,4 @@
+import { SettingsHeading } from "./settings-index";
 import { RiRefreshLine } from "@remixicon/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/base/buttons/button";
@@ -114,7 +115,7 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
   return (
     <section className="settings-section" aria-labelledby="changes-title">
       <div className="flex items-center justify-between gap-3">
-        <h2 tabIndex={-1} id="changes-title">Change history</h2>
+        <SettingsHeading id="changes-title">Change history</SettingsHeading>
         <button
           className="quiet-action refresh-changes"
           aria-label="Refresh changes"

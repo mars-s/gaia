@@ -1590,14 +1590,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .setup-row-actions { justify-content: flex-start; }
 }
 
-@media (max-width: 639px) {
- .settings-index { display: flex; flex-direction: row; flex-wrap: wrap; flex-shrink: 0; gap: 4px; padding: 8px 16px; border-bottom: 1px solid var(--color-line); }
- .settings-index button { flex: 0 0 auto; padding: 6px 10px; border-radius: var(--radius-sm); font-size: 13px; line-height: 20px; color: var(--color-ink-2); }
- .settings-index button[aria-current] { color: var(--color-ink); background: var(--color-surface-selected); }
- .settings-index button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
- .settings-content > .settings-section > h2, .settings-content > .settings-section > div > #changes-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
- .settings-section .section-explainer { margin-top: 0; }
-}
+
 
 .dark .code-block { --code-surface: var(--color-surface-selected); }
 
@@ -1634,4 +1627,20 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .setup-settings .setup-list-row > .setup-row-meta:last-child { grid-column: 3; justify-self: end; align-self: center; }
  .main-chat-setting > button { flex-grow: 1; max-width: 100%; }
  .setup-name .status-pill { display: table; margin-left: 0; margin-top: 4px; }
+}
+
+.settings-pane-heading { position: relative; display: flex; align-items: center; gap: 6px; }
+.settings-section-trigger { display: none; }
+.settings-section-menu { width: min(288px, calc(100vw - 32px)); padding: 4px; border-radius: 12px; background: var(--color-surface-page); box-shadow: var(--shadow-level-2); color: var(--color-ink); }
+.settings-section-option { display: flex; align-items: center; justify-content: space-between; height: 44px; padding-inline: 12px; border-radius: 8px; font-size: 15px; outline: none; }
+.settings-section-option[data-selected] { background: var(--color-surface-selected); }
+.settings-section-option[data-highlighted] { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+@media (max-width: 639px) {
+ .settings-index { display: none; }
+ .settings-page { padding-top: 16px; }
+ .settings-pane-heading { min-height: 44px; isolation: isolate; }
+ .settings-section-trigger { display: inline-flex; align-items: center; color: var(--color-ink-2); }
+ .settings-section-trigger::before { content: ""; position: absolute; inset: 0 -8px; border-radius: 8px; z-index: -1; }
+ .settings-section-trigger:hover::before, .settings-section-trigger:active::before { background: var(--color-surface-hover); }
+ .settings-section-trigger:focus-visible::before { outline: 2px solid var(--color-focus); }
 }

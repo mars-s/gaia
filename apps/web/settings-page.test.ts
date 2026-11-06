@@ -28,7 +28,7 @@ test("Settings has its own header, close control and five peer sections in order
     new URL("./managed-settings.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(changes, /<h2 tabIndex={-1} id="changes-title"[^>]*>\s*Change history/);
+  assert.match(changes, /<SettingsHeading id="changes-title">Change history/);
 });
 
 test("Settings folds the interview offer into About you without a Skip action", () => {
@@ -120,11 +120,15 @@ test("settings use main chat consistently and explain change history truthfully"
  assert.match(nav, /"Change history"/);
 });
 
-test("narrow settings wraps all five tabs and removes duplicate pane headings", () => {
+test("narrow Settings uses a real heading and an accessible listbox switcher", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /settings-index \{ display: flex; flex-direction: row; flex-wrap: wrap/);
- assert.match(css, /settings-content > .settings-section > h2[^}]*clip: rect/);
- assert.match(css, /settings-index button:focus-visible[^}]*outline: 2px/);
+ const source = readFileSync(new URL("./settings-index.tsx", import.meta.url), "utf8");
+ assert.match(css, /settings-index \{ display: none/);
+ assert.doesNotMatch(css, /settings-content > .settings-section > h2[^}]*clip: rect/);
+ assert.match(source, /<h2 ref=\{heading\} tabIndex=\{-1\} id=\{id\}/);
+ assert.match(source, /aria-label=\{`Settings section: /);
+ assert.match(source, /aria-haspopup="listbox"/);
+ assert.doesNotMatch(source, /tablist/);
 });
 
 test("selected Settings labels use primary ink and medium weight at every width", () => {

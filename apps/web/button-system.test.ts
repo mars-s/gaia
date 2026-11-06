@@ -52,5 +52,5 @@ test("main screens render every button with exactly one of the three action clas
   ];
   let count = 0;
   for (const screen of screens) count += buttons(renderToStaticMarkup(screen)).length;
-  assert.equal(count, 26);
+  assert.equal(count, 28);
 });
