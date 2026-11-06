@@ -157,7 +157,7 @@ export function ExperienceConversation({
             {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <SetupGlyph layout={layout} />}</span>}
             <span className="scope-row-copy min-w-0">
               <span className="block truncate">{item.label}</span>
-              {preview && <span className="scope-preview" title={preview}>{preview}</span>}
+              {preview && <span className="scope-preview" title={preview}>{preview.length > 72 ? `${preview.slice(0, 71).trimEnd()}…` : preview}</span>}
               {!preview && showSessionRecency && sessionRecency(item.createdAt) && (
                 <span className="session-recency">Started {sessionRecency(item.createdAt)}</span>
               )}

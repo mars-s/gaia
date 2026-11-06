@@ -660,3 +660,14 @@ test("sidebar previews use the last real message, omit empty histories and keep 
    controller.pause();
  }
 });
+
+test("long sidebar messages have bounded excerpts and retain the full message as a tooltip", () => {
+ const {controller, parsed, html} = fixture("sessions");
+ const text = "A real message with enough detail to continue well beyond the small sidebar row and its preview.";
+ controller.receive(controller.selected!, {...parsed, revision: 2, messages: [{id: "long", role: "assistant", text, createdAt: "now"}]});
+ const nav = html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
+ assert.ok(nav.includes(`title="${text}"`));
+ assert.ok(nav.includes(`>${text.slice(0, 71).trimEnd()}…</span>`));
+ assert.ok(!nav.includes(`>${text}</span>`));
+ controller.pause();
+});
