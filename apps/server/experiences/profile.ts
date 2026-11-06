@@ -226,9 +226,10 @@ export async function openProfile(
     const conversation = await tx.createConversation({
       ownership: { kind: "ownerless" },
     });
+    const selection = state.initialSelection ?? { modelId: "gpt-6.1-sol", thinkingLevel: "high" as const };
     await configure(tx, conversation.id, {
-      model: { provider: "openai-codex", modelId: "gpt-6.1-sol" },
-      thinkingLevel: "high",
+      model: { provider: "openai-codex", modelId: selection.modelId },
+      thinkingLevel: selection.thinkingLevel,
       instructions:
         "Passive scope context ledger. Never execute owner inputs here.",
     });
@@ -249,8 +250,8 @@ export async function openProfile(
       chat: {
         // Old GOOD requires this cache. Active reads and validation use Pi's live catalogue.
         models: liveModels(),
-        modelId: "gpt-6.1-sol",
-        thinkingLevel: "high",
+        modelId: selection.modelId,
+        thinkingLevel: selection.thinkingLevel,
         compaction: { kind: "idle" },
       },
       messages: [],
@@ -327,7 +328,7 @@ export async function openProfile(
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    async initialise(input: z.infer<typeof ExperienceCreate>) {
+    async initialise(input: z.infer<typeof ExperienceCreate>, selection?: ModelSelection) {
       return mutate((state) => {
         gate();
         if (state.profile) {
@@ -339,6 +340,7 @@ export async function openProfile(
           return state.profile;
         }
         state.createDigest = digest(input);
+        state.initialSelection = input.selection ?? selection;
         state.profile = { id, kind: "proposed", revision: 1, plan: input.plan };
         return state.profile;
       });

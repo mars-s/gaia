@@ -4,7 +4,7 @@ import {
   type ConversationId,
   type TaskId,
 } from "@earendil-works/pi-durable";
-import { Chat, Message } from "../../../packages/protocol/index.ts";
+import { Chat, Message, ModelSelection } from "../../../packages/protocol/index.ts";
 import {
   Experience,
   ExperienceJob,
@@ -62,6 +62,7 @@ export const Job = z.object({
 export const State = z.object({
   profile: Experience.nullable(),
   createDigest: z.string(),
+  initialSelection: ModelSelection.optional(),
   revision: z.number(),
   scopes: z.array(Scope),
   jobs: z.array(Job),

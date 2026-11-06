@@ -182,7 +182,7 @@ export const ExperienceScopeState = z.object({
 });
 export type ExperienceScopeState = z.infer<typeof ExperienceScopeState>;
 export const ExperienceCreate = z
-  .object({ requestId: z.string().uuid(), plan: ExperiencePlan })
+  .object({ requestId: z.string().uuid(), plan: ExperiencePlan, selection: ModelSelection.optional() })
   .strict();
 export const ExperienceConfirm = z
   .object({ revision: z.number().int().nonnegative() })

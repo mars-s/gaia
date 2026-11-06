@@ -131,7 +131,7 @@ test(
       );
       const view = await f.scope(proposal.id, scope.id);
       assert.equal(view.chat.modelId, "gpt-6.1-sol");
-      assert.equal(view.chat.thinkingLevel, "high");
+      assert.equal(view.chat.thinkingLevel, "medium");
     }
     assert.deepEqual(await (await f.request("state")).json(), legacy);
     const extra = ExperienceScope.parse(

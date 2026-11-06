@@ -195,3 +195,30 @@ test("main sidecars preserve a synthetic 35-message owner and skipped details wi
     await compatible(baseline, f.dir);
   }
 });
+
+test("new setups snapshot the source model and effort, preserving choices after confirmation and restart", async (t) => {
+  const f = await experienceFixture(t);
+  assert(f.pi.configure);
+  await f.pi.configure("second", "low");
+  const proposal = await f.propose("bots");
+  await f.pi.configure("gpt-6.1-sol", "medium");
+  const confirmed = await f.request(`experiences/${proposal.id}/confirm`, { revision: proposal.revision });
+  assert.equal(confirmed.status, 200);
+  const state = await f.state(proposal.id);
+  for (const scope of state.scopes) {
+    const chat = (await f.scope(proposal.id, scope.id)).chat;
+    assert.equal(chat.modelId, "second");
+    assert.equal(chat.thinkingLevel, "low");
+  }
+  const first = state.scopes[0];
+  assert.equal((await f.request(`experiences/${proposal.id}/scopes/${first.id}/model`, { modelId: "gpt-6.1-sol", thinkingLevel: "high" })).status, 200);
+  await f.reopen();
+  assert.equal((await f.scope(proposal.id, first.id)).chat.thinkingLevel, "high");
+  assert.equal((await f.scope(proposal.id, state.scopes[1].id)).chat.thinkingLevel, "low");
+  const nested = await f.request("experiences", { requestId: randomUUID(), plan: proposal.plan, selection: { modelId: "gpt-6.1-sol", thinkingLevel: "high" } });
+  assert.equal(nested.status, 201);
+  const next = await nested.json();
+  assert.equal((await f.request(`experiences/${next.id}/confirm`, { revision: next.revision })).status, 200);
+  const nextState = await f.state(next.id);
+  assert.equal((await f.scope(next.id, nextState.scopes[0].id)).chat.thinkingLevel, "high");
+});

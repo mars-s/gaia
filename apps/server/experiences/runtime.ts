@@ -14,6 +14,7 @@ import {
 } from "./profile.ts";
 import { durableDirectory, profileDirectories } from "./storage.ts";
 import { Capacity } from "./capacity.ts";
+import type { ModelSelection } from "../../../packages/protocol/index.ts";
 import { HttpError } from "../http-error.ts";
 
 export type ExperienceRuntimeOptions = Omit<
@@ -24,6 +25,7 @@ export type ExperienceRuntimeOptions = Omit<
     | Partial<z.infer<typeof ExperienceCapabilities>>
     | (() => Partial<z.infer<typeof ExperienceCapabilities>>);
   concurrency?: number;
+  readSelection?(): ModelSelection;
 };
 export async function createExperienceRuntime(
   generation: string,
@@ -115,7 +117,7 @@ export async function createExperienceRuntime(
           durableDirectory(directory);
           profile = load(id, path);
         }
-        const value = await (await profile).initialise(input);
+        const value = await (await profile).initialise(input, options.readSelection?.());
         let metadata = sidecars.proposal(id);
         if (!metadata) {
           metadata = {

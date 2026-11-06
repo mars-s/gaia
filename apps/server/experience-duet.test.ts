@@ -55,7 +55,7 @@ test(
     for (const scope of state.scopes) {
       const live = await f.scope(p, scope.id);
       assert.equal(live.chat.modelId, "gpt-6.1-sol");
-      assert.equal(live.chat.thinkingLevel, "high");
+      assert.equal(live.chat.thinkingLevel, "medium");
     }
     const gateA = f.hold("a"),
       gateB = f.hold("b");
@@ -81,7 +81,7 @@ test(
     f.faux.setResponses([
       (context, options, _state, model) => {
         assert.equal(model.id, "gpt-6.1-sol");
-        assert.equal(options?.reasoning, "high");
+        assert.equal(options?.reasoning, "medium");
         assert(!JSON.stringify(context).includes("SHARED_TEA_391"));
         return remember("stale-write", "coffee", 0);
       },

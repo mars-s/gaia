@@ -587,3 +587,18 @@ test("started effects require confirmation and only flagged jobs send repeatEffe
   assert.deepEqual(Object.keys(requests[2]!), ["requestId"]);
   controller.pause();
 });
+
+test("proposals from a setup send its selected model and effort", async () => {
+  let selection: unknown;
+  const { controller } = harness({
+    create: async (input) => {
+      selection = input.selection;
+      return { ...profile().profile, kind: "proposed" };
+    },
+  });
+  controller.selected = scope;
+  controller.receive(scope, state(pid));
+  assert.equal(await controller.propose(profile().profile.plan), true);
+  assert.deepEqual(selection, { modelId: "model", thinkingLevel: "high" });
+  controller.pause();
+});

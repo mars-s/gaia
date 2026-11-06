@@ -270,6 +270,10 @@ export async function createPi(
           models: auth.models,
           settings,
           ...options.experiences,
+          readSelection: () => {
+            const { modelId, thinkingLevel } = home.controls();
+            return { modelId, thinkingLevel };
+          },
           readOwner: () => readOwnerState(dirname(path)),
           capabilities: experienceCapabilities,
           extensionsForJob: async (binding) => [

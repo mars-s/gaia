@@ -34,7 +34,7 @@ test(
     const first = profile.scopes[0].id;
     const initial = await f.scope(p, first);
     assert.equal(initial.chat.modelId, "gpt-6.1-sol");
-    assert.equal(initial.chat.thinkingLevel, "high");
+    assert.equal(initial.chat.thinkingLevel, "medium");
     f.faux.setResponses([fauxAssistantMessage("FIRST_SESSION_801")]);
     const admission = await f.send(p, first, "Remember first session");
     const history = await completed(f, p, first, admission.jobId);
@@ -66,7 +66,7 @@ test(
     const freshHistory = await completed(f, p, fresh.id, next.jobId);
     assert(JSON.stringify(freshHistory.messages).includes("NEW_SESSION_802"));
     assert.equal((await f.scope(p, first)).chat.modelId, "gpt-6.1-sol");
-    assert.equal((await f.scope(p, first)).chat.thinkingLevel, "high");
+    assert.equal((await f.scope(p, first)).chat.thinkingLevel, "medium");
     const calls = f.faux.state.callCount;
     await f.reopen();
     assert.deepEqual((await f.scope(p, first)).messages, history.messages);

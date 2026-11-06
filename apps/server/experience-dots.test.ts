@@ -55,7 +55,7 @@ async function centralChat(f: Awaited<ReturnType<typeof experienceFixture>>) {
     scope = state.scopes[0].id;
   const chat = (await f.scope(profile, scope)).chat;
   assert.equal(chat.modelId, "gpt-6.1-sol");
-  assert.equal(chat.thinkingLevel, "high");
+  assert.equal(chat.thinkingLevel, "medium");
   return { profile, scope };
 }
 

@@ -378,7 +378,9 @@ export function createExperienceController(
     },
     async propose(plan: ExperiencePlan) {
       const input = ExperiencePlan.parse(plan);
-      const payload = JSON.stringify(input);
+      const chat = controller.selected ? controller.entry(controller.selected).state?.chat : undefined;
+      const selection = chat ? { modelId: chat.modelId, thinkingLevel: chat.thinkingLevel } : undefined;
+      const payload = JSON.stringify({ plan: input, selection });
       const attempt =
         proposalAttempt?.payload === payload
           ? proposalAttempt
@@ -387,7 +389,7 @@ export function createExperienceController(
       const token = generation;
       return perform(async (signal) => {
         const proposal = await client.create(
-          { requestId: attempt.requestId, plan: input },
+          { requestId: attempt.requestId, plan: input, selection },
           signal,
         );
         if (paused) return;
