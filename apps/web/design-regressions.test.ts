@@ -244,7 +244,7 @@ test("all shell titles use the primary ink instead of quiet action ink", () => {
 test("setup status uses the shared pill with no dotted status badges", () => {
  assert.match(css, /status-pill \{[^}]*height: 20px/);
  assert.doesNotMatch(css, /setup-status-badge/);
- assert.match(read("./experiences/index.tsx"), /<StatusPill tone="accent">Main/);
+ assert.match(read("./experiences/index.tsx"), /<StatusPill tone="accent">Main chat/);
 });
 
 test("overflowing code has top breathing room and a right-edge cue until scrolled to the end", () => {

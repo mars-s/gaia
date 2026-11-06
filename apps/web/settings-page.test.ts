@@ -28,7 +28,7 @@ test("Settings has its own header, close control and five peer sections in order
     new URL("./managed-settings.tsx", import.meta.url),
     "utf8",
   );
-  assert.match(changes, /<h2 tabIndex={-1} id="changes-title"[^>]*>\s*Changes/);
+  assert.match(changes, /<h2 tabIndex={-1} id="changes-title"[^>]*>\s*Change history/);
 });
 
 test("Settings folds the interview offer into About you without a Skip action", () => {
@@ -106,3 +106,14 @@ test("narrow account rows stack status and actions, and secondary text shares bo
  assert.match(css, /settings-index button:not\(\[aria-current\]\):hover/);
  assert.doesNotMatch(css, /settings-index button:hover/);
  });
+
+test("settings use main chat consistently and explain change history truthfully", () => {
+ const setups = readFileSync(new URL("./experiences/index.tsx", import.meta.url), "utf8");
+ assert.match(setups, /Your main chat is the one Gaia opens at start\./);
+ assert.doesNotMatch(setups, /main setup|>Main</);
+ const history = readFileSync(new URL("./managed-settings.tsx", import.meta.url), "utf8");
+ assert.match(history, />Change history</);
+ assert.match(history, /Updates Gaia has made to itself/);
+ const nav = readFileSync(new URL("./settings-index.tsx", import.meta.url), "utf8");
+ assert.match(nav, /"Change history"/);
+});

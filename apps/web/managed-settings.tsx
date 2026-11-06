@@ -114,7 +114,7 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
   return (
     <section className="settings-section" aria-labelledby="changes-title">
       <div className="flex items-center justify-between gap-3">
-        <h2 tabIndex={-1} id="changes-title">Changes</h2>
+        <h2 tabIndex={-1} id="changes-title">Change history</h2>
         <button
           className="quiet-action refresh-changes"
           aria-label="Refresh changes"

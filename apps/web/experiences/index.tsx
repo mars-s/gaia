@@ -116,7 +116,7 @@ export function SetupSettings({
       aria-labelledby="setups-title"
     >
       <h2 tabIndex={-1} id="setups-title">Setups</h2>
-      <p className="section-explainer">The main setup is the one Gaia opens at start.</p>
+      <p className="section-explainer">Your main chat is the one Gaia opens at start.</p>
       {controller.error && (
         <p role="alert" className="text-text-error-primary">
           {controller.error}{" "}
@@ -138,7 +138,7 @@ export function SetupSettings({
             </p>
           </div>
           <div className="setup-row-meta">
-          {controller.mainId === null ? <StatusPill tone="accent">Main</StatusPill> : <span />}
+          {controller.mainId === null ? <StatusPill tone="accent">Main chat</StatusPill> : <span />}
           <div className="setup-row-actions">
             {!controller.profile && <span className="setup-open-now"><RiCheckLine aria-hidden="true" />Current</span>}
             {controller.profile && (
@@ -159,7 +159,7 @@ export function SetupSettings({
                 size="small"
                 onClick={() => void controller.makeMain(null)}
               >
-                Make main
+                Make main chat
               </Button>
             )}
           </div>
@@ -177,7 +177,7 @@ export function SetupSettings({
               </p>
             </div>
             <div className="setup-row-meta">
-            {controller.mainId === item.id ? <StatusPill tone="accent">Main</StatusPill> : item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
+            {controller.mainId === item.id ? <StatusPill tone="accent">Main chat</StatusPill> : item.proposal?.dismissedAt || item.proposal?.supersededBy ? <StatusPill>Hidden</StatusPill> : item.kind === "proposed" ? <StatusPill>Proposed</StatusPill> : <span />}
             <div className="setup-row-actions">
               {controller.profile?.profile.id === item.id && <span className="setup-open-now"><RiCheckLine aria-hidden="true" />Current</span>}
               {(item.kind === "proposed" ||
@@ -215,7 +215,7 @@ export function SetupSettings({
                   disabled={pending}
                   onClick={() => void controller.makeMain(item.id)}
                 >
-                  Make main
+                  Make main chat
                 </Button>
               )}
             </div>

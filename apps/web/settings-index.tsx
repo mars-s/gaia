@@ -1,5 +1,5 @@
 import { Select, SelectItem } from "./components/base/select/select";
-export const settingsSections = [["plan-title", "Account"], ["appearance-title", "Appearance"], ["setups-title", "Setups"], ["about-title", "About you"], ["changes-title", "Changes"]] as const;
+export const settingsSections = [["plan-title", "Account"], ["appearance-title", "Appearance"], ["setups-title", "Setups"], ["about-title", "About you"], ["changes-title", "Change history"]] as const;
 export type SettingsSection = typeof settingsSections[number][0];
 export function SettingsIndex({ current, onSelect }: { current: SettingsSection; onSelect(section: SettingsSection): void }) {
   return <>
