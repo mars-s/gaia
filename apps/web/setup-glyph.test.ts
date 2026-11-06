@@ -13,3 +13,10 @@ test("every setup has a distinct shared glyph across navigation and settings", (
     assert.match(readFileSync(new URL(file, import.meta.url), "utf8"), /<SetupGlyph layout=/);
   }
 });
+
+test("workspace glyph differs from the hashtag used only for channels", () => {
+  const source = readFileSync(new URL("./setup-glyph.tsx", import.meta.url), "utf8");
+  assert.match(source, /channels: RiLayoutColumnLine/);
+  assert.doesNotMatch(source, /RiHashtag/);
+  assert.match(readFileSync(new URL("./experiences/view.tsx", import.meta.url), "utf8"), /layout === "channels" && <RiHashtag/);
+});

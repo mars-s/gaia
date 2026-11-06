@@ -596,10 +596,21 @@ test("setup sidebars explain memory and provide an Original chat exit", () => {
   }
 });
 
-test("Sessions show their real creation date and omit unavailable dates", () => {
+test("Sessions omit repeated recency and row icons, showing dates only when they differ", () => {
   const { controller, html } = fixture("sessions");
   controller.profile!.scopes[0].createdAt = new Date().toISOString();
+  assert.doesNotMatch(html(), /session-recency/);
+  const first = controller.profile!.scopes[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  controller.profile!.scopes.push({ ...first, id: ScopeId.parse("33333333-3333-4333-8333-333333333333"), createdAt: yesterday.toISOString() });
   assert.match(html(), /session-recency">Today/);
+  assert.match(html(), /session-recency">Yesterday/);
+  const nav = html().match(/<nav[^]*?<\/nav>/)?.[0] ?? "";
+  const rows = [...nav.matchAll(/<button[^]*?<\/button>/g)].filter(row => row[0].includes("experience-nav-row"));
+  assert.equal(rows.length, 2);
+  for (const row of rows) assert.doesNotMatch(row[0], /<svg/);
+  controller.pause();
 });
 
 test("Original chat footer passes through the app navigation callback", () => {

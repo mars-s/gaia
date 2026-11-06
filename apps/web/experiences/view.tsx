@@ -15,6 +15,7 @@ import { SharedComposer } from "../shared-composer";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   RiMenuLine,
+  RiHashtag,
   RiAddLine,
 } from "@remixicon/react";
 import { Button } from "../components/base/buttons/button";
@@ -69,10 +70,14 @@ export function ExperienceConversation({
     sessions: "New session",
   }[layout];
   const selected = profile.scopes.find((item) => item.id === scope.scopeId);
+  const recencies = profile.scopes.map((item) => sessionRecency(item.createdAt));
+  const showRecency = new Set(recencies.filter(Boolean)).size > 1;
   const scopeHead = (
     <span className="scope-head">
       {layout === "bots" ? (
         <BotAvatar avatar={selected?.avatar} />
+      ) : layout === "channels" ? (
+        <RiHashtag className="setup-layout-icon" aria-hidden="true" />
       ) : (
         <SetupGlyph layout={layout} />
       )}
@@ -131,10 +136,10 @@ export function ExperienceConversation({
                 />
               </span>
             )}
-            {layout !== "bots" && <SetupGlyph layout={layout} />}
+            {layout === "channels" && <RiHashtag className="setup-layout-icon" aria-hidden="true" />}
             <span className="scope-row-copy min-w-0">
               <span className="block truncate">{item.label}</span>
-              {layout === "sessions" && sessionRecency(item.createdAt) && (
+              {layout === "sessions" && showRecency && sessionRecency(item.createdAt) && (
                 <span className="session-recency">{sessionRecency(item.createdAt)}</span>
               )}
             </span>
