@@ -138,11 +138,11 @@ test("sidebar header stays out of the narrow title bar", () => {
  assert.match(css, /@media \(max-width: 639px\) \{ .app-bar-side.sidebar-header \{ display: none/);
 });
 
-test("all conversation shells reveal a 24px top fade and header rule only after scrolling", () => {
+test("all conversation shells hide a full clipped line before a 28px top fade and header rule only after scrolling", () => {
   for (const file of ["./app.tsx", "./experiences/view.tsx"]) {
     assert.match(read(file), /el.dataset.scrolled = String\(el.scrollTop > 0\)/);
   }
-  assert.match(css, /conversation-scroll\[data-scrolled="true"\][^}]*mask-image: linear-gradient\(transparent, black 24px\)/);
+  assert.match(css, /conversation-scroll\[data-scrolled="true"\][^}]*mask-image: linear-gradient\(transparent 28px, black 56px\)/);
   assert.match(css, /app-shell:has\(.conversation-scroll\[data-scrolled="true"\]\) .app-bar[^}]*inset 0 -1px/);
   assert.match(css, /message-list \{ padding-bottom: 12px/);
   assert.match(read("./app.tsx"), /className="interview-slot"/);

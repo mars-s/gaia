@@ -1319,9 +1319,9 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 
 @media (max-width: 639px) { .app-bar-side.sidebar-header { display: none; } }
 
-/* The page behind the mask supplies the top scroll fade in every shell. */
+/* Hide the clipped line before fading the next line into the transcript. */
 .conversation-scroll[data-scrolled="true"] {
-  mask-image: linear-gradient(transparent, black 24px);
+  mask-image: linear-gradient(transparent 28px, black 56px);
 }
 .app-shell:has(.conversation-scroll[data-scrolled="true"]) .app-bar {
   box-shadow: inset 0 -1px var(--color-line);
