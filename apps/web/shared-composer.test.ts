@@ -94,3 +94,10 @@ test("narrow attachments stay compact without hiding the empty-chat context", ()
  const empty = readFileSync(new URL("./empty-chat.tsx", import.meta.url), "utf8");
  assert.doesNotMatch(empty, /hasDraft|return null/);
 });
+
+test("Stop has a hover and keyboard-focus tooltip without changing its accessible name", () => {
+ const source = readFileSync(new URL("./shared-composer.tsx", import.meta.url), "utf8");
+ assert.match(source, /TooltipTrigger isDisabled=\{!onStop\}/);
+ assert.match(source, /<Focusable>[^]*aria-label=\{onStop \? stopLabel : "Send message"\}/);
+ assert.match(source, /<Tooltip>Stop reply<\/Tooltip>/);
+});

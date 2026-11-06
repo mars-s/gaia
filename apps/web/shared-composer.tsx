@@ -1,3 +1,5 @@
+import { Focusable } from "react-aria-components";
+import { Tooltip, TooltipTrigger } from "./components/base/tooltip/tooltip";
 import { useEffect, useRef, useState } from "react";
 import { RiArrowUpLine, RiStopFill } from "@remixicon/react";
 import { IconButton } from "./components/base/buttons/icon-button";
@@ -196,6 +198,8 @@ export function SharedComposer({
             onSelect={onSelect}
           />
         )}
+        <TooltipTrigger isDisabled={!onStop}>
+        <Focusable>
         <IconButton
           variant="primary"
           className={cx(
@@ -208,6 +212,9 @@ export function SharedComposer({
           disabled={onStop ? stopDisabled : !canSend}
           onClick={onStop}
         />
+        </Focusable>
+        <Tooltip>Stop reply</Tooltip>
+        </TooltipTrigger>
       </div>
     </form>
   );
