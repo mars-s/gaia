@@ -87,7 +87,7 @@ test("both themes set a composer halo and share one code block border", () => {
 
 test("narrow attachments stay compact without hiding the empty-chat context", () => {
  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /composer .draft-images .image-thumbnail img[^}]*width: 56px; height: 56px/);
+ assert.match(css, /composer .draft-images .draft-file-chip img[^}]*height: 48px; width: 48px/);
  assert.match(css, /composer .composer-field textarea[^}]*min-height: 20px; line-height: 20px/);
  const source = readFileSync(new URL("./shared-composer.tsx", import.meta.url), "utf8");
  assert.match(source, /rows=\{1\}\s*autoResize/);

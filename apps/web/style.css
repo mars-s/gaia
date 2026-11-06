@@ -1663,3 +1663,10 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 }
 
 .message-list > article[data-setup-card] + .proposal-list { margin-top: calc(16px - var(--space-message-gap)); }
+
+.composer .draft-images .draft-file-chip { display: inline-flex; flex-direction: row; align-items: center; width: auto; max-width: 100%; height: 56px; padding: 4px 8px 4px 4px; gap: 10px; border: 1px solid var(--color-line); border-radius: 12px; background: var(--color-surface-raised); }
+.composer .draft-images .draft-file-chip img, .composer .draft-images .draft-file-chip .image-unavailable { flex-shrink: 0; height: 48px; width: 48px; border-radius: 8px; object-fit: cover; }
+.draft-file-copy { min-width: 0; max-width: 180px; }
+.draft-file-copy p:first-child { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--color-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.draft-file-copy p + p { font-size: 12px; line-height: 16px; color: var(--color-ink-2); }
+.composer .draft-images .draft-file-chip .remove-image { position: static; flex-shrink: 0; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--color-ink-2); background: transparent; }

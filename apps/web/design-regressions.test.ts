@@ -106,17 +106,15 @@ test("dark bubbles and disabled send discs use the stronger selected surface", (
     /\.composer-send:disabled \{\s*background: var\(--color-surface-selected\)/,
   );
 });
-test("attachments expose the filename below a 72px image in a 96px chip", () => {
-  assert.match(read("./image-previews.tsx"), /<figcaption>/);
-  assert.match(
-    css,
-    /draft-images .image-thumbnail \{ width: 96px; height: auto/,
-  );
-  assert.match(css, /width: 72px; height: 72px; border-radius: 12px/);
-  assert.match(
-    css,
-    /text-overflow: ellipsis; white-space: nowrap; text-align: center/,
-  );
+test("draft attachment chips keep filename, type and a separate removal action", () => {
+ const preview = read("./image-previews.tsx");
+ assert.match(preview, /draft-file-copy/);
+ assert.match(preview, /PNG image/);
+ assert.match(preview, /!remove && <figcaption>/);
+ assert.match(css, /draft-file-chip \{[^}]*height: 56px/);
+ assert.match(css, /draft-file-chip img[^}]*height: 48px; width: 48px/);
+ assert.match(css, /draft-file-chip .remove-image \{ position: static/);
+ assert.match(css, /draft-file-copy \{ min-width: 0; max-width: 180px/);
 });
 test("narrow model chip shares the add column and proposal actions share a baseline", () => {
   assert.match(

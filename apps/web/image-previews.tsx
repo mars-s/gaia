@@ -1,3 +1,4 @@
+import { cx } from "./utils/cx";
 import { useEffect, useState } from "react";
 import { RiCloseLine, RiImageLine } from "@remixicon/react";
 import {
@@ -10,21 +11,26 @@ function Thumbnail({
   src,
   name,
   remove,
+  mimeType,
 }: {
   src?: string;
   name: string;
   remove?: () => void;
+  mimeType?: ImageUpload["mimeType"];
 }) {
+  const [aspect, setAspect] = useState(1);
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [src]);
   return (
-    <figure className="image-thumbnail">
+    <figure className={cx("image-thumbnail", remove && "draft-file-chip")}>
       {src && !failed ? (
         <img
           src={src}
           alt={name}
           width={80}
           height={80}
+          style={remove ? {width: `clamp(48px, ${48 * aspect}px, 72px)`} : undefined}
+          onLoad={event => setAspect(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight)}
           onError={() => setFailed(true)}
         />
       ) : (
@@ -33,6 +39,7 @@ function Thumbnail({
           <span>{src ? "Unavailable" : "Loading"}</span>
         </span>
       )}
+      {remove && <div className="draft-file-copy"><p title={name}>{name}</p><p>{mimeType === "image/png" ? "PNG image" : mimeType === "image/jpeg" ? "JPEG image" : "WebP image"}{failed ? ", preview unavailable" : ""}</p></div>}
       {remove && (
         <button
           type="button"
@@ -43,10 +50,10 @@ function Thumbnail({
           <RiCloseLine className="size-3.5" aria-hidden />
         </button>
       )}
-      <figcaption>
+      {!remove && <figcaption>
         {name}
         {failed ? ", preview unavailable" : ""}
-      </figcaption>
+      </figcaption>}
     </figure>
   );
 }
@@ -75,7 +82,7 @@ function DraftThumbnail({
     setSrc(url);
     return () => URL.revokeObjectURL(url);
   }, [image.data, image.mimeType]);
-  return <Thumbnail src={src} name={image.name} remove={remove} />;
+  return <Thumbnail src={src} name={image.name} mimeType={image.mimeType} remove={remove} />;
 }
 
 export function DraftImages({
