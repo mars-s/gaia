@@ -188,3 +188,12 @@ test("code overflow measurement covers narrow screens and the thin scrollbar sta
  assert.match(css, /pre::-webkit-scrollbar \{ height: 4px/);
  assert.match(css, /pre::-webkit-scrollbar-thumb \{ background: var\(--color-line-strong\)/);
 });
+
+test("answer section headings use distinct semibold type scale steps", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ for (const [heading, token] of [["h2", "title-2"], ["h3", "title-3"]]) {
+   assert.match(css, new RegExp(`message-markdown ${heading} \\{[^}]*font-size: var\\(--text-${token}-semibold\\);[^}]*line-height: var\\(--text-${token}-semibold--line-height\\);[^}]*font-weight: var\\(--text-${token}-semibold--font-weight\\)`));
+ }
+ const html = renderToStaticMarkup(createElement(MessageMarkdown, {text: "## Main heading\n\nBody\n\n### Section heading"}));
+ assert.match(html, /<h2>Main heading<\/h2>[^]*<h3>Section heading<\/h3>/);
+});

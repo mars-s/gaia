@@ -434,12 +434,14 @@ body {
   line-height: 26px;
 }
 .message-markdown h2 {
-  font-size: 16px;
-  line-height: 22px;
+  font-size: var(--text-title-2-semibold);
+  line-height: var(--text-title-2-semibold--line-height);
+  font-weight: var(--text-title-2-semibold--font-weight);
 }
 .message-markdown h3 {
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-title-3-semibold);
+  line-height: var(--text-title-3-semibold--line-height);
+  font-weight: var(--text-title-3-semibold--font-weight);
 }
 .message-markdown code {
   font-size: 13px;
