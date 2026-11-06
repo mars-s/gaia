@@ -286,3 +286,9 @@ test("desktop Settings keeps a 560px content measure aligned to the pane gutter"
 test("code headers retain a visible divider in both themes", () => {
  assert.match(css, /\.code-header \{[^}]*border-bottom: 1px solid var\(--color-line-strong\)/);
 });
+
+test("sidebar rows, creation and Original chat share a 24px icon column and text edge", () => {
+ assert.match(css, /experience-nav-row > span \{ display: grid; grid-template-columns: 24px minmax\(0, 1fr\) auto; column-gap: 8px/);
+ assert.match(css, /sidebar-new \{ display: grid; grid-template-columns: 24px minmax\(0, 1fr\) auto; gap: 8px; padding: 8px 10px/);
+ assert.match(css, /sidebar-original \{ display: grid; grid-template-columns: 24px minmax\(0, 1fr\); align-items: center; gap: 8px; width: 100%; padding: 8px 10px/);
+});

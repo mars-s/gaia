@@ -1576,7 +1576,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 }
 
 .sidebar-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--color-line); }
-.sidebar-original { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; color: var(--color-ink-2); }
+.sidebar-original { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; gap: 8px; width: 100%; padding: 8px 10px; color: var(--color-ink-2); text-align: left; }
 .session-monogram { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: var(--radius-sm); color: var(--color-ink-2); background: var(--color-surface-sunken); font-size: 12px; }
 
 .setup-settings .setup-list-row { grid-template-columns: 28px minmax(0, 1fr) auto; padding-inline: 0; }
@@ -1611,3 +1611,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 }
 
 .settings-index button[aria-current] { color: var(--color-ink); font-weight: 500; }
+
+.sidebar-new .new-icon, .sidebar-original .sidebar-glyph { width: 24px; flex-shrink: 0; }
