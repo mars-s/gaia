@@ -706,9 +706,9 @@ a:focus-visible {
   color: var(--color-ink-3);
   opacity: 1;
 }
-.composer-stop {
-  background: var(--color-primary-fill);
-  color: var(--color-primary-ink);
+.composer-send.composer-stop {
+  background: var(--color-ink-2);
+  color: var(--color-surface-page);
 }
 .composer-dragging {
   border-color: var(--color-accent);
@@ -798,8 +798,8 @@ a:focus-visible {
 .composer-send:not(:disabled):hover {
   background: var(--color-primary-fill);
 }
-.composer-stop:not(:disabled):hover {
-  background: var(--color-primary-fill);
+.composer-send.composer-stop:not(:disabled):hover {
+  background: var(--color-ink);
 }
 
 /* Model and effort picker. */
