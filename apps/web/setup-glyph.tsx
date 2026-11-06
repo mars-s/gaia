@@ -1,9 +1,9 @@
-import { RiChat1Line, RiRobot2Line, RiLayoutColumnLine, RiChatHistoryLine } from "@remixicon/react";
+import { RiChat1Line, RiGroupLine, RiLayoutColumnLine, RiChatHistoryLine } from "@remixicon/react";
 import type { ExperienceLayout } from "../../packages/protocol/experiences";
 
 const glyphs = {
   single: RiChat1Line,
-  bots: RiRobot2Line,
+  bots: RiGroupLine,
   channels: RiLayoutColumnLine,
   sessions: RiChatHistoryLine,
 };

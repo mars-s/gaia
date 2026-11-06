@@ -1,4 +1,3 @@
-import { SetupGlyph } from "./setup-glyph";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -584,7 +583,7 @@ test("sessions keep creation order when selection moves between rows", () => {
   controller.pause();
 });
 
-test("setup sidebars explain memory and leave Original chat to the switcher", () => {
+test("setup sidebars explain memory and provide the Original chat footer", () => {
   for (const [layout, caption] of [
     ["bots", "Bots · separate memory"],
     ["channels", "Channels · shared memory"],
@@ -592,13 +591,13 @@ test("setup sidebars explain memory and leave Original chat to the switcher", ()
   ] as const) {
     const html = fixture(layout).html();
     assert.ok(html.includes(caption));
-    assert.doesNotMatch(html, /sidebar-footer|sidebar-settings/);
-    assert.doesNotMatch(html, /sidebar-original/);
+    assert.match(html, /sidebar-footer[^]*sidebar-original[^]*Original chat/);
+    assert.doesNotMatch(html, /sidebar-settings/);
     assert.doesNotMatch(html, /session-recency/);
   }
 });
 
-test("Sessions keep one glyph and single-line rows even when dates differ", () => {
+test("Sessions fill the icon column with a name monogram", () => {
   const { controller, html } = fixture("sessions");
   controller.profile!.scopes[0].createdAt = new Date().toISOString();
   assert.doesNotMatch(html(), /session-recency/);
@@ -612,9 +611,8 @@ test("Sessions keep one glyph and single-line rows even when dates differ", () =
   const rows = [...nav.matchAll(/<button[^]*?<\/button>/g)].filter(row => row[0].includes("experience-nav-row"));
   assert.equal(rows.length, 2);
   for (const row of rows) {
-    assert.match(row[0], /sidebar-glyph[^]*setup-layout-icon/);
-    const glyph = renderToStaticMarkup(createElement(SetupGlyph, { layout: "sessions" }));
-    assert.ok(row[0].includes(glyph));
+    assert.match(row[0], /sidebar-glyph[^]*session-monogram[^]*>M<\/span>/);
+    assert.doesNotMatch(row[0], /setup-layout-icon/);
   }
   controller.profile!.scopes[1].createdAt = first.createdAt;
   assert.doesNotMatch(html(), /session-recency/);
@@ -624,7 +622,8 @@ test("Sessions keep one glyph and single-line rows even when dates differ", () =
 test("Original chat stays in app navigation and Settings stays in the title bar", () => {
   const view = readFileSync(new URL("./experiences/view.tsx", import.meta.url), "utf8");
   const app = readFileSync(new URL("./app.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(view, /sidebar-footer|sidebar-settings/);
+  assert.match(view, /sidebar-footer[^]*sidebar-original/);
+  assert.doesNotMatch(view, /sidebar-settings/);
   assert.match(view, /\{accountControl\}/);
   assert.match(app, /onOriginal=\{\(\) => \{[^]*experiences.original\(\);[^]*setExperienceView\("original"\)/);
 });

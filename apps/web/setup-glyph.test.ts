@@ -20,3 +20,9 @@ test("workspace glyph differs from the hashtag used only for channels", () => {
   assert.doesNotMatch(source, /RiHashtag/);
   assert.match(readFileSync(new URL("./experiences/view.tsx", import.meta.url), "utf8"), /layout === "channels" \? <RiHashtag/);
 });
+
+test("Bots layout uses a neutral group glyph while robot artwork remains the Bot identity", () => {
+ const source = readFileSync(new URL("./setup-glyph.tsx", import.meta.url), "utf8");
+ assert.match(source, /bots: RiGroupLine/);
+ assert.doesNotMatch(source, /Robot/);
+});

@@ -1571,3 +1571,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 @media (min-width: 480px) {
  .setup-list-row:has(.setup-row-actions:empty) .status-pill { grid-column: 3 / -1; justify-self: end; }
 }
+
+.sidebar-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--color-line); }
+.sidebar-original { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; color: var(--color-ink-2); }
+.session-monogram { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: var(--radius-sm); color: var(--color-ink-2); background: var(--color-surface-sunken); font-size: 12px; }

@@ -35,6 +35,7 @@ export function ExperienceConversation({
   switcher,
   accountControl,
   onSettings,
+  onOriginal,
 }: {
   controller: ExperienceController;
   switcher?: ReactNode;
@@ -150,7 +151,7 @@ export function ExperienceConversation({
                 />
               </span>
             )}
-            {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <SetupGlyph layout={layout} />}</span>}
+            {layout !== "bots" && <span className="sidebar-glyph">{layout === "channels" ? <RiHashtag aria-hidden="true" /> : <span className="session-monogram" aria-hidden="true">{Array.from(item.label.trim())[0]?.toLocaleUpperCase()}</span>}</span>}
             <span className="scope-row-copy min-w-0">
               <span className="block truncate">{item.label}</span>
             </span>
@@ -232,7 +233,12 @@ export function ExperienceConversation({
           </Button>
         </form>
       )}
-
+      <div className="sidebar-footer">
+        <button className="quiet-action sidebar-original" onClick={() => { controller.original(); onOriginal?.(); setNavigation(false); }}>
+          <span className="sidebar-glyph"><SetupGlyph layout="single" /></span>
+          <span>Original chat</span>
+        </button>
+      </div>
     </nav>
   );
   return (
