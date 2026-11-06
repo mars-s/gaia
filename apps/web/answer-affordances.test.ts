@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -162,4 +163,11 @@ test("code headers label known languages and keep copy outside the pre", () => {
     assert.match(html, /aria-label="Copy code"[\s\S]*<div class="code-scroll-area"><pre>/);
     assert.doesNotMatch(html, /<pre>[\s\S]*<button/);
   }
+});
+
+test("code wraps below 640 without a fade and the transcript has a clean top edge", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.doesNotMatch(css, /mask-image/);
+ assert.match(css, /code-block pre \{ white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible/);
+ assert.match(css, /owner-bubble \{ background: var\(--color-surface-selected\)/);
 });

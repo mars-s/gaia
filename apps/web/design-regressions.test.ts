@@ -142,11 +142,11 @@ test("sidebar header stays out of the narrow title bar", () => {
  assert.match(css, /@media \(max-width: 639px\) \{ .app-bar-side.sidebar-header \{ display: none/);
 });
 
-test("all conversation shells hide a full clipped line before a 28px top fade and header rule only after scrolling", () => {
+test("all conversation shells cut cleanly at the bar and show a header rule only after scrolling", () => {
   for (const file of ["./app.tsx", "./experiences/view.tsx"]) {
     assert.match(read(file), /el.dataset.scrolled = String\(el.scrollTop > 0\)/);
   }
-  assert.match(css, /conversation-scroll\[data-scrolled="true"\][^}]*mask-image: linear-gradient\(transparent 28px, black 56px\)/);
+  assert.doesNotMatch(css, /mask-image/);
   assert.match(css, /app-shell:has\(.conversation-scroll\[data-scrolled="true"\]\) .app-bar[^}]*inset 0 -1px/);
   assert.match(css, /message-list \{ padding-bottom: 12px/);
   assert.match(read("./app.tsx"), /className="interview-slot"/);
@@ -247,7 +247,7 @@ test("setup status uses the shared pill with no dotted status badges", () => {
 
 test("overflowing code has top breathing room and a right-edge cue until scrolled to the end", () => {
   assert.match(css, /code-block pre[^}]*padding: 16px/);
-  assert.match(css, /data-overflow="true"[^}]*width: 40px[^}]*surface-sunken\) 80%/);
+  assert.match(css, /data-overflow="true"[^}]*width: 32px[^}]*surface-sunken\) 80%/);
   assert.match(read("./transcript.tsx"), /scrollWidth - element.clientWidth - element.scrollLeft > 1/);
   assert.match(read("./transcript.tsx"), /removeEventListener\("scroll", measure\)/);
 });
