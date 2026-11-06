@@ -1609,3 +1609,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .composer .composer-field { padding-block: 4px; }
  .composer .composer-field textarea { min-height: 20px; line-height: 20px; }
 }
+
+.settings-index button[aria-current] { color: var(--color-ink); font-weight: 500; }

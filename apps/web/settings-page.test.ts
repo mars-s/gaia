@@ -126,3 +126,8 @@ test("narrow settings wraps all five tabs and removes duplicate pane headings", 
  assert.match(css, /settings-content > .settings-section > h2[^}]*clip: rect/);
  assert.match(css, /settings-index button:focus-visible[^}]*outline: 2px/);
 });
+
+test("selected Settings labels use primary ink and medium weight at every width", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /\n.settings-index button\[aria-current\] \{ color: var\(--color-ink\); font-weight: 500/);
+});
