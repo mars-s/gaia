@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
@@ -317,4 +318,10 @@ test("mobile model Done is a secondary action with a safe bottom inset", async (
   const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
   assert.ok(css.includes("24px + env(safe-area-inset-bottom)"));
   assert.match(css, /model-done[^}]*min-height: 32px[^}]*color: var\(--color-ink\)/);
+});
+
+test("model sheet dims with the shared backdrop and radios keep one centre token in both themes", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /model-scrim \{[^}]*background: var\(--backdrop\)/);
+ assert.match(css, /data-selected\] > \.model-radio \{[^}]*background: var\(--color-primary-ink\)/);
 });

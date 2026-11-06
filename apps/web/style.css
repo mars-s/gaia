@@ -959,7 +959,7 @@ a:focus-visible {
 }
 [data-selected] > .model-radio {
   border: 5px solid var(--color-accent);
-  background: var(--color-surface-raised);
+  background: var(--color-primary-ink);
 }
 [data-disabled] > .model-radio {
   border: 1px solid var(--color-ink-3);
@@ -1063,7 +1063,7 @@ a:focus-visible {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: color-mix(in srgb, var(--color-ink) 14%, transparent);
+  background: var(--backdrop);
   display: flex;
   align-items: flex-end;
   transition: opacity var(--motion-drawer);

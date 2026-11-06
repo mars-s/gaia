@@ -157,7 +157,7 @@ test("secondary labels remain readable and errors reserve colour for the icon", 
   assert.match(css, /model-trigger\[data-loading="true"\] \{ color: var\(--color-ink-2\)/);
   assert.match(css, /reply-error \{ color: var\(--color-ink\)/);
   assert.match(css, /reply-error-icon \{ color: var\(--color-danger\)/);
-  assert.match(css, /model-scrim[^}]*color-mix\(in srgb, var\(--color-ink\) 14%, transparent\)/);
+  assert.match(css, /model-scrim[^}]*var\(--backdrop\)/);
 });
 test("Bot art is clipped to one shared tile radius and welcome lines are balanced", () => {
   assert.match(css, /avatar-tile, .assistant-head .avatar-tile[^}]*border-radius: var\(--radius-sm\); overflow: hidden/);
