@@ -1431,7 +1431,7 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
  .settings-index { display: flex; flex-direction: column; width: 240px; flex-shrink: 0; padding: 12px; border-right: 1px solid var(--color-line); }
  .settings-index button { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 8px 10px; height: 36px; text-align: left; font-size: 14px; line-height: 20px; border-radius: var(--radius-sm); }
  .settings-index button[aria-current] { background: var(--color-surface-selected); font-weight: 500; }
- .settings-index button:hover { background: var(--color-surface-hover); }
+ .settings-index button:not([aria-current]):hover { background: var(--color-surface-hover); }
  .settings-bar-side { display: flex; align-items: center; padding-left: 22px; font-size: 16px; line-height: 22px; font-weight: 600; }
  .settings-bar .settings-title { display: none; }
  .settings-bar .app-bar-column { justify-content: flex-end; }

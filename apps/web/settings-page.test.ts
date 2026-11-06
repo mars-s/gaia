@@ -99,3 +99,10 @@ test("narrow account rows stack status and actions, and secondary text shares bo
  assert.match(css, /plan-status \{ display: flex; flex-direction: column/);
  assert.match(css, /text-text-secondary[^}]*letter-spacing: 0/);
 });
+
+ test("Settings hover cannot replace the selected pane fill", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /settings-index button\[aria-current\] \{ background: var\(--color-surface-selected\)/);
+ assert.match(css, /settings-index button:not\(\[aria-current\]\):hover/);
+ assert.doesNotMatch(css, /settings-index button:hover/);
+ });
