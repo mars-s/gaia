@@ -159,11 +159,11 @@ body {
 }
 
 .composer {
-  caret-color: var(--color-text-primary);
+  caret-color: var(--color-accent);
 }
 
 .composer:focus-within {
-  border-color: var(--color-primary-fill);
+  border-color: var(--color-line-strong);
 }
 
 .composer-dragging {
@@ -621,8 +621,8 @@ a:focus-visible {
   outline: 2px solid var(--color-focus);
 }
 .composer:focus-within {
-  border-color: var(--color-primary-fill);
-  box-shadow: none;
+  border-color: var(--color-line-strong);
+  box-shadow: var(--shadow-level-1), 0 0 0 3px color-mix(in oklab, var(--color-ink) 6%, transparent);
 }
 @media (max-width: 639px) {
   :root {
@@ -711,7 +711,7 @@ a:focus-visible {
   color: var(--color-primary-ink);
 }
 .composer-dragging {
-  border-color: var(--color-primary-fill);
+  border-color: var(--color-accent);
   background: var(--color-accent-soft);
 }
 .chat-notice {
@@ -1451,3 +1451,5 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 }
 
 .text-text-secondary, .text-caption-1-regular, .section-explainer, .setup-memory-caption, .session-recency, .welcome-caption { letter-spacing: 0; }
+
+.dark .secondary-action { border-color: var(--color-line-strong); }

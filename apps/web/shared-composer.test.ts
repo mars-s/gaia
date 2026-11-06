@@ -64,3 +64,11 @@ test("composer keeps attachment growth to its row and aligns narrow model contro
   assert.match(css, /conversation-scroll[^}]*scrollbar-width: thin; scrollbar-color: transparent transparent/);
   assert.match(css, /conversation-scroll:hover[^}]*scrollbar-color: var\(--color-line-strong\)/);
 });
+
+test("composer focus is neutral with a visible halo, shared by both conversations", () => {
+ const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+ assert.match(css, /composer:focus-within \{[^}]*border-color: var\(--color-line-strong\)/);
+ assert.match(css, /box-shadow: var\(--shadow-level-1\), 0 0 0 3px color-mix/);
+ assert.doesNotMatch(css, /composer:focus-within \{[^}]*color-primary-fill/);
+ assert.match(css, /dark \.secondary-action \{ border-color: var\(--color-line-strong\)/);
+});

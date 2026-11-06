@@ -164,8 +164,8 @@ test("Bot art is clipped to one shared tile radius and welcome lines are balance
   assert.match(css, /avatar-tile img \{ border-radius: inherit/);
   assert.match(css, /welcome-intro p \{ text-wrap: balance/);
 });
-test("composer focus has a single accent edge and both actions share the same fill and shape", () => {
-  assert.match(css, /composer:focus-within[^}]*border-color: var\(--color-primary-fill\);\s*box-shadow: none/);
+test("composer focus has a neutral edge and both actions share the same fill and shape", () => {
+  assert.match(css, /composer:focus-within[^}]*border-color: var\(--color-line-strong\);\s*box-shadow: var\(--shadow-level-1\), 0 0 0 3px/);
   assert.match(css, /composer-stop \{\s*background: var\(--color-primary-fill\)/);
   assert.match(css, /primary-action, .secondary-action, .quiet-action[^}]*border-radius: var\(--radius-sm\);\s*background-image: none/);
 });
@@ -222,7 +222,7 @@ test("attachment remove is a backed 24px circle with a 14px icon inside the imag
 test("Settings has labelled appearance, contained secondary actions and aligned content controls", () => {
   assert.match(read("./appearance.tsx"), /label="Theme"/);
   assert.match(read("./experiences/index.tsx"), /<Button\s*variant="secondary"\s*size="small"/);
-  assert.match(read("./managed-settings.tsx"), /className="quiet-action app-control"[^]*aria-label="Check for changes"/);
+  assert.match(read("./managed-settings.tsx"), /className="quiet-action app-control"[^]*aria-label="Refresh changes"/);
   assert.match(css, /settings-section > section > button.primary-action \{ align-self: flex-start/);
   assert.match(css, /settings-bar .app-control:not\(.chat-switcher-trigger\) \{ margin-right: 0/);
 });
@@ -239,13 +239,10 @@ test("all shell titles use the primary ink instead of quiet action ink", () => {
   assert.match(css, /scope-head \{[^}]*color: var\(--color-ink\)/);
 });
 
-test("setup status uses plain dotted text and account separator uses non-breaking thin spaces", () => {
-  const status = css.match(/\.setup-status-badge \{([^}]+)\}/)?.[1] ?? "";
-  assert.doesNotMatch(status, /border:|background:|padding:/);
-  assert.match(css, /setup-status-badge::before[^}]*background: currentColor/);
-  assert.ok(read("./plan-sign-in.tsx").includes('"\\u202f·\\u202f"}'));
-  assert.match(read("./plan-sign-in.tsx"), /connected \? "Connected" : "Not connected"/);
-  assert.match(read("./experiences/proposal.tsx"), /channels: \{ label: "Shared channels"/);
+test("setup status uses the shared pill with no dotted status badges", () => {
+ assert.match(css, /status-pill \{[^}]*height: 20px/);
+ assert.doesNotMatch(css, /setup-status-badge/);
+ assert.match(read("./experiences/index.tsx"), /<StatusPill tone="accent">Main/);
 });
 
 test("overflowing code has top breathing room and a right-edge cue until scrolled to the end", () => {
