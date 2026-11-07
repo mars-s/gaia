@@ -47,5 +47,9 @@ test("preview binds hidden fixture shots to source, reuses before shots and leav
     assert.equal(supervisor.state.kind, "stable");
     assert.equal(supervisor.child, undefined);
     assert.equal(await readFile(join(repo, "apps/web/styles/theme.css"), "utf8"), original);
+    const tint = Change.parse(await supervisor.handle({ kind: "stage", reason: "Preview a visible page tint", edits: [{ path: "apps/web/styles/theme.css", text: original.replace("--color-surface-page: var(--color-white);", "--color-surface-page: var(--color-neutral-50);") }] }));
+    const tinted = Change.parse(await supervisor.handle({ kind: "preview", id: tint.id, surfaces: [] }));
+    assert(tinted.previews?.alsoChanged.includes("empty-1000-light"), "baseline changes above half a percent must reach the card and critic");
+    assert.deepEqual(await readdir(before), keys, "another stage from the same release reuses before shots");
   } finally { await rm(data, { recursive: true, force: true }); }
 });

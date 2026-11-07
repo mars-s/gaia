@@ -40,6 +40,8 @@ test("UI submit requires a preview for the exact source, including unstaged and 
     const entry = f.supervisor.history.find(entry => entry.id === change.id)!;
     entry.previews = { hash, surfaces: [], shots: [], alsoChanged: [] };
     await assert.rejects(f.supervisor.handle({ kind: "submit", id: change.id }), /matching preview/);
+    entry.previews.hash = await sourceIdentity(stage);
+    await assert.rejects(f.supervisor.handle({ kind: "submit", id: change.id }), /all source edits to be staged/);
     assert.equal(f.supervisor.state.kind, "stable");
     assert.equal(f.supervisor.child, undefined);
     assert.equal(f.supervisor.history[0].outcome, "staged");

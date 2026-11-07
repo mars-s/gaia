@@ -46,6 +46,7 @@ export function reviewedSelfChange(extension: Extension, source?: (conversation:
       const live = await api.snapshot(LiveDoc, api.conversationId, context), turn = String(live?.run?.first ?? api.taskId), key = String(api.conversationId);
       const state = loops.get(key)?.turn === turn ? loops.get(key)! : { turn, count: 0 };
       if (input.kind === "stage") {
+        if (state.count >= 3) return { output: [{ type: "text", text: "Three preview attempts reached. Submit the last matching preview, or report the remaining mechanical failure." }], isError: true };
         const origin = await source?.(key), stageInput = { ...input, ...(origin ? { source: origin } : {}), ...(state.lastStage ? { supersedes: state.lastStage } : {}) };
         const result = await tool.execute({ ...z.record(z.string(), z.unknown()).parse(args), command: JSON.stringify(stageInput) }, api, context);
         const first = result.output?.find(block => block.type === "text");

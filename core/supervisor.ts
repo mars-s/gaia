@@ -14,11 +14,11 @@ import {
   type Edit,
   patchText,
 } from "./state.ts";
-import { command, cleanEnv, stop } from "./process.ts";
+import { command, cleanEnv, stop, failureDetail } from "./process.ts";
 import { safeFile, verifyProtected } from "./install.ts";
 import { designPack } from "./design/pack.ts";
 import { recipe } from "./recipe.ts";
-import { previewChange, sourceIdentity, previewImages } from "./preview.ts";
+import { previewChange, stagedIdentity, previewImages } from "./preview.ts";
 import { waitHealth } from "./sandbox.ts";
 import { compatible } from "./schema.ts";
 import { probes } from "./probes.ts";
@@ -345,6 +345,9 @@ export class Supervisor {
         entry.previews = await previewChange(this.options, entry, input.surfaces);
         await this.saveHistory();
         return { ...entry, images: await previewImages(this.options.data, entry) };
+      } catch (error) {
+        const entry = this.history.find(change => change.id === input.id), paths = Buffer.from(entry?.diff.match(/^diff --git .+$/gm)?.join("; ") ?? "unknown").subarray(0, 1000).toString("utf8"), tail = Buffer.from(failureDetail(error, join(this.options.data, "staging", input.id)).split("\n").slice(-35).join("\n")).subarray(-2800).toString("utf8"), detail = `Preview failed. Changed files: ${paths}\n${tail}`;
+        if (entry) { entry.checks.push(detail); await this.saveHistory(); } throw new Error(detail, { cause: error });
       } finally { this.busy = false; }
     }
     if (input.kind === "stage") {
@@ -376,7 +379,7 @@ export class Supervisor {
       if (entry.base !== this.state.active.release)
         throw new Error("Stale proposal. Stage again from the active release.");
       if (input.kind === "submit" && /^(?:\+\+\+ b\/|diff --git a\/)apps\/web\//m.test(entry.diff)) {
-        if (!entry.previews || entry.previews.hash !== await sourceIdentity(join(this.options.data, "staging", entry.id))) throw new Error("apps/web: a matching preview is required before submit. Preview this stage again.");
+        if (!entry.previews || entry.previews.hash !== await stagedIdentity(join(this.options.data, "staging", entry.id))) throw new Error("apps/web: a matching preview is required before submit. Preview this stage again.");
       }
       entry.outcome = "queued";
       entry.detail =
@@ -535,6 +538,7 @@ export class Supervisor {
       entry.outcome = "checking";
       await this.saveHistory();
       await verifyProtected(stage, this.protected);
+      if (!entry.previews && entry.diff.includes("diff --git a/apps/web/")) entry.previews = await previewChange(this.options, entry, []);
       await recipe({
         stage,
         core,
@@ -547,6 +551,7 @@ export class Supervisor {
         },
       });
       await verifyProtected(stage, this.protected);
+      if (entry.previews && entry.previews.hash !== await stagedIdentity(stage)) throw new Error("apps/web: source changed after preview; stage and preview again");
       await command(
         "git",
         [

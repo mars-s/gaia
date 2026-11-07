@@ -271,6 +271,7 @@ test(
           );
           const result = await finish(reverted.id);
           assert.equal(result.outcome, "accepted", result.detail);
+          assert.equal(result.previews?.shots.length, 20, "Revert retains its own before and after shots");
           const state = await readState(data);
           stable = state.active;
           assert.equal(

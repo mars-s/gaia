@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
@@ -28,7 +29,7 @@ test("critic rubric matches protected compact questions and rejects malformed sc
 });
 
 test("real Pi tool calls run a fresh same-plan critic, keep low scores advisory and cap revision previews", async () => {
-  const root = await mkdtemp("/private/tmp/gaia-critic-"), db = new DatabaseSync(join(root, "auth.sqlite")), auth = createAuth(db);
+  const root = await mkdtemp(join(tmpdir(), "gaia-critic-")), db = new DatabaseSync(join(root, "auth.sqlite")), auth = createAuth(db);
   const faux = fauxProvider({ provider: "openai-codex", models: [{ id: "gpt-6.1-sol", reasoning: true }], tokensPerSecond: 100000 });
   auth.models.setProvider(faux.provider); auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
   let renders = 0, critics = 0, reviews = 0;
@@ -40,6 +41,7 @@ test("real Pi tool calls run a fresh same-plan critic, keep low scores advisory 
       preview(), context => { critics++; assert(!JSON.stringify(context).includes("PRIVATE_OWNER_CHAT")); assert(!JSON.stringify(context).includes("PRIVATE_DIFF")); assert(JSON.stringify(context).includes("fresh UI critic")); return fauxAssistantMessage(JSON.stringify(critique)); },
       preview(), () => { critics++; return fauxAssistantMessage(JSON.stringify(critique)); },
       preview(), () => { critics++; return fauxAssistantMessage(JSON.stringify(critique)); },
+      fauxAssistantMessage(fauxToolCall("self_change", { command: JSON.stringify({ kind: "stage", reason: "A fourth revision", edits: [] }) }), { stopReason: "toolUse" }),
       preview(), context => { assert(JSON.stringify(context).includes("Three preview attempts reached")); return fauxAssistantMessage("The low review score does not block submission."); },
     ]);
     let answer = "";

@@ -182,7 +182,7 @@ app.server.on("request", async (req, res) => {
       }
       if (
         req.method !== "POST" ||
-        !["stage", "submit", "revert"].includes(action)
+        !["stage", "preview", "submit", "revert"].includes(action)
       )
         return json(404, { error: "Not found." });
       if (req.headers["content-type"] !== "application/json")

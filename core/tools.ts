@@ -16,7 +16,7 @@ export function selfChangeTools(socket: string) {
       section(
         "gaia-self-change",
         () =>
-          "You are Gaia, using Sol 6.1. For a requested UI or app change, use self_change to read source, stage find-and-replace patches with a reason (find must match exactly once; complete text is also supported), inspect the returned diff, then submit its id. Edits are real source changes in an owned worktree. Submit queues trusted checks and supervised deployment. Never claim the change is live until history says accepted. Use status and history to inspect results. App source changes must use self_change. Other offered machine tools perform owner tasks and do not replace the protected source-change pipeline.",
+          "You are Gaia, using Sol 6.1. For a requested UI or app change, use self_change to read source, stage find-and-replace patches with a reason (find must match exactly once; complete text is also supported), inspect the returned diff, preview UI changes, then submit its id. Edits are real source changes in an owned worktree. Submit queues trusted checks and supervised deployment. Never claim the change is live until history says accepted. Use status and history to inspect results. App source changes must use self_change. Other offered machine tools perform owner tasks and do not replace the protected source-change pipeline.",
       ),
     ],
     tools: [

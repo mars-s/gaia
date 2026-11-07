@@ -17,14 +17,14 @@ export async function renderProfile(stage: string, core: string, dependencies: s
   catch (error) { await rm(trusted, { recursive: true, force: true }); throw error; }
   return { policy, trusted };
 }
-export async function renderCandidate({ stage, core, dependencies, surfaces = [], before }: { before?: string; stage: string; core: string; dependencies: string; surfaces?: Surface[] }) {
+export async function renderCandidate({ stage, core, dependencies, surfaces = [], before, baseline = true }: { baseline?: boolean; before?: string; stage: string; core: string; dependencies: string; surfaces?: Surface[] }) {
   await mkdir(join(stage, "dist/web"), { recursive: true }); await mkdir(join(core, ".sandbox-profiles"), { recursive: true });
   const scratch = await mkdtemp(join(stage, "dist/.render-"));
   surfaces = Surfaces.parse(surfaces);
   const webroot = join(scratch, "webroot");
   const results: unknown[] = [];
   let built = false;
-  for (const scenario of ["empty", "answer", "proposal", "setups", "failed", ...surfaces.map(surface => surface.name)]) {
+  for (const scenario of [...(baseline ? ["empty", "answer", "proposal", "setups", "failed"] : []), ...surfaces.map(surface => surface.name)]) {
     const data = join(scratch, scenario); await mkdir(data);
     const port = await freePort(), origin = `http://127.0.0.1:${port}`;
     const { policy, trusted } = await renderProfile(stage, core, dependencies, scratch, port);
