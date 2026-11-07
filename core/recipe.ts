@@ -33,6 +33,7 @@ export async function recipe({
   release,
   record,
   surfaces = [],
+  data = stage,
 }: {
   stage: string;
   core: string;
@@ -40,6 +41,7 @@ export async function recipe({
   release: string;
   record: (result: string) => Promise<void>;
   surfaces?: Surface[];
+  data?: string;
 }) {
   const profile = await sandboxProfile(stage, core, dependencies);
   const bin = (path: string) => join(dependencies, path);
@@ -52,7 +54,7 @@ export async function recipe({
       );
       await record(`${name}: passed`);
     } catch (error) {
-      await record(`${name}: failed\n${failureDetail(error, stage)}`);
+      await record(`${name}: failed\n${failureDetail(error, stage, [core, dependencies, data])}`);
       throw error;
     }
   };
@@ -105,7 +107,7 @@ export async function recipe({
     await designPack(stage, core);
     await record("design pack: passed");
   } catch (error) {
-    await record(`design pack: failed\n${failureDetail(error, stage)}`);
+    await record(`design pack: failed\n${failureDetail(error, stage, [core, dependencies, data])}`);
     throw error;
   }
   await run("build", [
@@ -122,7 +124,7 @@ export async function recipe({
     await candidateBoot({ stage, core, dependencies, release });
     await record("sandbox boot and isolation: passed");
   } catch (error) {
-    await record(`sandbox boot and isolation: failed\n${failureDetail(error, stage)}`);
+    await record(`sandbox boot and isolation: failed\n${failureDetail(error, stage, [core, dependencies, data])}`);
     throw error;
   }
   await run("protocol conformance", [
@@ -137,7 +139,7 @@ export async function recipe({
     await rm(rendered.scratch, { recursive: true, force: true });
     await record("rendered design checks: passed");
   } catch (error) {
-    await record(`rendered design checks: failed\n${failureDetail(error, stage)}`);
+    await record(`rendered design checks: failed\n${failureDetail(error, stage, [core, dependencies, data])}`);
     throw error;
   }
 

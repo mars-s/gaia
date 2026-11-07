@@ -297,6 +297,12 @@ export class Supervisor {
     }
   }
   async handle(input: Command): Promise<unknown> {
+    try { return await this.dispatch(input); }
+    catch (error) {
+      throw new Error(failureDetail(error, this.options.data, [this.options.core, this.options.dependencies]), { cause: error });
+    }
+  }
+  private async dispatch(input: Command): Promise<unknown> {
     if (input.kind === "status")
       return {
         version: 1,
@@ -349,7 +355,7 @@ export class Supervisor {
         await this.saveHistory();
         return { ...entry, images: await previewImages(this.options.data, entry) };
       } catch (error) {
-        const entry = this.history.find(change => change.id === input.id), paths = Buffer.from(entry?.diff.match(/^diff --git .+$/gm)?.join("; ") ?? "unknown").subarray(0, 1000).toString("utf8"), tail = Buffer.from(failureDetail(error, join(this.options.data, "staging", input.id)).split("\n").slice(-35).join("\n")).subarray(-2800).toString("utf8"), detail = `Preview failed. Changed files: ${paths}\n${tail}`;
+        const entry = this.history.find(change => change.id === input.id), paths = Buffer.from(entry?.diff.match(/^diff --git .+$/gm)?.join("; ") ?? "unknown").subarray(0, 1000).toString("utf8"), tail = Buffer.from(failureDetail(error, join(this.options.data, "staging", input.id), [this.options.core, this.options.dependencies, this.options.data]).split("\n").slice(-35).join("\n")).subarray(-2800).toString("utf8"), detail = `Preview failed. Changed files: ${paths}\n${tail}`;
         if (entry) { entry.checks.push(detail); await this.saveHistory(); } throw new Error(detail, { cause: error });
       } finally { this.previewing = false; }
     }
@@ -543,6 +549,7 @@ export class Supervisor {
       await verifyProtected(stage, this.protected);
       if (!entry.previews && await uiChanged(stage)) entry.previews = await previewChange(this.options, entry, []);
       await recipe({
+    data,
         stage,
         core,
         dependencies,
@@ -632,7 +639,7 @@ export class Supervisor {
       entry.detail = "Code and conversation generation promoted.";
     } catch (error) {
       const outcome = switching ? "rolled-back" : "rejected";
-      entry.detail = String(error).slice(-16000);
+      entry.detail = failureDetail(error, stage, [this.options.core, this.options.dependencies, this.options.data]);
       const failures = this.state.failures + 1;
       if (switching) await this.halt();
       await this.persist({

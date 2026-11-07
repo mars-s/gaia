@@ -153,6 +153,7 @@ export async function importBaseline(
     await symlink(dependencies, join(releaseDir, "node_modules"));
   }
   await recipe({
+    data,
     stage: releaseDir,
     core,
     dependencies,

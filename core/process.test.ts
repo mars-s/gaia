@@ -143,3 +143,12 @@ test("failure detail keeps the final 40 lines and at most 4 KB of UTF-8 with sta
   assert(long.endsWith("ASSERTION END"));
   assert.doesNotMatch(long, /\uFFFD/);
 });
+
+test("failure details remove core, dependency, data and home paths as well as stage paths", () => {
+  const stage = "/Users/private-owner/gaia/data/staging/id";
+  const roots = ["/Users/private-owner/gaia/core", "/Users/private-owner/gaia/data/dependencies", "/Users/private-owner/gaia/data", "/Users/private-owner"];
+  const output = failureDetail(new Error([stage, ...roots.map(root => root + "/sentinel")].join("\n")), stage, roots);
+  for (const root of [stage, ...roots]) assert(!output.includes(root));
+  assert(!output.includes("private-owner"));
+  assert(output.includes("sentinel"));
+});
