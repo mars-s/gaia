@@ -68,7 +68,7 @@ app.whenReady().then(async () => {
         const previous = nativeImage.createFromPath(job.scratch + '/before/' + file).toBitmap(), current = picture.toBitmap();
         if (previous.length !== current.length) throw Error('Preview image dimensions differ');
         const masks = await evaluate(`Array.from(document.querySelectorAll('[data-preview-surface]')).map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};})`);
-        for (let pixel = 0; pixel < current.length; pixel += 4) if (!masks.some(r => (pixel/4)%picture.getSize().width >= r.x && (pixel/4)%picture.getSize().width < r.right && Math.floor(pixel/4/picture.getSize().width) >= r.y && Math.floor(pixel/4/picture.getSize().width) < r.bottom) && [0,1,2].some(channel => Math.abs(previous[pixel+channel]-current[pixel+channel]) > 4)) changed++;
+        for (let pixel = 0; pixel < current.length; pixel += 4) if (!masks.some(r => (pixel/4)%picture.getSize().width >= r.x && (pixel/4)%picture.getSize().width < r.right && Math.floor(pixel/4/picture.getSize().width) >= r.y && Math.floor(pixel/4/picture.getSize().width) < r.bottom) && [0,1,2].some(channel => Math.abs(previous[pixel+channel]-current[pixel+channel]) > 0)) changed++;
       }
       shots.push({ file, width, theme, changed: changed / (width * (width === 320 ? 700 : 760)) });
       if (window.isVisible() || window.isFocused()) throw Error("Capture must remain hidden and unfocused");
