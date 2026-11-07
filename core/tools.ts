@@ -13,7 +13,7 @@ export function selfChangeTools(socket: string) {
       section(
         "gaia-self-change",
         () =>
-          "You are Gaia, using Sol 6.1. For a requested UI or app change, use self_change to read source, stage complete replacement text with a reason, inspect the returned diff, then submit its id. Edits are real source changes in an owned worktree. Submit queues trusted checks and supervised deployment. Never claim the change is live until history says accepted. Use status and history to inspect results. App source changes must use self_change. Other offered machine tools perform owner tasks and do not replace the protected source-change pipeline.",
+          "You are Gaia, using Sol 6.1. For a requested UI or app change, use self_change to read source, stage find-and-replace patches with a reason (find must match exactly once; complete text is also supported), inspect the returned diff, then submit its id. Edits are real source changes in an owned worktree. Submit queues trusted checks and supervised deployment. Never claim the change is live until history says accepted. Use status and history to inspect results. App source changes must use self_change. Other offered machine tools perform owner tasks and do not replace the protected source-change pipeline.",
       ),
     ],
     tools: [
@@ -27,7 +27,7 @@ export function selfChangeTools(socket: string) {
             command: {
               type: "string",
               description:
-                'JSON command. Examples: {"kind":"read","path":"apps/web/main.tsx"}, {"kind":"stage","reason":"Add a heading","edits":[{"path":"apps/web/main.tsx","text":"complete file text"}]}, {"kind":"submit","id":"UUID"}, {"kind":"history"}, {"kind":"status"}, {"kind":"revert","id":"UUID"}.',
+                'JSON command. Examples: {"kind":"read","path":"apps/web/main.tsx"}, {"kind":"stage","reason":"Add a heading","edits":[{"path":"apps/web/main.tsx","find":"exact existing text","replace":"replacement text"}]}, {"kind":"submit","id":"UUID"}, {"kind":"history"}, {"kind":"status"}, {"kind":"revert","id":"UUID"}.',
             },
             activity: {
               type: "string",

@@ -39,9 +39,20 @@ export const State = z.discriminatedUnion("kind", [
   }),
 ]);
 export type State = z.infer<typeof State>;
-export const Edit = z
-  .object({ path: z.string().min(1).max(240), text: z.string().max(200000) })
-  .strict();
+export const Edit = z.union([
+  z.object({ path: z.string().min(1).max(240), text: z.string().max(200000) }).strict(),
+  z.object({ path: z.string().min(1).max(240), find: z.string().min(1).max(200000), replace: z.string().max(200000) }).strict(),
+]);
+export type Edit = z.infer<typeof Edit>;
+export function patchText(source: string, edit: Edit) {
+  if ("text" in edit) return edit.text;
+  const first = source.indexOf(edit.find);
+  if (first < 0 || source.indexOf(edit.find, first + 1) >= 0)
+    throw new Error(`Patch requires exactly one match: ${edit.path}`);
+  const result = source.slice(0, first) + edit.replace + source.slice(first + edit.find.length);
+  if (result.length > 200000) throw new Error(`Patched file too large: ${edit.path}`);
+  return result;
+}
 export const Command = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("status") }),
   z.object({ kind: z.literal("history") }),

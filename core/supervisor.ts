@@ -11,6 +11,8 @@ import {
   Command,
   type State,
   type Pair,
+  type Edit,
+  patchText,
 } from "./state.ts";
 import { command, cleanEnv, stop } from "./process.ts";
 import { safeFile, verifyProtected } from "./install.ts";
@@ -363,7 +365,7 @@ export class Supervisor {
       throw error;
     }
   }
-  private async stage(reason: string, edits: { path: string; text: string }[]) {
+  private async stage(reason: string, edits: Edit[]) {
     const { data, dependencies } = this.options;
     const id = randomUUID();
     const stage = join(data, "staging", id);
@@ -377,7 +379,7 @@ export class Supervisor {
     for (const edit of edits) {
       const path = await safeFile(stage, edit.path);
       await mkdir(join(path, ".."), { recursive: true });
-      await writeFile(path, edit.text);
+      await writeFile(path, patchText("text" in edit ? "" : await readFile(path, "utf8"), edit));
     }
     await verifyProtected(stage, this.protected);
     await command(
