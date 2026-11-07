@@ -18,7 +18,7 @@ import { command, cleanEnv, stop, failureDetail } from "./process.ts";
 import { safeFile, verifyProtected } from "./install.ts";
 import { designPack } from "./design/pack.ts";
 import { recipe } from "./recipe.ts";
-import { previewChange, stagedIdentity, previewImages } from "./preview.ts";
+import { previewChange, stagedIdentity, previewImages, uiChanged } from "./preview.ts";
 import { waitHealth } from "./sandbox.ts";
 import { compatible } from "./schema.ts";
 import { probes } from "./probes.ts";
@@ -378,7 +378,7 @@ export class Supervisor {
       }
       if (entry.base !== this.state.active.release)
         throw new Error("Stale proposal. Stage again from the active release.");
-      if (input.kind === "submit" && /^(?:\+\+\+ b\/|diff --git a\/)apps\/web\//m.test(entry.diff)) {
+      if (input.kind === "submit" && await uiChanged(join(this.options.data, "staging", entry.id))) {
         if (!entry.previews || entry.previews.hash !== await stagedIdentity(join(this.options.data, "staging", entry.id))) throw new Error("apps/web: a matching preview is required before submit. Preview this stage again.");
       }
       entry.outcome = "queued";
@@ -538,7 +538,7 @@ export class Supervisor {
       entry.outcome = "checking";
       await this.saveHistory();
       await verifyProtected(stage, this.protected);
-      if (!entry.previews && entry.diff.includes("diff --git a/apps/web/")) entry.previews = await previewChange(this.options, entry, []);
+      if (!entry.previews && await uiChanged(stage)) entry.previews = await previewChange(this.options, entry, []);
       await recipe({
         stage,
         core,

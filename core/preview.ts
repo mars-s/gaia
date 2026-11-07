@@ -15,6 +15,9 @@ export async function sourceIdentity(stage: string) {
   for (const file of (await sourceFiles(stage)).sort()) hash.update(JSON.stringify([file, (await readFile(join(stage, file))).toString("base64")]));
   return hash.digest("hex");
 }
+export async function uiChanged(stage: string) {
+  return (await command("git", ["diff", "--cached", "--name-only", "--no-ext-diff", "-z"], stage, 120000, true)).split("\0").some(path => path.startsWith("apps/web/"));
+}
 export async function stagedIdentity(stage: string) {
   await command("git", ["diff", "--exit-code", "--no-ext-diff"], stage);
   if (await command("git", ["ls-files", "--others", "--exclude-standard", "--", "apps", "packages", "core", "selfmod"], stage)) throw new Error("apps/web: a matching preview requires all source edits to be staged");

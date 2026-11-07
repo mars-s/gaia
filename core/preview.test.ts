@@ -45,6 +45,9 @@ test("UI submit requires a preview for the exact source, including unstaged and 
     assert.equal(f.supervisor.state.kind, "stable");
     assert.equal(f.supervisor.child, undefined);
     assert.equal(f.supervisor.history[0].outcome, "staged");
+    const quoted = Change.parse(await f.supervisor.handle({ kind: "stage", reason: "Quoted filename guard", edits: [{ path: "apps/web/odd\tname.css", text: ".test {}" }] }));
+    assert(quoted.diff.includes('"a/apps/web/odd\\tname.css"'), "Git must quote this path in the formatted diff");
+    await assert.rejects(f.supervisor.handle({ kind: "submit", id: quoted.id }), /matching preview is required/);
     assert(!Command.safeParse({ kind: "preview", id: change.id, surfaces: [{ name: "empty", steps: [] }] }).success);
     assert(!Command.safeParse({ kind: "preview", id: change.id, surfaces: [{ name: "tasks", steps: [{ kind: "evaluate", code: "unsafe" }] }] }).success);
   } finally { await rm(f.data, { recursive: true, force: true }); }
