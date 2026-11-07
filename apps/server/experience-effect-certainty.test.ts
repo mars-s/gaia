@@ -33,7 +33,7 @@ for (const tool of ["mac_shell", "agent_desktop"] as const) {
         const dir = await mkdtemp(join(tmpdir(), "gaia-effect-certainty-"));
         const receipts = join(dir, "receipts");
         const marker = join(dir, "effects");
-        const program = `const fs=require('node:fs');process.stdout.write('effect-written',()=>{fs.appendFileSync(${JSON.stringify(marker)},String(process.pid)+'\\n');});setInterval(()=>{},100);`;
+        const program = `const fs=require('node:fs');process.stdout.write('effect-written',()=>{fs.writeFileSync(${JSON.stringify(marker + ".new")},String(process.pid)+'\\n');fs.renameSync(${JSON.stringify(marker + ".new")},${JSON.stringify(marker)});});setInterval(()=>{},100);`;
         const desktopExecutable = join(dir, "desktop-fixture");
         await writeFile(desktopExecutable, `#!${process.execPath}\n${program}`);
         await chmod(desktopExecutable, 0o700);
@@ -78,6 +78,7 @@ for (const tool of ["mac_shell", "agent_desktop"] as const) {
         const admitted = await f.send(profile, scope, "Write once then hold");
         await eventually(async () => (await readdir(dir)).includes("effects"));
         const pid = Number((await readFile(marker, "utf8")).trim());
+        assert(Number.isSafeInteger(pid) && pid > 0, "The fixture must publish a complete owned PID before cancellation");
         if (action === "stop") {
           const response = await f.request(
             `experiences/${profile}/jobs/${admitted.jobId}/stop`,

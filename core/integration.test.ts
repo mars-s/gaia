@@ -886,10 +886,11 @@ if (process.argv.includes('--test-provider')) {
             );
             await delay(500);
           }
-          await until(
+          const safe = await until(
             () => readState(data),
             (value) => value.kind === "safe",
           );
+          await waitHealth(base, safe.active.release);
           assert.equal(
             (await (await fetch(base + "/healthz")).json()).mode,
             "safe",
