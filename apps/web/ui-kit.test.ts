@@ -17,7 +17,7 @@ test("a preview overrides a ready surface with each required state without chang
     assert.match(html, new RegExp(`data-ui="${marker}"`));
     assert.doesNotMatch(html, /Add task/);
     if (state === "error") assert.match(html, /data-tone="danger"/);
-    if (state === "loading") assert.doesNotMatch(html, />[^<\s]+</);
+    if (state === "loading") { assert.doesNotMatch(html, />[^<\s]+</); assert.match(html, /aria-hidden="true"/); assert.doesNotMatch(html, /aria-label/); }
   }
   assert.match(renderToStaticMarkup(createElement(Surface)), /Add task/);
 });

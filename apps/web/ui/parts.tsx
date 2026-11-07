@@ -37,7 +37,7 @@ export function EmptyState({ glyph, text, starters = [] }: { glyph: ReactNode; t
 /** Quiet loading dots without a text prop. @example <Loading /> */
 export function Loading() {
   const state = usePreviewState(undefined);
-  return <span className="working-indicator" data-ui="loading" data-preview-state={state} aria-label="Loading"><i /><i /><i /></span>;
+  return <span className="working-indicator" data-ui="loading" data-preview-state={state} aria-hidden="true"><i /><i /><i /></span>;
 }
 
 /** A known error or information line with recovery actions. @example <Notice tone="danger" message="Connection lost." retry={retry} /> */
