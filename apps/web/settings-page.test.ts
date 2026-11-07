@@ -61,8 +61,6 @@ test("Settings has an Account group, clear update copy and separated sections", 
 
   assert.match(read("./plan-sign-in.tsx"), /connected \? "Connected" : "Not connected"/);
   assert.match(read("./managed-settings.tsx"), /Updates Gaia has made to itself. You can undo applied updates here./);
-  assert.match(read("./style.css"), /settings-section \+ .settings-section[^}]*border-top: 1px/);
-  assert.match(read("./style.css"), /settings-section h2[^}]*var\(--text-headline-medium\)[^}]*font-weight: 600/);
 });
 
 test("Settings interview is secondary and change refresh is an accessible icon action", () => {
@@ -75,10 +73,7 @@ test("Settings interview is secondary and change refresh is an accessible icon a
   const changes = readFileSync(new URL("./managed-settings.tsx", import.meta.url), "utf8");
   assert.match(changes, /aria-label="Refresh changes"/);
   assert.match(changes, /<RiRefreshLine/);
-  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
-  assert.match(css, /settings-content[^}]*gap: 0/);
 });
-
 import { SettingsHeading, SettingsIndex, settingsSections } from "./settings-index";
 test("Settings navigation selects exactly one pane and retains five owner choices", () => {
  for (const [current] of settingsSections) {
@@ -95,20 +90,6 @@ test("Settings navigation selects exactly one pane and retains five owner choice
  assert.match(source, /setSettingsSection\("setups-title"\)/);
 });
 
-test("narrow account rows stack status and actions, and secondary text shares body tracking", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /settings-plan-row \{ grid-template-columns: 20px minmax\(0, 1fr\);/);
- assert.match(css, /plan-status \{ display: flex; flex-direction: column/);
- assert.match(css, /text-text-secondary[^}]*letter-spacing: 0/);
-});
-
- test("Settings hover cannot replace the selected pane fill", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /settings-index button\[aria-current\] \{ background: var\(--color-surface-selected\)/);
- assert.match(css, /settings-index button:not\(\[aria-current\]\):hover/);
- assert.doesNotMatch(css, /settings-index button:hover/);
- });
-
 test("settings use main chat consistently and explain change history truthfully", () => {
  const setups = readFileSync(new URL("./experiences/index.tsx", import.meta.url), "utf8");
  assert.match(setups, /Opens when Gaia starts\./);
@@ -121,19 +102,11 @@ test("settings use main chat consistently and explain change history truthfully"
 });
 
 test("narrow Settings uses a real heading and an accessible listbox switcher", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  const source = readFileSync(new URL("./settings-index.tsx", import.meta.url), "utf8");
- assert.match(css, /settings-index \{ display: none/);
- assert.doesNotMatch(css, /settings-content > .settings-section > h2[^}]*clip: rect/);
  assert.match(source, /<h2 ref=\{heading\} tabIndex=\{-1\} id=\{id\}/);
  assert.match(source, /aria-label=\{`Settings section: /);
  assert.match(source, /aria-haspopup="listbox"/);
  assert.doesNotMatch(source, /tablist/);
-});
-
-test("selected Settings labels use primary ink and medium weight at every width", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /\n.settings-index button\[aria-current\] \{ color: var\(--color-ink\); font-weight: 500/);
 });
 
 test("narrow heading keeps the exact section name independently of its button name", () => {

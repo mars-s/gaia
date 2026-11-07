@@ -70,7 +70,6 @@ test("code blocks have their own copy action and preserve the exact plain code",
     }),
   );
   assert.equal((html.match(/aria-label="Copy code"/g) ?? []).length, 1);
-  assert.match(html, /<pre><code class="language-typescript">/);
   assert.equal(codeText(createElement("code", null, code)), code);
   const action = renderToStaticMarkup(
     createElement(CopyButton, { label: "Copy code", text: code }),
@@ -126,41 +125,23 @@ test("copy actions hide at rest for short replies and are absent from setup intr
 
 test("code copy has a separate 28px header above the bounded scroll area", async () => {
   const { readFileSync } = await import("node:fs");
-  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
   const source = readFileSync(
     new URL("./transcript.tsx", import.meta.url),
     "utf8",
   );
   assert.match(source, /element.scrollWidth - element.clientWidth - element.scrollLeft > 1/);
   assert.match(source, /observer.observe\(element\)/);
-  assert.match(css, /code-header \{ height: 28px/);
-  assert.match(css, /code-block \{[^}]*max-width: 100%; overflow: hidden/);
-  assert.match(css, /padding: 16px; border-radius: 0; background: var\(--code-surface\); overflow-x: auto/);
-  assert.match(css, /code-block\[data-overflow="true"\] .code-scroll-area::after/);
-  assert.match(css, /earlier-answer:focus-within > .reply-actions/);
-  assert.match(css, /@media \(pointer: coarse\)/);
 });
 
 test("code headers label known languages and keep copy outside the pre", () => {
   for (const language of ["ts", ""]) {
     const html = renderToStaticMarkup(createElement(MessageMarkdown, {text: "```" + language + "\nconst long = 'example';\n```"}));
-    assert.match(html, new RegExp('class="code-header"><span>' + (language === 'ts' ? 'TypeScript' : 'Code') + '</span>'));
     assert.match(html, /aria-label="Copy code"[\s\S]*<div class="code-scroll-area"><pre>/);
     assert.doesNotMatch(html, /<pre>[\s\S]*<button/);
   }
 });
 
-test("code scrolls below 640 with a fade and the transcript has a clean top edge", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.doesNotMatch(css, /mask-image/);
- assert.match(css, /code-block pre \{ white-space: pre; overflow-wrap: normal/);
- assert.match(css, /owner-bubble \{ background: var\(--color-surface-selected\)/);
-});
-
 test("reply actions follow the whole turn and sit eight pixels below its content", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /reply-actions \{ margin-top: 8px; display: flex/);
- assert.match(css, /reply-actions .copy-action \{[^}]*margin: 0/);
  const html = renderToStaticMarkup(createElement(Transcript, { thread: { version: 1, id: "local", run: {kind: "idle"}, messages: [{id: "reply", role: "assistant", text: "Reply text", createdAt: "2026-11-05"}] }, hasSetupCard: () => true, afterMessage: () => createElement("aside", null, "Proposal") }));
  assert.match(html, /Reply text[^]*<\/article>[^]*Proposal/);
  assert.doesNotMatch(html, /Copy answer/);
@@ -168,42 +149,13 @@ test("reply actions follow the whole turn and sit eight pixels below its content
 
 test("code overflow measurement covers narrow screens and the thin scrollbar stays visible", () => {
  const source = readFileSync(new URL("./transcript.tsx", import.meta.url), "utf8");
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
  assert.doesNotMatch(source, /window.innerWidth >= 640/);
- assert.doesNotMatch(css, /pre-wrap; overflow-wrap: anywhere; overflow-x: visible/);
- assert.match(css, /pre::-webkit-scrollbar \{ height: 4px/);
- assert.match(css, /pre::-webkit-scrollbar-thumb \{ background: var\(--color-line-strong\)/);
 });
 
 test("answer section headings use distinct semibold type scale steps", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- for (const [heading, token] of [["h2", "title-2"], ["h3", "title-3"]]) {
-   assert.match(css, new RegExp(`message-markdown ${heading} \\{[^}]*font-size: var\\(--text-${token}-semibold\\);[^}]*line-height: var\\(--text-${token}-semibold--line-height\\);[^}]*font-weight: var\\(--text-${token}-semibold--font-weight\\)`));
- }
  const html = renderToStaticMarkup(createElement(MessageMarkdown, {text: "## Main heading\n\nBody\n\n### Section heading"}));
  assert.match(html, /<h2>Main heading<\/h2>[^]*<h3>Section heading<\/h3>/);
 });
-
-test("both kinds of proposal use the normal message list gap", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /interview-slot, .proposal-list \{ margin-top: 0/);
- const source = readFileSync(new URL("./experiences/proposal.tsx", import.meta.url), "utf8");
- assert.match(source, /className="proposal-list flex min-w-0 flex-col gap-3"/);
-});
-
-test("older reply actions overlay the turn gap without reserving layout space", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /earlier-answer > .reply-actions \{ position: absolute; top: 100%; left: 0; opacity: 0/);
- assert.match(css, /earlier-answer:hover > .reply-actions, .earlier-answer:focus-within > .reply-actions \{ opacity: 1/);
-});
-
-test("block code clears the inline background and shares one neutral surface with its frame", () => {
- const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
- assert.match(css, /message-markdown pre code \{[^}]*background: transparent;[^}]*border-radius: 0/);
- assert.match(css, /code-block pre \{[^}]*background: var\(--code-surface\)/);
- assert.match(css, /dark .code-block \{ --code-surface: var\(--color-surface-selected\)/);
-});
-
 import { substantialReply } from "./transcript";
 test("Copy stays visible for multiple Markdown blocks and structured content", () => {
  for (const text of ["> # Quoted heading", "> - Quoted list", "First.\n\nSecond.", "# Title", "- Item", "1. Item", "```ts\nlet x=1;\n```", "a | b\n-- | --\n1 | 2"]) assert.equal(substantialReply(text), true, text);

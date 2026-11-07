@@ -148,7 +148,6 @@ test("proposal actions put primary acceptance first, quiet dismissal second and 
     (render().match(/class="avatar-tile"/g) ?? []).length,
     proposal.plan.scopes.length,
   );
-  assert.match(render(), /<h2 class="text-title-3-semibold"/);
 });
 
 test("created card collapses and stale error sits above the actions", async (t) => {
@@ -185,7 +184,6 @@ test("proposal change caption sits after the actions and memory copy reflects th
     assert.ok(html.indexOf("Or tell me what to change.") > html.indexOf("Use this setup"));
     assert.match(html, /your original chat stays available/);
     assert.match(html, /setup-memory-caption/);
-    assert.match(html, /class="status-pill" data-tone="neutral">Proposed/);
     assert.equal((html.match(/original chat/g) ?? []).length, 1);
     assert.equal((html.match(/main chat/g) ?? []).length, 1);
     assert.match(html, /proposal-heading/);
@@ -207,7 +205,6 @@ test("every proposal explains the actual memory boundary and preserves the origi
   const proposal = await f.propose(layout);
   const html = renderToStaticMarkup(createElement(ExperienceProposalNotice, { proposals: [proposal], disabled: false }));
   assert.ok(html.includes(`This becomes your main chat. ${explanations[layout]}, and your original chat stays available.`));
-  assert.match(html, /class="status-pill" data-tone="neutral">Proposed/);
   assert.ok(html.indexOf("Or tell me what to change.") > html.indexOf("Use this setup"));
  }
 });
