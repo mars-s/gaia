@@ -1,3 +1,4 @@
+import { designPack } from "./design/pack.ts";
 import { join } from "node:path";
 import { writeFile, readdir, readFile } from "node:fs/promises";
 import { command, failureDetail } from "./process.ts";
@@ -100,6 +101,13 @@ export async function recipe({
     "--test",
     ...tests,
   ]);
+  try {
+    await designPack(stage, core);
+    await record("design pack: passed");
+  } catch (error) {
+    await record(`design pack: failed\n${failureDetail(error, stage)}`);
+    throw error;
+  }
   await run("build", [
     "--import",
     bin("tsx/dist/loader.mjs"),

@@ -59,12 +59,13 @@ export function selfChangeTools(socket: string) {
           const result = await control(socket, input);
           const ui = (input.kind === "read" && input.path.startsWith("apps/web/")) || (input.kind === "stage" && input.edits.some(edit => edit.path.startsWith("apps/web/")));
           let design: unknown;
+          let designError: string | undefined;
           if (ui) {
             const live = await api.snapshot(LiveDoc, api.conversationId, context);
             const turn = String(live?.run?.first ?? live?.run?.inputs.join(",") ?? api.taskId);
             if (turns.first(String(api.conversationId), turn)) {
               try { design = await control(socket, { kind: "design" }); }
-              catch (error) { turns.forget(String(api.conversationId)); throw error; }
+              catch { turns.forget(String(api.conversationId)); designError = "Design pack unavailable. The command succeeded."; }
             }
           }
           if (input.kind === "preview") {
@@ -75,7 +76,7 @@ export function selfChangeTools(socket: string) {
             output: [
               {
                 type: "text",
-                text: JSON.stringify(design === undefined ? result : { result, design }),
+                text: JSON.stringify(designError ? { result, designError } : design === undefined ? result : { result, design }),
               },
             ],
           };

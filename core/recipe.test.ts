@@ -36,3 +36,35 @@ test("the real recipe returns a failing unit assertion in checks and stops befor
     await rm(root, { recursive: true, force: true });
   }
 });
+test("the real recipe rejects an undocumented kit export before build", { skip: process.platform !== "darwin" }, async () => {
+  const root = await mkdtemp("/private/tmp/gaia-recipe-detail-");
+  const stage = join(root, "stage");
+  const core = join(root, "core");
+  const dependencies = resolve("node_modules");
+  const checks: string[] = [];
+  try {
+    await Promise.all([mkdir(join(stage, "apps/web"), { recursive: true }), mkdir(join(stage, "apps/server"), { recursive: true }), mkdir(core)]);
+    for (const directory of ["packages", "core", "selfmod"]) {
+      await mkdir(join(stage, directory));
+      await writeFile(join(stage, directory, "fixture.ts"), "export {};\n");
+    }
+    await Promise.all([
+      symlink(dependencies, join(stage, "node_modules")),
+      symlink(dependencies, join(core, "node_modules")),
+      writeFile(join(stage, "package.json"), '{"type":"module"}'),
+      writeFile(join(core, "package.json"), '{"type":"module"}'),
+      writeFile(join(core, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2023", module: "ESNext", moduleResolution: "Bundler", skipLibCheck: true, noEmit: true, jsx: "react-jsx" } })),
+      copyFile("eslint.config.js", join(core, "eslint.config.js")),
+      writeFile(join(stage, "apps/web/failure.test.ts"), 'import {test} from "node:test"; test("passing fixture", () => {});'),
+    ]);
+    await mkdir(join(stage, "apps/web/ui"));
+    await writeFile(join(stage, "apps/web/ui/index.ts"), 'export { Bad } from "./bad";');
+    await writeFile(join(stage, "apps/web/ui/bad.tsx"), 'export function Bad() { return null; }');
+    await assert.rejects(recipe({ stage, core, dependencies, release: "fixture", record: async (result) => { checks.push(result); } }));
+    assert(checks.includes("unit tests: passed"), checks.join("\n"));
+    assert.match(checks.at(-1)!, /^design pack: failed\n.*@example/s);
+    assert(!checks.some(check => check.startsWith("build")));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
