@@ -4,9 +4,9 @@ import { command, guarded, cleanEnv, stop } from "../process.ts";
 import { Surfaces, type Surface } from "./schema.ts";
 import { freePort } from "../sandbox.ts";
 
-export async function renderProfile(stage: string, core: string, dependencies: string, scratch: string, port: number) {
+export async function renderProfile(stage: string, core: string, dependencies: string, scratch: string, port: number, readonly: string[] = []) {
   if (process.platform !== "darwin") throw new Error("Renderer fails closed: macOS sandbox-exec is required");
-  const roots = await Promise.all([join(stage, "dist/web"), join(stage, "apps"), join(stage, "core"), join(stage, "packages"), join(core, "core"), join(core, "packages"), dependencies, scratch].map(path => realpath(path)));
+  const roots = await Promise.all([join(stage, "dist/web"), join(stage, "apps"), join(stage, "core"), join(stage, "packages"), join(core, "core"), join(core, "packages"), dependencies, scratch, ...readonly].map(path => realpath(path)));
   const trusted = await mkdtemp(join(core, ".sandbox-profiles", "render-"));
   const read = [...roots, trusted, "/opt/homebrew", "/System", "/usr/lib", "/usr/share", "/Library/Apple", "/Library/Fonts"];
   const profile = `(version 1)\n(deny default)\n(allow process*)\n(allow sysctl-read)\n(allow iokit-open (iokit-user-client-class "IOSurfaceRootUserClient"))\n(allow mach-lookup)\n(allow mach-register (global-name-regex #"^com[.]github[.]Electron[.]"))\n(allow file-read-metadata)\n(allow file-read-data (literal "/") ${read.map(path => `(subpath ${JSON.stringify(path)})`).join(" ")} ${[stage, core, join(stage, "package.json"), join(stage, "tsconfig.json"), join(core, "package.json"), join(core, "tsconfig.json"), "/dev/urandom", "/dev/random", "/dev/null", "/private/etc/localtime"].map(path => `(literal ${JSON.stringify(path)})`).join(" ")})\n(allow file-write* (subpath ${JSON.stringify(await realpath(scratch))}) (literal "/dev/null"))\n(allow network-bind (local ip "localhost:${port}"))\n(allow network-inbound (local ip "localhost:${port}"))\n(allow network-outbound (remote ip "localhost:${port}"))\n`;
@@ -39,7 +39,10 @@ export async function renderCandidate({ stage, core, dependencies, surfaces = []
       try { await command("/usr/bin/sandbox-exec", ["-f", policy, process.execPath, "--import", join(dependencies, "tsx/dist/loader.mjs"), join(dependencies, "vite/bin/vite.js"), "build", "--config", join(core, "core/render/vite.config.ts"), "--configLoader", "runner", "--outDir", join(webroot, "dist/web")], stage, remaining(120000)); built = true; }
       catch (error) { await rm(trusted, { recursive: true, force: true }); throw error; }
     }
-    const server = guarded("/usr/bin/sandbox-exec", ["-f", policy, process.execPath, "--import", join(dependencies, "tsx/dist/loader.mjs"), join(core, "core/render/fixture.ts"), stage, data, String(port), scenario, webroot], data, { ...cleanEnv(), HOME: data, TMPDIR: data }, 60000);
+    const fixture = join(data, "fixture");
+    await mkdir(fixture);
+    const fixturePolicy = await renderProfile(stage, core, dependencies, fixture, port, [webroot]);
+    const server = guarded("/usr/bin/sandbox-exec", ["-f", fixturePolicy.policy, process.execPath, "--import", join(dependencies, "tsx/dist/loader.mjs"), join(core, "core/render/fixture.ts"), stage, fixture, String(port), scenario, webroot], fixture, { ...cleanEnv(), HOME: fixture, TMPDIR: fixture }, 60000);
     let logs = ""; server.stdout?.on("data", chunk => { logs = (logs + chunk).slice(-16000); }); server.stderr?.on("data", chunk => { logs = (logs + chunk).slice(-16000); });
     try {
       const readyDeadline = Date.now() + remaining(20000);
@@ -53,7 +56,7 @@ export async function renderCandidate({ stage, core, dependencies, surfaces = []
       // Chromium cannot nest Seatbelt. The verified outer profile confines the whole process tree.
       const output = await command("/usr/bin/sandbox-exec", ["-f", policy, electron, "--no-sandbox", join(core, "core/render/browser.mjs"), job], data, remaining(30000));
       results.push(JSON.parse(output));
-    } finally { await stop(server); await rm(trusted, { recursive: true, force: true }); }
+    } finally { await stop(server); await rm(trusted, { recursive: true, force: true }); await rm(fixturePolicy.trusted, { recursive: true, force: true }); }
   }
   await writeFile(join(scratch, "results.json"), JSON.stringify(results, null, 2));
   return { scratch, results };
