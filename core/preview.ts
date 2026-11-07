@@ -8,7 +8,7 @@ import { verifyProtected, hashes } from "./install.ts";
 import { renderCandidate } from "./render/index.ts";
 import { Preview, type Change } from "./state.ts";
 import type { Options } from "./supervisor.ts";
-import type { Surface } from "./render/schema.ts";
+import { readSurfaces, type Surface } from "./render/schema.ts";
 
 export async function sourceIdentity(stage: string) {
   const hash = createHash("sha256");
@@ -27,8 +27,7 @@ const Reports = z.array(z.object({ shots: z.array(z.object({ file: z.string().re
 export async function previewChange(options: Options, entry: Change, surfaces: Surface[]) {
   const { data, core, dependencies } = options, stage = join(data, "staging", entry.id), active = join(data, "releases", entry.base);
   await verifyProtected(stage, await hashes(active));
-  const names = await readdir(join(stage, "apps/web/surfaces")).catch((error: unknown) => { if (error instanceof Error && "code" in error && error.code === "ENOENT") return []; throw error; });
-  for (const name of names) if (!surfaces.some(surface => surface.name === name)) throw new Error(`apps/web/surfaces/${name}: declared render steps are required`);
+  surfaces = await readSurfaces(stage);
   const hash = await stagedIdentity(stage), key = createHash("sha256").update(JSON.stringify([entry.base, surfaces])).digest("hex"), cache = join(data, "previews/before", key);
   const scenarios = ["empty", "answer", "proposal", "setups", "failed", ...surfaces.map(surface => surface.name)];
   await mkdir(join(data, "previews/before"), { recursive: true });
@@ -48,7 +47,7 @@ export async function previewChange(options: Options, entry: Change, surfaces: S
         await writeFile(join(baseline, "ready"), entry.base);
       } finally { await rm(rendered.scratch, { recursive: true, force: true }); }
     }
-    const declared = surfaces.filter(surface => existing.includes(surface.name));
+    const declared = await readSurfaces(active);
     const before = declared.length ? await renderCandidate({ stage: active, core, dependencies, surfaces: declared, baseline: false }) : undefined;
     try {
       for (const scenario of scenarios) {

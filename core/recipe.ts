@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { writeFile, readdir, readFile } from "node:fs/promises";
 import { command, failureDetail } from "./process.ts";
 import { renderCandidate } from "./render/index.ts";
-import { type Surface } from "./render/schema.ts";
+import { readSurfaces, type Surface } from "./render/schema.ts";
 import { sandboxProfile, candidateBoot } from "./sandbox.ts";
 export async function sourceFiles(
   root: string,
@@ -124,11 +124,7 @@ export async function recipe({
     stage,
   ]);
   try {
-    const paths = await readdir(join(stage, "apps/web/surfaces")).catch((error: unknown) => {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
-      throw error;
-    });
-    for (const name of paths) if (!surfaces.some(surface => surface.name === name)) throw new Error(`apps/web/surfaces/${name}: declared render steps are required`);
+    surfaces = await readSurfaces(stage);
     await renderCandidate({ stage, core, dependencies, surfaces });
     await record("rendered design checks: passed");
   } catch (error) {
