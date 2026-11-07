@@ -15,6 +15,7 @@ export const gates = [
   "build: passed",
   "sandbox boot and isolation: passed",
   "protocol conformance: passed",
+  "rendered design checks: passed",
 ];
 export const CoreChange = z
   .object({ path: z.string(), beforeHash: Hash.nullable(), afterHash: Hash })

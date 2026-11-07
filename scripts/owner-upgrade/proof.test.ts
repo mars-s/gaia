@@ -19,7 +19,7 @@ import { activate, prepare } from "./upgrade.ts";
 import { copyRealInputs } from "./testing.ts";
 
 test(
-  "real complete dependency provisioning, six fixed gates and offline upgrade retain a deterministic chat",
+  "real complete dependency provisioning, seven fixed gates and offline upgrade retain a deterministic chat",
   {
     skip:
       !process.env.GAIA_OWNER_REAL_PROVISION || process.platform !== "darwin",

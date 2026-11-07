@@ -697,3 +697,20 @@ test("dependency version validation rejects a symlinked package manifest", async
     await rm(f.root, { recursive: true, force: true });
   }
 });
+
+
+test("preparation refuses six-gate receipts and requires the rendered design gate", async () => {
+  const f = await fixture();
+  try {
+    await changeSource(f.source);
+    const before = await controlBytes(f.data);
+    await assert.rejects(prepare({ ...f, installer: fakeInstaller, check: async ({record}) => {
+      for (const gate of ["typecheck", "lint", "unit tests", "build", "sandbox boot and isolation", "protocol conformance"]) await record(`${gate}: passed`);
+    } }), /Trusted preparation checks are incomplete/);
+    assert.deepEqual(await controlBytes(f.data), before);
+    const ready = await prepareFixture(f);
+    const prepared = await readPrepared(ready.preparedFile);
+    assert.equal(prepared.checks.length, 7);
+    assert.equal(prepared.checks.at(-1), "rendered design checks: passed");
+  } finally { await rm(f.root, {recursive:true,force:true}); }
+});
