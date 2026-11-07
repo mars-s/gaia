@@ -1,23 +1,24 @@
-import { spawn } from "node:child_process";
-import { once } from "node:events";
+import { NativeProcessFailure, runGuardedProcess } from "./process.ts";
 
 export async function canSignalOwnedChild() {
-  const child = spawn(process.execPath, ["-e", "setTimeout(()=>{},50)"], {
-    stdio: "ignore",
-  });
-  const exited = once(child, "exit");
-  let allowed = true;
   try {
-    if (child.pid) process.kill(child.pid, 0);
+    const result = await runGuardedProcess({
+      executable: process.execPath,
+      args: ["-e", ""],
+      cwd: process.cwd(),
+      timeoutMs: 2000,
+      maxBytes: 1024,
+      signal: new AbortController().signal,
+    });
+    if (result.reason !== "exited" || result.code !== 0)
+      throw new Error("Native capability probe did not complete successfully.");
+    return true;
   } catch (error) {
     if (
-      !(error instanceof Error) ||
-      !("code" in error) ||
-      error.code !== "EPERM"
+      error instanceof NativeProcessFailure &&
+      /EPERM|EACCES/.test(error.message)
     )
-      throw error;
-    allowed = false;
+      return false;
+    throw error;
   }
-  await exited;
-  return allowed;
 }
