@@ -3,8 +3,8 @@ import { defineExtension, LiveDoc, section, type Extension, type ToolExecutionRe
 import type { Models } from "@earendil-works/pi-ai/models";
 import type { ModelRef } from "@earendil-works/pi-durable";
 
-const Issue = z.object({ issue: z.string().min(1).max(500), shots: z.array(z.string().min(1).max(120)).min(1).max(10) }).strict();
-export const Critique = z.object({ critic: z.literal("fresh"), score: z.number().min(0).max(10), summary: z.string().min(1).max(500), blocking: z.array(Issue).max(5), minor: z.array(Issue).max(10) }).strict();
+export { ChangeCritique as Critique } from "../../packages/protocol/change-preview.ts";
+import { ChangeCritique as Critique, type ChangeSource } from "../../packages/protocol/change-preview.ts";
 export type Critique = z.infer<typeof Critique>;
 const rubric = [
   "Is the screen a quiet, coherent composition?",
@@ -35,17 +35,28 @@ export async function reviewPreview({ models, model, output }: { models: Models;
   return value;
 }
 
-export function reviewedSelfChange(extension: Extension): Extension {
+export function reviewedSelfChange(extension: Extension, source?: (conversation: string) => ChangeSource | undefined | Promise<ChangeSource | undefined>): Extension {
   if (!extension.tools?.some(tool => tool.name === "self_change")) return extension;
-  const loops = new Map<string, { turn: string; count: number }>();
+  const loops = new Map<string, { turn: string; count: number; lastStage?: string }>();
   return defineExtension({ ...extension,
     sections: [...(extension.sections ?? []), section("gaia-ui-review", () => 'For apps/web changes use stage, then {"kind":"preview","id":"UUID","surfaces":[{"name":"tasks","steps":[]}]} before submit. Preview supplies fixture images and a separate advisory critic. Revise with another stage when useful, then preview again. At most three previews per request. After the third submit the last previewed stage even with open design issues. Mechanical failures must be fixed; critic scores never block. New stages replace earlier proposals in this revision loop. Never claim deployment before accepted history.')],
     tools: extension.tools.map(tool => tool.name !== "self_change" ? tool : { ...tool, async execute(args, api, context) {
       const { command } = z.object({ command: z.string() }).parse(args);
       const input = z.object({ kind: z.string() }).passthrough().parse(JSON.parse(command));
-      if (input.kind !== "preview") return tool.execute(args, api, context);
       const live = await api.snapshot(LiveDoc, api.conversationId, context), turn = String(live?.run?.first ?? api.taskId), key = String(api.conversationId);
       const state = loops.get(key)?.turn === turn ? loops.get(key)! : { turn, count: 0 };
+      if (input.kind === "stage") {
+        const origin = await source?.(key), stageInput = { ...input, ...(origin ? { source: origin } : {}), ...(state.lastStage ? { supersedes: state.lastStage } : {}) };
+        const result = await tool.execute({ ...z.record(z.string(), z.unknown()).parse(args), command: JSON.stringify(stageInput) }, api, context);
+        const first = result.output?.find(block => block.type === "text");
+        if (first?.type === "text") {
+          const raw = z.object({ result: z.unknown().optional() }).passthrough().parse(JSON.parse(first.text));
+          const value = z.object({ id: z.string().uuid() }).safeParse(raw.result ?? raw);
+          if (value.success) state.lastStage = value.data.id;
+        }
+        loops.set(key, state); return result;
+      }
+      if (input.kind !== "preview") return tool.execute(args, api, context);
       if (state.count >= 3) return { output: [{ type: "text", text: "Three preview attempts reached. Submit the last matching preview, or report the remaining mechanical failure." }], isError: true };
       state.count++; loops.set(key, state);
       if (loops.size > 128) loops.delete(loops.keys().next().value ?? "");
@@ -53,6 +64,11 @@ export function reviewedSelfChange(extension: Extension): Extension {
       if (result.isError) return result;
       try {
         const critique = await reviewPreview({ models: api.models, model: (await api.agent(context)).model, output: result.output });
+        const metadata = result.output?.find(block => block.type === "text");
+        if (metadata?.type === "text") {
+          const record = z.object({ id: z.string().uuid(), previews: z.object({ hash: z.string() }) }).safeParse(JSON.parse(metadata.text));
+          if (record.success) await tool.execute({ command: JSON.stringify({ kind: "review", id: record.data.id, hash: record.data.previews.hash, critique }) }, api, context);
+        }
         return { ...result, output: [...(result.output ?? []), { type: "text", text: JSON.stringify({ critique, previewAttempt: state.count, next: state.count === 3 ? "Submit this stage. Design issues are advisory." : "Revise if useful, otherwise submit." }) }] };
       } catch {
         return { ...result, output: [...(result.output ?? []), { type: "text", text: "The separate plan review was unavailable. Preview checks passed. You may submit; no critic score was recorded." }] };

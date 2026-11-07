@@ -1,3 +1,4 @@
+import { ChangeCritique, ChangePreviews, ChangeSource } from "../protocol/change-preview.ts";
 import { z } from "zod";
 import { ApiError } from "../protocol/index.ts";
 
@@ -18,6 +19,9 @@ export const ManagedChange = z.object({
     "interrupted",
   ]),
   detail: z.string(),
+  previews: ChangePreviews.optional(),
+  critique: ChangeCritique.optional(),
+  source: ChangeSource.optional(),
 });
 export type ManagedChange = z.infer<typeof ManagedChange>;
 const History = z.object({
@@ -90,4 +94,10 @@ export async function revertChange(id: string, signal: AbortSignal) {
       "Revert was not queued. Refresh history before trying again.",
     );
   return change;
+}
+
+export function changeImage(id: string, file: string) {
+  z.string().uuid().parse(id);
+  z.string().regex(/^(before|after)-[a-z0-9-]+\.jpg$/).parse(file);
+  return `/api/v1/selfmod/images/${id}/${file}`;
 }

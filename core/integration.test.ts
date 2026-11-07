@@ -233,6 +233,12 @@ test(
           );
           const promotion = await submit(entry);
           assert.equal(promotion.outcome, "accepted", promotion.detail);
+          const shot = promotion.previews?.shots[0]; assert(shot);
+          const image = await fetch(`${base}/api/v1/selfmod/images/${promotion.id}/${shot.after}`);
+          assert.equal(image.status, 200); assert.equal(image.headers.get("content-type"), "image/jpeg");
+          assert((await image.arrayBuffer()).byteLength > 1000);
+          assert.equal((await fetch(`${base}/api/v1/selfmod/images/${promotion.id}/${shot.after}`, { headers: { "sec-fetch-site": "cross-site" } })).status, 403);
+          assert.equal((await fetch(`${base}/api/v1/selfmod/images/${promotion.id}/after-missing.jpg`)).status, 400);
           const newHtml = await (await fetch(base + "/")).text();
           const newCssPath = /href="([^"]+\.css)"/.exec(newHtml)?.[1];
           assert(newCssPath);

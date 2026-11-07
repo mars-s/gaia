@@ -3,6 +3,7 @@ import {
   defaultPlanModel,
   type PlanAvailability,
 } from "../../../core/plan-models.ts";
+import { reviewedSelfChange } from "../self-change-review.ts";
 import { digest } from "./storage.ts";
 import { createAdmission } from "./admission.ts";
 import { createJobTask, scopeIn, jobIn } from "./jobs.ts";
@@ -154,7 +155,10 @@ export async function openProfile(
     tools: tools.tools,
   });
   registry.install(base);
-  const shared = (options.extensions ?? []).map(trackedExtension);
+  const shared = (options.extensions ?? []).map(extension => reviewedSelfChange(extension, async conversation => {
+    const job = (await read()).jobs.find(job => String(job.workerId) === conversation);
+    return job ? { kind: "experience", profileId: id, scopeId: job.public.scopeId, answerMessageId: job.public.answerId } : undefined;
+  })).map(trackedExtension);
   for (const extension of shared) registry.install(extension);
   async function prepareWorker(job: State["jobs"][number]) {
     const extensions = (
@@ -167,7 +171,7 @@ export async function openProfile(
           .getModels()
           .find((model) => model.id === job.selection.modelId)?.provider,
       })) ?? []
-    ).map(trackedExtension);
+    ).map(extension => reviewedSelfChange(extension, () => ({ kind: "experience", profileId: id, scopeId: job.public.scopeId, answerMessageId: job.public.answerId }))).map(trackedExtension);
     for (const extension of extensions) registry.install(extension);
     try {
       await harness.commit(

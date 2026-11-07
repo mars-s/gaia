@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 
 const name = "after-empty-320-light.jpg";
 const critique = { critic: "fresh", score: 2, summary: "The next action is hard to find.", blocking: [{ issue: "Action is unclear", shots: [name] }], minor: [] };
-const output = [{ type: "text" as const, text: "PRIVATE_DIFF_MUST_NOT_REACH_CRITIC" }, { type: "text" as const, text: name }, { type: "image" as const, data: "ZmFrZS1maXh0dXJlLWltYWdl", mimeType: "image/jpeg" }];
+const output = [{ type: "text" as const, text: JSON.stringify({ id: "08c519e7-e982-45fa-ac70-1fe245b20c77", previews: { hash: "fixture" }, diff: "PRIVATE_DIFF_MUST_NOT_REACH_CRITIC" }) }, { type: "text" as const, text: name }, { type: "image" as const, data: "ZmFrZS1maXh0dXJlLWltYWdl", mimeType: "image/jpeg" }];
 
 test("critic rubric matches protected compact questions and rejects malformed scores or evidence", async () => {
   for (const question of readFileSync("core/design/rubric-compact.md", "utf8").trim().split("\n")) assert(criticPrompt.includes(question));
@@ -31,8 +31,8 @@ test("real Pi tool calls run a fresh same-plan critic, keep low scores advisory 
   const root = await mkdtemp("/private/tmp/gaia-critic-"), db = new DatabaseSync(join(root, "auth.sqlite")), auth = createAuth(db);
   const faux = fauxProvider({ provider: "openai-codex", models: [{ id: "gpt-6.1-sol", reasoning: true }], tokensPerSecond: 100000 });
   auth.models.setProvider(faux.provider); auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
-  let renders = 0, critics = 0;
-  const extension = defineExtension({ name: "preview-fixture", tools: [defineTool({ name: "self_change", description: "Fixture", parameters: { type: "object", properties: { command: { type: "string" } }, required: ["command"] }, async execute() { renders++; return { output }; } })] });
+  let renders = 0, critics = 0, reviews = 0;
+  const extension = defineExtension({ name: "preview-fixture", tools: [defineTool({ name: "self_change", description: "Fixture", parameters: { type: "object", properties: { command: { type: "string" } }, required: ["command"] }, async execute(args) { const command = JSON.parse((args as { command: string }).command); if (command.kind === "preview") renders++; if (command.kind === "review") { reviews++; assert.deepEqual(command.critique, critique); } return { output }; } })] });
   const pi = await createPi(join(root, "pi.sqlite"), auth, [extension]);
   const preview = () => fauxAssistantMessage(fauxToolCall("self_change", { command: JSON.stringify({ kind: "preview", id: randomUUID() }) }), { stopReason: "toolUse" });
   try {
@@ -44,7 +44,7 @@ test("real Pi tool calls run a fresh same-plan critic, keep low scores advisory 
     ]);
     let answer = "";
     await pi.run({ text: "PRIVATE_OWNER_CHAT, revise this UI", requestId: randomUUID(), onText: text => { answer = text; }, signal: new AbortController().signal });
-    assert.equal(renders, 3); assert.equal(critics, 3); assert.match(answer, /does not block/);
+    assert.equal(renders, 3); assert.equal(critics, 3); assert.equal(reviews, 3); assert.match(answer, /does not block/);
     faux.setResponses([preview(), fauxAssistantMessage("invalid critic JSON"), context => { assert(JSON.stringify(context).includes("review was unavailable")); return fauxAssistantMessage("You may submit."); }]);
     await pi.run({ text: "A new request", requestId: randomUUID(), onText() {}, signal: new AbortController().signal });
     assert.equal(renders, 4, "new owner turn starts a new revision budget");

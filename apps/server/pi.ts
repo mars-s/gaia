@@ -77,6 +77,7 @@ export async function createPi(
     ? await createExperienceToolHost(options.tools)
     : undefined;
   const registry = createRegistry();
+  let changeAnswer: string | undefined;
   let current:
     | { owner: OwnerCapability; signal: AbortSignal; answerMessageId?: string }
     | undefined;
@@ -226,7 +227,7 @@ export async function createPi(
         }
       : workspaceTools.extension,
   );
-  for (const extension of extensions) registry.install(reviewedSelfChange(extension));
+  for (const extension of extensions) registry.install(reviewedSelfChange(extension, () => changeAnswer ? { kind: "original", answerMessageId: changeAnswer } : undefined));
   const homeExtensions = [...registry.snapshot().installed()];
   const { harness } = await openRecoveredHarness(
     await openNodeSqliteStorage(path),
@@ -282,7 +283,6 @@ export async function createPi(
           models: auth.models,
           settings,
           ...options.experiences,
-          extensions: options.experiences?.extensions?.map(reviewedSelfChange),
           readSelection: () => {
             const { modelId, thinkingLevel } = home.controls();
             return { modelId, ...(thinkingLevel === undefined ? {} : { thinkingLevel }) };
@@ -291,7 +291,7 @@ export async function createPi(
           readOwner: () => readOwnerState(dirname(path)),
           capabilities: experienceCapabilities,
           extensionsForJob: async (binding) => [
-            ...((await options.experiences?.extensionsForJob?.(binding)) ?? []).map(reviewedSelfChange),
+            ...((await options.experiences?.extensionsForJob?.(binding)) ?? []),
             ...(toolHost && options.tools
               ? [
                   toolHost.extension(
@@ -312,6 +312,7 @@ export async function createPi(
     workspace,
     async run(input) {
       if (current) throw new Error("A model run is already active.");
+      changeAnswer = input.answerMessageId;
       current = input.owner
         ? {
             owner: input.owner,
@@ -346,6 +347,7 @@ export async function createPi(
         await workspaceTools.runHome(input, () => home.run(input));
       } finally {
         current = undefined;
+        changeAnswer = undefined;
         if (machineExtension) {
           await root.configure({ extensions: homeExtensions }, ctx);
           registry.uninstall(machineExtension);

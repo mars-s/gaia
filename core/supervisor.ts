@@ -304,6 +304,11 @@ export class Supervisor {
         selfModification: this.state.kind !== "safe",
       };
     if (input.kind === "history") return { version: 1, changes: this.history };
+    if (input.kind === "image") {
+      const entry = this.history.find(change => change.id === input.id);
+      if (!entry?.previews?.shots.some(shot => shot.before === input.file || shot.after === input.file)) throw new Error("Change image not found");
+      return { data: (await readFile(join(this.options.data, "previews/changes", entry.id, input.file))).toString("base64"), mimeType: "image/jpeg" };
+    }
     if (input.kind === "design") return { design: await designPack(join(this.options.data, "releases", this.state.active.release), this.options.core) };
     if (input.kind === "read") {
       const root = join(
@@ -325,10 +330,18 @@ export class Supervisor {
         "Self-change is disabled in safe mode. Review the failures locally.",
       );
     this.busy = true;
+    if (input.kind === "review") {
+      try {
+        const entry = this.history.find(change => change.id === input.id && change.outcome === "staged");
+        if (!entry?.previews || entry.previews.hash !== input.hash) throw new Error("Review does not match the preview");
+        entry.critique = input.critique; await this.saveHistory(); return entry;
+      } finally { this.busy = false; }
+    }
     if (input.kind === "preview") {
       try {
         const entry = this.history.find(change => change.id === input.id && change.outcome === "staged");
         if (!entry || entry.base !== this.state.active.release) throw new Error("Stale or missing stage. Stage again from the active release.");
+        delete entry.previews; delete entry.critique; await this.saveHistory();
         entry.previews = await previewChange(this.options, entry, input.surfaces);
         await this.saveHistory();
         return { ...entry, images: await previewImages(this.options.data, entry) };
@@ -336,7 +349,11 @@ export class Supervisor {
     }
     if (input.kind === "stage") {
       try {
-        return await this.stage(input.reason, input.edits);
+        const entry = await this.stage(input.reason, input.edits);
+        if (input.source) entry.source = input.source;
+        const older = this.history.find(change => change.id === input.supersedes && change.outcome === "staged" && JSON.stringify(change.source) === JSON.stringify(entry.source));
+        if (older) { older.outcome = "interrupted"; older.detail = "Replaced by a revised proposal."; }
+        await this.saveHistory(); return entry;
       } finally {
         this.busy = false;
       }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { open, readFile, rename, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import { ChangeCritique, ChangeSource } from "../packages/protocol/change-preview.ts";
 import { Surfaces } from "./render/schema.ts";
 export const Pair = z.object({
   release: z.string().regex(/^[a-f0-9]{40}$/),
@@ -62,8 +63,12 @@ export const Command = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("stage"),
     reason: z.string().min(1).max(1000),
+    source: ChangeSource.optional(),
+    supersedes: z.string().uuid().optional(),
     edits: z.array(Edit).min(1).max(30),
   }),
+  z.object({ kind: z.literal("image"), id: z.string().uuid(), file: z.string().regex(/^(before|after)-[a-z0-9-]+\.jpg$/) }),
+  z.object({ kind: z.literal("review"), id: z.string().uuid(), hash: z.string(), critique: ChangeCritique }),
   z.object({ kind: z.literal("preview"), id: z.string().uuid(), surfaces: Surfaces.default([]) }),
   z.object({ kind: z.literal("submit"), id: z.string().uuid() }),
   z.object({ kind: z.literal("revert"), id: z.string().uuid() }),
@@ -89,6 +94,8 @@ export const Change = z.object({
   ]),
   detail: z.string(),
   previews: Preview.optional(),
+  critique: ChangeCritique.optional(),
+  source: ChangeSource.optional(),
 });
 export type Change = z.infer<typeof Change>;
 export async function atomic(path: string, value: unknown) {
