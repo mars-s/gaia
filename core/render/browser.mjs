@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import process from 'node:process';
 import { URL } from 'node:url';
 import { setTimeout } from 'node:timers';
+import { once } from 'node:events';
 import { auditPage } from './checks.mjs';
 app.setActivationPolicy('prohibited');
 app.disableHardwareAcceleration();
@@ -21,7 +22,7 @@ app.whenReady().then(async () => {
     if (!allowed) blocked++;
     done({ cancel: !allowed });
   });
-  const window = new BrowserWindow({ show: false, focusable: false, width: 1000, height: 760, webPreferences: { sandbox: true, nodeIntegration: false, contextIsolation: true, backgroundThrottling: false, disableDialogs: true } });
+  const window = new BrowserWindow({ show: false, focusable: false, width: 1000, height: 760, webPreferences: { sandbox: true, nodeIntegration: false, contextIsolation: true, backgroundThrottling: false, disableDialogs: true, offscreen: true } });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => { if (new URL(url).origin !== job.origin) event.preventDefault(); });
   const errors = [], shots = [], audits = [];
@@ -36,7 +37,7 @@ app.whenReady().then(async () => {
     nativeTheme.themeSource = theme; window.setContentSize(width, width === 320 ? 700 : 760);
     await window.loadURL(job.origin + (state ? "/?__gaia_state=" + state : ""));
     await window.webContents.debugger.sendCommand("Runtime.enable"); await evaluate(`localStorage.setItem('gaia.appearance', ${JSON.stringify(theme)})`);
-    await window.reload(); await wait(`!!document.querySelector('[aria-label="Account settings"]')`);
+    const loaded = once(window.webContents, "did-finish-load"); window.reload(); await loaded; await wait(`!!document.querySelector('[aria-label="Account settings"]')`);
     if (job.scenario === 'setups') {
       await evaluate(`document.querySelector('[aria-label="Account settings"]').click()`);
       await wait(`!!document.getElementById('plan-title')`);
@@ -51,17 +52,22 @@ app.whenReady().then(async () => {
       if (step.kind === 'click') await evaluate(target + '.click()');
       if (step.kind === 'type') await evaluate(`(()=>{const el=${target};Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(step.text)});el.dispatchEvent(new Event('input',{bubbles:true,composed:true}));})()`);
     }
+    const ready = {answer:'A calmer week',proposal:'Use this setup',failed:'Try again',setups:'My sessions'}[job.scenario]; if (ready) await wait('document.body.innerText.includes(' + JSON.stringify(ready) + ')');
     await evaluate(`document.fonts.ready`); await new Promise(resolve => setTimeout(resolve, 350));
+    await evaluate(`for (const animation of document.getAnimations()) { if (animation.effect.getComputedTiming().iterations === Infinity) animation.cancel(); else animation.finish(); }`);
     if (window.isVisible() || window.isFocused()) throw Error('Renderer must remain hidden and unfocused');
     if (await evaluate(`document.documentElement.classList.contains('dark')`) !== (theme === 'dark')) throw Error('Theme did not render: ' + theme);
+    if (job.scenario === 'setups' && !await evaluate(`!!document.getElementById('setups-title')`)) throw Error('Settings capture lost its selected pane');
+    if (!state) {
+      const file = `${job.scenario}-${width}-${theme}.png`;
+      fs.writeFileSync(job.scratch + '/' + file, (await window.webContents.capturePage(undefined, {stayHidden:true})).toPNG());
+      shots.push({ file, width, theme });
+      if (window.isVisible() || window.isFocused()) throw Error("Capture must remain hidden and unfocused");
+    }
     await evaluate(fs.readFileSync(job.axe, 'utf8'));
     const report = await evaluate('(' + auditPage.toString() + ')(' + JSON.stringify(state) + ',' + JSON.stringify(job.scenario) + ')');
     if (report.failures.length || errors.length) throw Error('apps/web, ' + job.scenario + ', ' + width + ', ' + theme + ', ' + (state || 'filled') + ':\n' + [...report.failures,...errors].join('\n'));
     audits.push({width,theme,state:state||'filled',...report});
-    if (state) continue;
-    const file = `${job.scenario}-${width}-${theme}.png`;
-    fs.writeFileSync(job.scratch + '/' + file, (await window.webContents.capturePage()).toPNG());
-    shots.push({ file, width, theme });
   }
   const before = blocked;
   await session.defaultSession.fetch('https://example.com/gaia-render-denial').then(() => { throw Error('External request escaped'); }, () => {});
