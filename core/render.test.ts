@@ -10,7 +10,8 @@ import { z } from "zod";
 test("the real protected renderer captures all baseline variants hidden with fixture-only data", { skip: process.platform !== "darwin", timeout: 180000 }, async () => {
   const { scratch, results } = await renderCandidate({ stage: resolve("."), core: resolve("."), dependencies: resolve("node_modules") });
   try {
-    const reports = z.array(z.object({ shots: z.array(z.object({ file: z.string(), width: z.number(), theme: z.string() })), externalBlocked: z.literal(true), hidden: z.literal(true), errors: z.array(z.string()) })).parse(results);
+    const reports = z.array(z.object({ shots: z.array(z.object({ file: z.string(), width: z.number(), theme: z.string() })), audits: z.array(z.object({ incomplete: z.array(z.object({ skipped: z.string().optional() })) })), externalBlocked: z.literal(true), hidden: z.literal(true), errors: z.array(z.string()) })).parse(results);
+    assert(reports.flatMap(report => report.audits.flatMap(audit => audit.incomplete)).some(node => node.skipped?.includes("partly obscured")), "real scrolled text cannot claim an ancestor-only contrast ratio");
     assert.equal(reports.length, 5); assert.equal(reports.flatMap(report => report.shots).length, 20);
     for (const [index, scenario] of ["empty", "answer", "proposal", "setups", "failed"].entries()) {
       assert.deepEqual(reports[index].errors, []);

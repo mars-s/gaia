@@ -41,7 +41,7 @@ await window.webContents.executeJavaScriptInIsolatedWorld(999,[{code:${JSON.stri
 const report=await window.webContents.executeJavaScriptInIsolatedWorld(999,[{code:${JSON.stringify(audit.replace("export async function", "async function"))}+';auditPage('+JSON.stringify(state)+',"tasks")'}]);results.push({name,expected,report});}
 process.stdout.write(JSON.stringify(results));window.destroy();app.quit();}).catch(e=>{process.stderr.write(String(e.stack));app.exit(1)});`);
     const output = await command(require("electron"), [script, `--user-data-dir=${join(dir, "profile")}`], dir, 55000);
-    const results: { name: string; expected: string | null; report: { failures: string[]; contrast: {skipped?: string}[] } }[] = JSON.parse(output);
+    const results: { name: string; expected: string | null; report: { failures: string[]; contrast: {skipped?: string}[]; incomplete: {skipped?:string}[] } }[] = JSON.parse(output);
     assert.equal(results.length, cases.length);
     assert(results[0].report.contrast.some(node => node.skipped?.includes("gradient")), "non-solid node exemption is explicit");
     for (const result of results) {

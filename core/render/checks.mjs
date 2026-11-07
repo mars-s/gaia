@@ -14,8 +14,12 @@ export async function auditPage(state, surface) {
   };
   const blend = (ink, background) => ink.slice(0, 3).map((value, index) => value * ink[3] + background[index] * (1 - ink[3]));
   const luminance = rgb => rgb.slice(0, 3).map(value => { value /= 255; return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4; }).reduce((total, value, index) => total + value * [.2126, .7152, .0722][index], 0);
+  const rules = globalThis.axe.getRules().map(rule => rule.ruleId).filter(id => ['color-contrast', 'button-name', 'label', 'link-name', 'target-size'].includes(id) || id.startsWith('aria-'));
+  const axe = await globalThis.axe.run(document, { runOnly: { type: 'rule', values: rules } });
+  const obscured = new Set(axe.incomplete.filter(rule => rule.id === "color-contrast").flatMap(rule => rule.nodes.filter(node => node.any.some(check => check.data?.messageKey === "elmPartiallyObscured")).map(node => node.target.length === 1 && typeof node.target[0] === "string" ? document.querySelector(node.target[0]) : null)));
   const contrastNode = el => {
     const target = identify(el), style = getComputedStyle(el), ancestors = [];
+    if (obscured.has(el)) return { target, skipped: 'Axe reports partly obscured text. Another painted layer changes the foreground or backdrop, so ancestor-only colour composition cannot measure it.' };
     if (!visible(el)) return { target, skipped: 'Outside the shot or hidden, so no visible text to measure.' };
     if (el.closest(':disabled,[aria-disabled="true"]')) return { target, skipped: 'Inactive control text is exempt under WCAG 1.4.3.' };
     for (let cursor = el; cursor; cursor = cursor.parentElement) {
@@ -63,8 +67,7 @@ export async function auditPage(state, surface) {
     const roots = [...document.querySelectorAll('[data-preview-surface="' + surface + '"]')];
     if (!marker || !roots.some(root => (root.matches(marker) && visible(root)) || [...root.querySelectorAll(marker)].some(visible))) failures.push('Missing required state ' + marker + ' for surface ' + surface);
   }
-  const rules = globalThis.axe.getRules().map(rule => rule.ruleId).filter(id => ['color-contrast', 'button-name', 'label', 'link-name', 'target-size'].includes(id) || id.startsWith('aria-'));
-  const axe = await globalThis.axe.run(document, { runOnly: { type: 'rule', values: rules } });
+
   for (const violation of axe.violations) for (const node of violation.nodes) failures.push(`axe ${violation.id}: ${node.target.join(' ')}: ${node.failureSummary}`);
   const incomplete = [];
   for (const rule of axe.incomplete) for (const node of rule.nodes) {
