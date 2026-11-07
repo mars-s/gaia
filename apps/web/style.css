@@ -777,11 +777,6 @@ a:focus-visible {
 .code-block[data-overflow="true"] .code-scroll-area::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 32px; pointer-events: none; background: linear-gradient(to right, transparent, var(--code-surface) 80%); }
 .message-markdown { min-width: 0; width: 100%; }
 
-.progress-elapsed {
-  font-variant-numeric: tabular-nums;
-  color: var(--color-ink-2);
-}
-
 .draft-images {
   gap: 8px;
   padding: 8px;

@@ -8,38 +8,23 @@ import { ProgressRow } from "./progress-row";
 import { Transcript, MessageMarkdown } from "./transcript";
 import type { Thread } from "../../packages/protocol/index.ts";
 
-test("elapsed time appears from one second, alongside real activity, and disappears on settlement", (t) => {
-  const start = "2026-11-05T00:00:00Z";
-  for (const seconds of [0, 1, 2, 3, 12, 65]) {
-    t.mock.method(Date, "now", () => Date.parse(start) + seconds * 1000);
-    const html = renderToStaticMarkup(
-      createElement(ProgressRow, { active: true, startedAt: start }),
-    );
-    assert.doesNotMatch(html, /Thinking|Running|Working/);
-    assert.match(html, /working-indicator/);
-    if (seconds < 1) assert.doesNotMatch(html, /seconds elapsed/);
-    else { assert.match(html, new RegExp(`${seconds} seconds elapsed`)); if (seconds === 1) assert.match(html, />1s</); }
+test("progress never renders a timer, with or without real activity", (t) => {
+  for (const seconds of [0, 1, 2, 3, 12, 65, 3600]) {
+    for (const description of [undefined, "Checking the calendar"]) {
+      let reads = 0;
+      t.mock.method(Date, "now", () => Date.parse("2026-11-05T00:00:00Z") + (reads++ === 0 ? 0 : seconds * 1000));
+      const html = renderToStaticMarkup(
+        createElement(ProgressRow, { active: true, description, children: createElement("button", null, "Stop") }),
+      );
+      assert.doesNotMatch(html, /elapsed|progress-elapsed|\b\d+(?:m|s)\b|Thinking|Running|Working/);
+      assert.match(html, /working-indicator/);
+      assert.match(html, />Stop</);
+      if (description) assert.match(html, /Checking the calendar/);
+      else assert.doesNotMatch(html, /Checking the calendar/);
+    }
   }
-  const withActivity = renderToStaticMarkup(
-    createElement(ProgressRow, {
-      active: true,
-      startedAt: start,
-      description: "Checking the calendar",
-    }),
-  );
-  assert.match(withActivity, /Checking the calendar/);
-  assert.match(withActivity, /1m 5s/);
-  const settled = renderToStaticMarkup(
-    createElement(ProgressRow, { active: false, startedAt: start }),
-  );
+  const settled = renderToStaticMarkup(createElement(ProgressRow, { active: false }));
   assert.doesNotMatch(settled, /elapsed|working-indicator/);
-});
-
-test("Original chat starts its elapsed clock at observation rather than inventing a server start time", () => {
-  const html = renderToStaticMarkup(
-    createElement(ProgressRow, { active: true }),
-  );
-  assert.doesNotMatch(html, /seconds elapsed/);
 });
 
 test("settled assistant answers have one accessible copy action, pending and failed answers have none", () => {

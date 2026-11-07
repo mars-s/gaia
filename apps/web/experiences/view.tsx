@@ -404,9 +404,6 @@ function ScopeConversation({
                     ? job.answerId === message.id
                     : job.messageId === message.id) && !job.parentId,
               );
-              const runningJob = jobs.find(
-                (job) => job.state.kind === "running",
-              );
               return (
                 <div
                   key={message.id}
@@ -443,11 +440,6 @@ function ScopeConversation({
                           ) : undefined
                         }
                         active={jobs.some(jobActive)}
-                        startedAt={
-                          runningJob?.state.kind === "running"
-                            ? runningJob.state.startedAt
-                            : undefined
-                        }
                       />
                     )}
                     {message.attachments?.map((image) => (
@@ -718,14 +710,12 @@ function JobRows({
           }
           avatar={assistantAvatar}
           active={jobActive(job)}
-          startedAt={state.kind === "running" ? state.startedAt : undefined}
         />
       )}
       {activities.map((activity) => (
         <ProgressRow
           key={activity.id}
           active={false}
-          startedAt={state.kind === "running" ? state.startedAt : undefined}
           avatar={null}
           description={activity.description}
         />
@@ -733,13 +723,6 @@ function JobRows({
       <ProgressRow
         error={state.kind === "failed" || state.kind === "uncertain"}
         active={false}
-        startedAt={
-          state.kind === "running"
-            ? state.startedAt
-            : state.kind === "queued"
-              ? state.acceptedAt
-              : undefined
-        }
         avatar={null}
       >
         {state.kind !== "queued" &&

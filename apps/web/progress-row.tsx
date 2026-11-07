@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { RiErrorWarningLine } from "@remixicon/react";
 import { Button } from "./components/base/buttons/button";
 
@@ -6,26 +6,15 @@ export function ProgressRow({
   active,
   avatar = <span className="gaia-mark" aria-hidden="true" />,
   description,
-  startedAt,
   children,
   error = false,
 }: {
   active: boolean;
   avatar?: ReactNode;
   description?: string;
-  startedAt?: string;
   children?: ReactNode;
   error?: boolean;
 }) {
-  const [observedAt] = useState(Date.now);
-  const [now, setNow] = useState(Date.now);
-  const start = startedAt ? Date.parse(startedAt) : observedAt;
-  const seconds = Math.max(0, Math.floor((now - start) / 1000));
-  useEffect(() => {
-    if (!active) return;
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [active]);
   return (
     <div
       className={
@@ -49,16 +38,6 @@ export function ProgressRow({
       {description && (
         <span className="min-w-0 truncate" title={description}>
           {description}
-        </span>
-      )}
-      {active && seconds >= 1 && (
-        <span
-          className="progress-elapsed"
-          aria-label={`${seconds} seconds elapsed`}
-        >
-          {seconds < 60
-            ? `${seconds}s`
-            : `${Math.floor(seconds / 60)}m ${seconds % 60}s`}
         </span>
       )}
       {children}
