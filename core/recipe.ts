@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { writeFile, readdir, readFile } from "node:fs/promises";
-import { command } from "./process.ts";
+import { command, failureDetail } from "./process.ts";
 import { sandboxProfile, candidateBoot } from "./sandbox.ts";
 export async function sourceFiles(
   root: string,
@@ -47,7 +47,7 @@ export async function recipe({
       );
       await record(`${name}: passed`);
     } catch (error) {
-      await record(`${name}: failed`);
+      await record(`${name}: failed\n${failureDetail(error, stage)}`);
       throw error;
     }
   };
@@ -106,8 +106,13 @@ export async function recipe({
     "--configLoader",
     "runner",
   ]);
-  await candidateBoot({ stage, core, dependencies, release });
-  await record("sandbox boot and isolation: passed");
+  try {
+    await candidateBoot({ stage, core, dependencies, release });
+    await record("sandbox boot and isolation: passed");
+  } catch (error) {
+    await record(`sandbox boot and isolation: failed\n${failureDetail(error, stage)}`);
+    throw error;
+  }
   await run("protocol conformance", [
     "--import",
     bin("tsx/dist/loader.mjs"),

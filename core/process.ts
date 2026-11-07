@@ -109,3 +109,15 @@ export async function stop(child: ChildProcess) {
     kill(child);
   }
 }
+
+export function failureDetail(error: unknown, stage: string): string {
+  const message = (error instanceof Error ? error.message : String(error))
+    .replaceAll(`${stage}/`, "")
+    .replaceAll(stage, ".")
+    .trim()
+    .split("\n")
+    .slice(-40)
+    .join("\n");
+  const bytes = Buffer.from(message);
+  return bytes.subarray(Math.max(0, bytes.length - 4096)).toString("utf8").replace(/^\uFFFD+/, "");
+}

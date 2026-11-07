@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync, spawn } from "node:child_process";
 import { once } from "node:events";
-import { command } from "./process.ts";
+import { command, failureDetail } from "./process.ts";
 
 test("guardian preserves fast success status and drains stdout", async () => {
   const dir = await mkdtemp(join(tmpdir(), "gaia-status-"));
@@ -128,4 +128,18 @@ test("SIGKILL of a command owner still kills its hanging process group", async (
     }
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("failure detail keeps the final 40 lines and at most 4 KB of UTF-8 with stage-relative paths", () => {
+  const stage = "/private/tmp/gaia-stage";
+  const lines = Array.from({ length: 80 }, (_, index) => `${stage}/apps/web/fixture.test.ts:${index} failed`);
+  const detail = failureDetail(new Error(lines.join("\n")), stage);
+  assert.equal(detail.split("\n").length, 40);
+  assert.match(detail, /^apps\/web\/fixture.test.ts:40/);
+  assert.match(detail, /fixture.test.ts:79 failed$/);
+  assert.doesNotMatch(detail, /private\/tmp/);
+  const long = failureDetail(new Error("é".repeat(6000) + "ASSERTION END"), stage);
+  assert(Buffer.byteLength(long) <= 4096);
+  assert(long.endsWith("ASSERTION END"));
+  assert.doesNotMatch(long, /\uFFFD/);
 });
