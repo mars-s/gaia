@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+
 test("primary controls use white labels and the same AA fill in both themes", () => {
   const theme = readFileSync(new URL("../../apps/web/styles/theme.css", import.meta.url), "utf8");
   assert.equal((theme.match(/--color-primary-fill:/g) ?? []).length, 1);
@@ -28,6 +29,7 @@ test("primary controls use white labels and the same AA fill in both themes", ()
   assert.match(css, /primary-action[^}]*background: var\(--color-primary-fill\);[^}]*color: var\(--color-primary-ink\)/);
   assert.match(css, /composer-send[^}]*background: var\(--color-primary-fill\);[^}]*color: var\(--color-primary-ink\)/);
 });
+
 test("muted ink clears every neutral surface and dark focus clears the strongest surface", () => {
   const theme = readFileSync(new URL("../../apps/web/styles/theme.css", import.meta.url), "utf8");
   const values = [...theme.matchAll(/--color-ink-3: oklch\(([\d.]+)% 0 none\)/g)].map(match => Number(match[1]) / 100);
@@ -45,4 +47,13 @@ test("muted ink clears every neutral surface and dark focus clears the strongest
   const rgb = [4.0767416621*l - 3.3077115913*m + .2309699292*s, -1.2684380046*l + 2.6097574011*m - .3413193965*s, -.0041960863*l - .7034186147*m + 1.707614701*s].map(value => Math.max(0, Math.min(1, value)));
   const luminance = .2126*rgb[0] + .7152*rgb[1] + .0722*rgb[2];
   assert((luminance + .05) / (selectedDark + .05) >= 3.1);
+});
+
+test("danger hover uses a labelled page fill and a visible focus ring", () => {
+  const css = readFileSync(new URL("../../apps/web/style.css", import.meta.url), "utf8");
+  const kit = readFileSync(new URL("../../apps/web/ui/ui.css", import.meta.url), "utf8");
+  for (const source of [css, kit]) {
+    assert.match(source, /(?:plan-disconnect\.quiet-action|ui-danger):hover \{ background: var\(--color-surface-page\); text-decoration: underline/);
+    assert.match(source, /(?:plan-disconnect\.quiet-action|ui-danger):focus-visible \{ outline: 2px solid var\(--color-focus\); outline-offset: 2px/);
+  }
 });

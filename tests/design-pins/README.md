@@ -5,6 +5,6 @@ These exact appearance checks stay outside the trusted candidate recipe, which d
 
 `inventory.tsv` records each inspected assertion. Behaviour and interaction invariants stay in `apps/web/`. Exact CSS pins move here. Mixed tests keep their behaviour assertions in `apps/web/`; their original complete case also runs here so no assertion is lost.
 
-The primary contrast cases remain protected until guardrail 8 replaces them. Their original exact palette pins also run here. The new contrast contract must reject the original low-contrast muted ink and dark focus values.
+Guardrails 7 and 8 now replace the old apostrophe and primary contrast files in the trusted recipe. Their original checks also run here. Planted edits prove the protected contract rejects straight apostrophes, the original low-contrast muted ink and dark focus, unreadable primary labels, and the unsafe danger-hover fill.
 
 A border alone must never identify a control. Decorative hairlines and labelled or filled control borders are exempt from the text and focus contrast thresholds.

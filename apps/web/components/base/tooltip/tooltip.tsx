@@ -110,7 +110,7 @@ export function Tooltip({ children, className, size = "sm", showArrow = true, of
                 height={caret.height}
                 viewBox={`0 0 ${caret.width} ${caret.height}`}
                 className="block overflow-visible fill-background-primary-default stroke-border-button-default"
-                style={{ filter: `drop-shadow(${caret.shadow} rgb(0 0 0 / 0.05))` }}
+                style={{ filter: `drop-shadow(${caret.shadow} var(--color-tooltip-shadow))` }}
               >
                 <path d={caret.path} />
               </svg>

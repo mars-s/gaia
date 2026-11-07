@@ -168,7 +168,7 @@ body {
   border-radius: 16px;
   background: var(--color-surface-sunken);
   color: var(--color-text-primary);
-  box-shadow: 0 8px 32px rgb(0 0 0 / 18%);
+  box-shadow: var(--shadow-model-popover);
   outline: 1px solid var(--color-border-button-default);
 }
 

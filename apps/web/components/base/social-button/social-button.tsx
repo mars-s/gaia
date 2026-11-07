@@ -155,7 +155,7 @@ export function SocialButton({
   const custom = brand === "custom";
   const meta = custom ? undefined : SOCIAL_PROVIDERS[brand as SocialProvider];
   const label = custom ? (config?.label ?? "SSO") : meta!.label;
-  const fill = custom ? (config?.color ?? "#000000") : meta!.brand;
+  const fill = custom ? (config?.color ?? "var(--color-social-fallback)") : meta!.brand;
 
   // The outlined treatment is where the real multi-colour mark belongs: on a
   // brand or black fill it would fight the background. Not every provider has
@@ -215,7 +215,7 @@ export function SocialButton({
   // gets that gradient’s shape derived from its own colour: down in
   // lightness and up slightly in chroma, which is what blue-500 → blue-600
   // does. Mixing toward black instead would wash the second stop out.
-  const systemFill = appearance === "colorful" && fill.startsWith("var(");
+  const systemFill = appearance === "colorful" && fill.startsWith("var(") && (!custom || config?.color !== undefined);
 
   const classes = cx(
     styles.base,
@@ -227,7 +227,7 @@ export function SocialButton({
     systemFill
       ? "bg-button-primary"
       : appearance === "colorful" &&
-          "hover:brightness-[1.06] active:brightness-95",
+          "social-colorful-fill hover:brightness-[1.06] active:brightness-95",
     fullWidth && !iconOnly && "w-full",
     className,
   );
@@ -239,7 +239,8 @@ export function SocialButton({
   const inlineStyle =
     appearance === "colorful" && !systemFill
       ? {
-          backgroundImage: `linear-gradient(180deg, ${fill} 0%, oklch(from ${fill} calc(l - 0.04) calc(c + 0.01) h) 100%)`,
+          "--social-brand": fill,
+          backgroundImage: "var(--gradient-social-colorful)",
         }
       : undefined;
 

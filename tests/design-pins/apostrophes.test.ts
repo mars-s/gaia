@@ -13,5 +13,5 @@ test("web source keeps curly apostrophes in contractions and possessives", () =>
    }
   }
  }
- scan(new URL(".", import.meta.url).pathname);
+ scan(new URL("../../apps/web/", import.meta.url).pathname);
 });
