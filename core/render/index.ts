@@ -194,6 +194,7 @@ export async function renderCandidate({
           throw error;
         }
       }
+      const surface = surfaces.find((surface) => surface.name === scenario);
       const fixture = join(data, "fixture");
       await mkdir(fixture);
       const fixturePolicy = await renderProfile(
@@ -221,7 +222,7 @@ export async function renderCandidate({
         ],
         fixture,
         { ...cleanEnv(), HOME: fixture, TMPDIR: fixture },
-        60000,
+        remaining(surface ? 150000 : 60000),
       );
       let logs = "";
       server.stdout?.on("data", (chunk) => {
@@ -249,7 +250,7 @@ export async function renderCandidate({
             scratch: data,
             compare: Boolean(before),
             scenario,
-            surface: surfaces.find((surface) => surface.name === scenario),
+            surface,
             axe: join(dependencies, "axe-core/axe.min.js"),
           }),
         );
@@ -268,7 +269,7 @@ export async function renderCandidate({
             job,
           ],
           data,
-          remaining(30000),
+          remaining(surface ? 120000 : 30000),
         );
         results.push(JSON.parse(output));
       } finally {
