@@ -1,0 +1,15 @@
+.change-card { width: 100%; min-width: 0; }
+.change-shots-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-row-y); }
+.change-shots { display: flex; flex-direction: column; gap: var(--space-gutter-narrow); }
+.change-shot-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-row-y); }
+.change-shot-pair > p { grid-column: 1 / -1; }
+.change-shot-pair figure { min-width: 0; margin: 0; }
+.change-shot-pair figcaption { color: var(--color-ink-2); }
+.change-shot-pair a { display: block; border-radius: var(--radius-sm); overflow: hidden; }
+.change-shot-pair a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.change-shot-pair img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: top; }
+.change-card pre { max-width: 100%; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.change-card summary { cursor: pointer; color: var(--color-ink-2); }
+.change-card summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+.change-card [data-ui="action"]:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }

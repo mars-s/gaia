@@ -57,6 +57,7 @@ export function setupSubtitle(layout: ExperienceLayout, n: number) {
   return n === 1 ? "1 session with its own history" : `${n} sessions with separate histories`;
 }
 export function ProfileExperience({
+  managed = false,
   controller,
   switcher,
   accountControl,
@@ -64,6 +65,7 @@ export function ProfileExperience({
   onOriginal,
 }: {
   controller: ExperienceController;
+  managed?: boolean;
   switcher?: ReactNode;
   accountControl?: ReactNode;
   onSettings?: () => void;
@@ -76,6 +78,7 @@ export function ProfileExperience({
   );
   return (
     <ExperienceConversation
+      managed={managed}
       controller={controller}
       switcher={switcher}
       accountControl={accountControl}

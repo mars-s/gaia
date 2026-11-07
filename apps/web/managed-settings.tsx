@@ -1,3 +1,4 @@
+import { ChangeCard } from "./change-card";
 import { Action } from "./ui";
 import { SettingsHeading } from "./settings-index";
 import { RiRefreshLine } from "@remixicon/react";
@@ -174,7 +175,7 @@ export function ManagedSettings({ runtime }: { runtime: Snapshot["runtime"] }) {
             <p className="text-text-secondary">No changes yet.</p>
           )}
           <ul className="flex min-w-0 flex-col gap-6">
-            {view.changes.map((change) => (
+            {view.changes.map((change) => change.previews ? <li key={change.id}><ChangeCard change={change} disabled={disabled} onRevert={id => void revert(id)} /></li> : (
               <li
                 key={change.id}
                 className="flex min-w-0 flex-col gap-2 wrap-anywhere"

@@ -7,4 +7,4 @@ export const ChangeSource = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("experience"), profileId: z.string().uuid(), scopeId: z.string().uuid(), answerMessageId: z.string().min(1).max(200) }),
 ]);
 export type ChangeSource = z.infer<typeof ChangeSource>;
-export const ChangePreviews = z.object({ shots: z.array(z.object({ name: z.string(), scenario: z.string(), width: z.number(), theme: z.enum(["light", "dark"]), before: z.string().regex(/^before-[a-z0-9-]+\.jpg$/), after: z.string().regex(/^after-[a-z0-9-]+\.jpg$/) })), alsoChanged: z.array(z.string()) });
+export const ChangePreviews = z.object({ surfaces: z.array(z.object({ name: z.string() })).optional(), shots: z.array(z.object({ name: z.string(), scenario: z.string(), width: z.number(), theme: z.enum(["light", "dark"]), before: z.string().regex(/^before-[a-z0-9-]+\.jpg$/), after: z.string().regex(/^after-[a-z0-9-]+\.jpg$/) })), alsoChanged: z.array(z.string()) });

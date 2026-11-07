@@ -1,3 +1,4 @@
+import { useManagedChanges, ReplyChanges, changesForReply } from "./change-card";
 import { ClaudeSignIn, PlanAccounts } from "./plan-sign-in";
 import { useTranscriptFollow } from "./use-transcript-follow";
 import { SettingsHeading, SettingsNavigation, SettingsIndex, type SettingsSection } from "./settings-index";
@@ -102,6 +103,7 @@ export function App() {
       () => setProfileError(true),
     ),
   );
+  const managedChanges = useManagedChanges(Boolean(state?.runtime) && experienceView === "original", JSON.stringify([state?.thread.run, state?.runtime]));
   const [authReply, setAuthReply] = useState("");
   const [browserError, setBrowserError] = useState("");
   const [accountOpen, updateAccountOpen] = useState(false);
@@ -598,6 +600,7 @@ export function App() {
         </main>
       ) : experienceView !== "original" && !controller.safeMode ? (
         <ProfileExperience
+          managed={Boolean(state?.runtime)}
           controller={experiences}
           onOriginal={() => {
             experiences.original();
@@ -659,6 +662,7 @@ export function App() {
                   thread={active.thread}
                   onSettings={() => setAccountOpen(true)}
                   hasSetupCard={(id) =>
+                    changesForReply(managedChanges, { kind: "original", answerMessageId: id }).length > 0 ||
                     scope.kind === "home" &&
                     !controller.safeMode &&
                     proposalsAfterAnswer(
@@ -677,7 +681,7 @@ export function App() {
                   }
                   afterMessage={
                     scope.kind === "home" && !controller.safeMode
-                      ? id => <>{setupCards(id)}{profile?.kind === "new" && id === active.thread.messages.at(-1)?.id && active.thread.run.kind === "idle" && interviewOfferAllowed(experiences.profiles, id) && <div className="interview-slot">{profilePanel()}</div>}</>
+                      ? id => <><ReplyChanges changes={managedChanges} source={{ kind: "original", answerMessageId: id }} disabled={pending || offline || running || controller.safeMode} />{setupCards(id)}{profile?.kind === "new" && id === active.thread.messages.at(-1)?.id && active.thread.run.kind === "idle" && interviewOfferAllowed(experiences.profiles, id) && <div className="interview-slot">{profilePanel()}</div>}</>
                       : undefined
                   }
                 />

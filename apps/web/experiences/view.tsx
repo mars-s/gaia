@@ -1,3 +1,4 @@
+import { useManagedChanges, ReplyChanges, changesForReply } from "../change-card";
 import { Action } from "../ui";
 import { sessionTiles } from "../session-tiles";
 import { setupContext } from "../setup-context";
@@ -33,6 +34,7 @@ import {
 } from "./controller";
 
 export function ExperienceConversation({
+  managed = false,
   controller,
   switcher,
   accountControl,
@@ -40,6 +42,7 @@ export function ExperienceConversation({
   onOriginal,
 }: {
   controller: ExperienceController;
+  managed?: boolean;
   switcher?: ReactNode;
   accountControl?: ReactNode;
   onSettings?: () => void;
@@ -292,6 +295,7 @@ export function ExperienceConversation({
           aria-label={selected?.label ?? "Conversation"}
         >
           <ScopeConversation
+            managed={managed}
             onSettings={onSettings}
             key={experienceKey(scope)}
             controller={controller}
@@ -304,16 +308,19 @@ export function ExperienceConversation({
 }
 
 function ScopeConversation({
+  managed,
   onSettings,
   controller,
   scope,
 }: {
   controller: ExperienceController;
   scope: Scope;
+  managed: boolean;
   onSettings?: () => void;
 }) {
   const entry = controller.entry(scope);
   const state = entry.state;
+  const managedChanges = useManagedChanges(managed, JSON.stringify(state?.jobs.map(job => [job.id, job.state.kind])));
   const [announcement, setAnnouncement] = useState("");
   const announcer = useRef<ReturnType<typeof createActivityAnnouncer> | null>(
     null,
@@ -465,10 +472,12 @@ function ScopeConversation({
                     )}
                     {message.role === "assistant" &&
                       message.text &&
+                      !changesForReply(managedChanges, { kind: "experience", profileId: scope!.profileId, scopeId: scope!.scopeId, answerMessageId: message.id }).length &&
                       jobs.every((job) => job.state.kind === "completed") && (
                         <div className="reply-actions"><CopyButton label="Copy answer" text={message.text} /></div>
                       )}
                   </article>
+                  {message.role === "assistant" && scope && <ReplyChanges changes={managedChanges} source={{ kind: "experience", profileId: scope.profileId, scopeId: scope.scopeId, answerMessageId: message.id }} disabled={entry.offline || entry.sending} />}
                   {jobs.map((job) => (
                     <JobRows
                       onSettings={onSettings}
