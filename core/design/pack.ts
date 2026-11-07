@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, lstat } from "node:fs/promises";
 import { join } from "node:path";
 import ts from "typescript";
 import { safeFile } from "../install.ts";
@@ -11,7 +11,9 @@ export async function designPack(active: string, core: string) {
     const module = declaration.moduleSpecifier.text;
     if (!/^\.\/[a-zA-Z0-9_/-]+$/.test(module)) throw new Error("Invalid UI kit export path");
     const path = `apps/web/ui/${module.slice(2)}.tsx`;
-    const source = ts.createSourceFile(path, await readFile(await safeFile(active, path), "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const file = path === "apps/web/ui/preview.tsx" ? join(active, path) : await safeFile(active, path);
+    if ((await lstat(file)).isSymbolicLink()) throw new Error("UI kit module symlink refused");
+    const source = ts.createSourceFile(path, await readFile(file, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
     for (const part of declaration.exportClause.elements) {
       if (part.isTypeOnly) continue;
       const name = (part.propertyName ?? part.name).text;

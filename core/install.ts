@@ -26,6 +26,7 @@ export function importable(path: string) {
 }
 export const editable = (path: string) =>
   /^(apps\/(web|server)\/|packages\/sdk\/)/.test(path) &&
+  path !== "apps/web/ui/preview.tsx" &&
   !/(^|\/)(auth\.ts|main\.ts|package(?:-lock)?\.json|.*\.config\..*|.*\.test\.tsx?)$/.test(
     path,
   );
