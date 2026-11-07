@@ -1,6 +1,6 @@
 import { designPack } from "./design/pack.ts";
 import { join } from "node:path";
-import { writeFile, readdir, readFile } from "node:fs/promises";
+import { writeFile, readdir, readFile, rm } from "node:fs/promises";
 import { command, failureDetail } from "./process.ts";
 import { renderCandidate } from "./render/index.ts";
 import { readSurfaces, type Surface } from "./render/schema.ts";
@@ -133,7 +133,8 @@ export async function recipe({
   ]);
   try {
     surfaces = await readSurfaces(stage);
-    await renderCandidate({ stage, core, dependencies, surfaces });
+    const rendered = await renderCandidate({ stage, core, dependencies, surfaces });
+    await rm(rendered.scratch, { recursive: true, force: true });
     await record("rendered design checks: passed");
   } catch (error) {
     await record(`rendered design checks: failed\n${failureDetail(error, stage)}`);

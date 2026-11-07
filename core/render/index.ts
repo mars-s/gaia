@@ -20,6 +20,7 @@ export async function renderProfile(stage: string, core: string, dependencies: s
 export async function renderCandidate({ stage, core, dependencies, surfaces = [], before, baseline = true }: { baseline?: boolean; before?: string; stage: string; core: string; dependencies: string; surfaces?: Surface[] }) {
   await mkdir(join(stage, "dist/web"), { recursive: true }); await mkdir(join(core, ".sandbox-profiles"), { recursive: true });
   const scratch = await mkdtemp(join(stage, "dist/.render-"));
+  try {
   surfaces = Surfaces.parse(surfaces);
   const webroot = join(scratch, "webroot");
   const results: unknown[] = [];
@@ -50,4 +51,8 @@ export async function renderCandidate({ stage, core, dependencies, surfaces = []
   }
   await writeFile(join(scratch, "results.json"), JSON.stringify(results, null, 2));
   return { scratch, results };
+  } catch (error) {
+    await rm(scratch, { recursive: true, force: true });
+    throw error;
+  }
 }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -233,6 +233,7 @@ test(
           );
           const promotion = await submit(entry);
           assert.equal(promotion.outcome, "accepted", promotion.detail);
+          assert.deepEqual((await readdir(join(data, "releases", promotion.commit!, "dist"))).filter(name => name.startsWith(".render-")), []);
           const shot = promotion.previews?.shots[0]; assert(shot);
           const image = await fetch(`${base}/api/v1/selfmod/images/${promotion.id}/${shot.after}`);
           assert.equal(image.status, 200); assert.equal(image.headers.get("content-type"), "image/jpeg");

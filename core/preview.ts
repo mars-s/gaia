@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { cp, mkdir, readFile, writeFile, rm, readdir } from "node:fs/promises";
+import { cp, mkdir, readFile, writeFile, rm, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import { command } from "./process.ts";
@@ -30,7 +30,8 @@ export async function previewChange(options: Options, entry: Change, surfaces: S
   surfaces = await readSurfaces(stage);
   const hash = await stagedIdentity(stage), key = createHash("sha256").update(JSON.stringify([entry.base, surfaces])).digest("hex"), cache = join(data, "previews/before", key);
   const scenarios = ["empty", "answer", "proposal", "setups", "failed", ...surfaces.map(surface => surface.name)];
-  await mkdir(join(data, "previews/before"), { recursive: true });
+  await prunePreviews(data, entry.base, key, entry.id);
+  await mkdir(join(data, "previews/before"), { recursive: true, mode: 0o700 });
   try { await readFile(join(cache, "ready")); }
   catch (error) {
     if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
@@ -43,7 +44,11 @@ export async function previewChange(options: Options, entry: Change, surfaces: S
       const rendered = await renderCandidate({ stage: active, core, dependencies });
       try {
         await mkdir(baseline, { recursive: true });
-        for (const scenario of scenarios.slice(0, 5)) await cp(join(rendered.scratch, scenario), join(baseline, scenario), { recursive: true });
+        for (const scenario of scenarios.slice(0, 5)) {
+          await mkdir(join(baseline, scenario), { recursive: true });
+          for (const file of await readdir(join(rendered.scratch, scenario)))
+            if (/\.(png|jpg)$/.test(file)) await cp(join(rendered.scratch, scenario, file), join(baseline, scenario, file));
+        }
         await writeFile(join(baseline, "ready"), entry.base);
       } finally { await rm(rendered.scratch, { recursive: true, force: true }); }
     }
@@ -78,4 +83,17 @@ export async function previewImages(data: string, entry: Change) {
   const images = [];
   for (const shot of entry.previews?.shots ?? []) for (const file of [shot.before, shot.after]) images.push({ name: file, data: (await readFile(join(data, "previews/changes", entry.id, file))).toString("base64"), mimeType: "image/jpeg" as const });
   return images;
+}
+
+
+export async function prunePreviews(data: string, base: string, key: string, current: string) {
+  for (const [kind, keep] of [["before", key], ["baseline", base]]) {
+    const root = join(data, "previews", kind);
+    for (const name of await readdir(root).catch(() => []))
+      if (name !== keep) await rm(join(root, name), { recursive: true, force: true });
+  }
+  const root = join(data, "previews/changes");
+  const entries = await Promise.all((await readdir(root).catch(() => [])).filter(name => name !== current).map(async name => ({ name, at: (await stat(join(root, name))).mtimeMs })));
+  entries.sort((a, b) => b.at - a.at);
+  for (const entry of entries.slice(9)) await rm(join(root, entry.name), { recursive: true, force: true });
 }
