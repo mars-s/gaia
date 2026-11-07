@@ -25,6 +25,7 @@ export async function stagedIdentity(stage: string) {
 }
 const Reports = z.array(z.object({ shots: z.array(z.object({ file: z.string().regex(/^[a-z0-9-]+\.png$/), width: z.number(), theme: z.enum(["light", "dark"]), changed: z.number().default(0) })) }));
 export async function previewChange(options: Options, entry: Change, surfaces: Surface[]) {
+  const deadline = Date.now() + 900000;
   const { data, core, dependencies } = options, stage = join(data, "staging", entry.id), active = join(data, "releases", entry.base);
   await verifyProtected(stage, await hashes(active));
   surfaces = await readSurfaces(stage);
@@ -41,7 +42,7 @@ export async function previewChange(options: Options, entry: Change, surfaces: S
     try { await readFile(join(baseline, "ready")); }
     catch (error) {
       if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
-      const rendered = await renderCandidate({ stage: active, core, dependencies });
+      const rendered = await renderCandidate({ stage: active, core, dependencies, deadline });
       try {
         await mkdir(baseline, { recursive: true });
         for (const scenario of scenarios.slice(0, 5)) {
@@ -53,7 +54,7 @@ export async function previewChange(options: Options, entry: Change, surfaces: S
       } finally { await rm(rendered.scratch, { recursive: true, force: true }); }
     }
     const declared = await readSurfaces(active);
-    const before = declared.length ? await renderCandidate({ stage: active, core, dependencies, surfaces: declared, baseline: false }) : undefined;
+    const before = declared.length ? await renderCandidate({ stage: active, core, dependencies, deadline, surfaces: declared, baseline: false }) : undefined;
     try {
       for (const scenario of scenarios) {
         const from = existing.includes(scenario) || !surfaces.some(surface => surface.name === scenario) ? scenario : "empty";
@@ -63,7 +64,7 @@ export async function previewChange(options: Options, entry: Change, surfaces: S
       await writeFile(join(cache, "ready"), entry.base);
     } finally { if (before) await rm(before.scratch, { recursive: true, force: true }); }
   }
-  const after = await renderCandidate({ stage, core, dependencies, surfaces, before: cache });
+  const after = await renderCandidate({ stage, core, dependencies, deadline, surfaces, before: cache });
   try {
     if (hash !== await stagedIdentity(stage)) throw new Error("apps/web: source changed during preview. Preview again.");
     const shots = [], alsoChanged = [], destination = join(data, "previews/changes", entry.id);

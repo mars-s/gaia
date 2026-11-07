@@ -17,7 +17,13 @@ export async function renderProfile(stage: string, core: string, dependencies: s
   catch (error) { await rm(trusted, { recursive: true, force: true }); throw error; }
   return { policy, trusted };
 }
-export async function renderCandidate({ stage, core, dependencies, surfaces = [], before, baseline = true }: { baseline?: boolean; before?: string; stage: string; core: string; dependencies: string; surfaces?: Surface[] }) {
+export async function renderCandidate({ stage, core, dependencies, surfaces = [], before, baseline = true, deadline = Infinity }: { deadline?: number; baseline?: boolean; before?: string; stage: string; core: string; dependencies: string; surfaces?: Surface[] }) {
+  const remaining = (cap: number) => {
+    const ms = Math.min(cap, deadline - Date.now());
+    if (ms <= 0) throw new Error("Preview deadline exceeded");
+    return ms;
+  };
+  remaining(120000);
   await mkdir(join(stage, "dist/web"), { recursive: true }); await mkdir(join(core, ".sandbox-profiles"), { recursive: true });
   const scratch = await mkdtemp(join(stage, "dist/.render-"));
   try {
@@ -30,22 +36,22 @@ export async function renderCandidate({ stage, core, dependencies, surfaces = []
     const port = await freePort(), origin = `http://127.0.0.1:${port}`;
     const { policy, trusted } = await renderProfile(stage, core, dependencies, scratch, port);
     if (!built) {
-      try { await command("/usr/bin/sandbox-exec", ["-f", policy, process.execPath, "--import", join(dependencies, "tsx/dist/loader.mjs"), join(dependencies, "vite/bin/vite.js"), "build", "--config", join(core, "core/render/vite.config.ts"), "--configLoader", "runner", "--outDir", join(webroot, "dist/web")], stage); built = true; }
+      try { await command("/usr/bin/sandbox-exec", ["-f", policy, process.execPath, "--import", join(dependencies, "tsx/dist/loader.mjs"), join(dependencies, "vite/bin/vite.js"), "build", "--config", join(core, "core/render/vite.config.ts"), "--configLoader", "runner", "--outDir", join(webroot, "dist/web")], stage, remaining(120000)); built = true; }
       catch (error) { await rm(trusted, { recursive: true, force: true }); throw error; }
     }
     const server = guarded("/usr/bin/sandbox-exec", ["-f", policy, process.execPath, "--import", join(dependencies, "tsx/dist/loader.mjs"), join(core, "core/render/fixture.ts"), stage, data, String(port), scenario, webroot], data, { ...cleanEnv(), HOME: data, TMPDIR: data }, 60000);
     let logs = ""; server.stdout?.on("data", chunk => { logs = (logs + chunk).slice(-16000); }); server.stderr?.on("data", chunk => { logs = (logs + chunk).slice(-16000); });
     try {
-      const deadline = Date.now() + 20000;
+      const readyDeadline = Date.now() + remaining(20000);
       while (!logs.includes("FIXTURE_READY")) {
-        if (server.exitCode !== null || Date.now() > deadline) throw new Error(`Design fixture failed: ${logs.slice(-4000)}`);
+        if (server.exitCode !== null || Date.now() > readyDeadline) throw new Error(`Design fixture failed: ${logs.slice(-4000)}`);
         await new Promise(resolve => setTimeout(resolve, 30));
       }
       if (before) await cp(join(before, scenario), join(data, "before"), { recursive: true });
       const job = join(trusted, "job.json"); await writeFile(job, JSON.stringify({ origin, scratch: data, compare: Boolean(before), scenario, surface: surfaces.find(surface => surface.name === scenario), axe: join(dependencies, "axe-core/axe.min.js") }));
       const electron: string = (await import(join(dependencies, "electron/index.js"))).default;
       // Chromium cannot nest Seatbelt. The verified outer profile confines the whole process tree.
-      const output = await command("/usr/bin/sandbox-exec", ["-f", policy, electron, "--no-sandbox", join(core, "core/render/browser.mjs"), job], data, 30000);
+      const output = await command("/usr/bin/sandbox-exec", ["-f", policy, electron, "--no-sandbox", join(core, "core/render/browser.mjs"), job], data, remaining(30000));
       results.push(JSON.parse(output));
     } finally { await stop(server); await rm(trusted, { recursive: true, force: true }); }
   }

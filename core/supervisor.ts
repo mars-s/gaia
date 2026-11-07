@@ -39,6 +39,7 @@ export class Supervisor {
   history: Change[] = [];
   child: ChildProcess | undefined;
   busy = false;
+  previewing = false;
   closing = false;
   private controlServer = createServer();
   private token = randomUUID();
@@ -300,7 +301,7 @@ export class Supervisor {
       return {
         version: 1,
         ...this.state,
-        busy: this.busy,
+        busy: this.busy || this.previewing,
         selfModification: this.state.kind !== "safe",
       };
     if (input.kind === "history") return { version: 1, changes: this.history };
@@ -321,7 +322,7 @@ export class Supervisor {
         text: await readFile(await safeFile(root, input.path), "utf8"),
       };
     }
-    if (this.busy)
+    if (this.busy || this.previewing)
       throw new Error(
         "Another change or reversion is in progress. Retry later.",
       );
@@ -338,6 +339,8 @@ export class Supervisor {
       } finally { this.busy = false; }
     }
     if (input.kind === "preview") {
+      this.busy = false;
+      this.previewing = true;
       try {
         const entry = this.history.find(change => change.id === input.id && change.outcome === "staged");
         if (!entry || entry.base !== this.state.active.release) throw new Error("Stale or missing stage. Stage again from the active release.");
@@ -348,7 +351,7 @@ export class Supervisor {
       } catch (error) {
         const entry = this.history.find(change => change.id === input.id), paths = Buffer.from(entry?.diff.match(/^diff --git .+$/gm)?.join("; ") ?? "unknown").subarray(0, 1000).toString("utf8"), tail = Buffer.from(failureDetail(error, join(this.options.data, "staging", input.id)).split("\n").slice(-35).join("\n")).subarray(-2800).toString("utf8"), detail = `Preview failed. Changed files: ${paths}\n${tail}`;
         if (entry) { entry.checks.push(detail); await this.saveHistory(); } throw new Error(detail, { cause: error });
-      } finally { this.busy = false; }
+      } finally { this.previewing = false; }
     }
     if (input.kind === "stage") {
       try {
