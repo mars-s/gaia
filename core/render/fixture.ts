@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { fauxProvider, fauxAssistantMessage } from "@earendil-works/pi-ai";
 import { Thread } from "../../packages/protocol/index.ts";
 import { webResource } from "../web.ts";
-const [stage, scratch, portText, scenario] = process.argv.slice(2);
+const [stage, scratch, portText, scenario, webroot] = process.argv.slice(2);
 const origin = `http://127.0.0.1:${Number(portText)}`;
 const { createAuth }: typeof import("../../apps/server/auth.ts") = await import(join(stage, "apps/server/auth.ts"));
 const { createPi }: typeof import("../../apps/server/pi.ts") = await import(join(stage, "apps/server/pi.ts"));
@@ -29,7 +29,7 @@ const handlers = app.server.listeners("request"); app.server.removeAllListeners(
 app.server.on("request", async (req, res) => {
   const path = new URL(req.url ?? "/", origin).pathname;
   if (req.method === "GET" && !path.startsWith("/api/") && path !== "/healthz") {
-    const resource = await webResource(path, { data: scratch, release: "0".repeat(40), directory: stage });
+    const resource = await webResource(path, { data: scratch, release: "0".repeat(40), directory: webroot });
     res.writeHead(resource.status, { "Content-Type": resource.type }); res.end(resource.body); return;
   }
   for (const handler of handlers) handler.call(app.server, req, res);

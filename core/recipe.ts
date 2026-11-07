@@ -1,6 +1,8 @@
 import { join } from "node:path";
 import { writeFile, readdir, readFile } from "node:fs/promises";
 import { command, failureDetail } from "./process.ts";
+import { renderCandidate } from "./render/index.ts";
+import { type Surface } from "./render/schema.ts";
 import { sandboxProfile, candidateBoot } from "./sandbox.ts";
 export async function sourceFiles(
   root: string,
@@ -29,12 +31,14 @@ export async function recipe({
   dependencies,
   release,
   record,
+  surfaces = [],
 }: {
   stage: string;
   core: string;
   dependencies: string;
   release: string;
   record: (result: string) => Promise<void>;
+  surfaces?: Surface[];
 }) {
   const profile = await sandboxProfile(stage, core, dependencies);
   const bin = (path: string) => join(dependencies, path);
@@ -119,4 +123,17 @@ export async function recipe({
     join(core, "core/conformance.ts"),
     stage,
   ]);
+  try {
+    const paths = await readdir(join(stage, "apps/web/surfaces")).catch((error: unknown) => {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
+      throw error;
+    });
+    for (const name of paths) if (!surfaces.some(surface => surface.name === name)) throw new Error(`apps/web/surfaces/${name}: declared render steps are required`);
+    await renderCandidate({ stage, core, dependencies, surfaces });
+    await record("rendered design checks: passed");
+  } catch (error) {
+    await record(`rendered design checks: failed\n${failureDetail(error, stage)}`);
+    throw error;
+  }
+
 }

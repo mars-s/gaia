@@ -12,7 +12,9 @@ npm run owner-upgrade -- prepare --data /absolute/path/to/gaia-data
 
 To prepare another checkout's committed HEAD, add `--source /absolute/path/to/checkout`. Save the returned `preparedFile` path. Inspect `prepared.json`, the staged diff, `coreChanges`, dependency identity, and `checks.json` before activation. Preparation may run while Gaia is active. A changed control record makes the preparation stale at activation.
 
-The command runs the original six fixed recipe gates in order. These are typecheck, lint, server and web unit tests, web build, sandbox boot and isolation, and protocol conformance. It does not invoke candidate package scripts. The trusted recipe discovers only server and web tests, so it does not recursively run operator preparation tests. Desktop and operator checks are separate repository checks.
+The command runs seven fixed recipe gates in order. These are typecheck, lint, server and web unit tests, web build, sandbox boot and isolation, protocol conformance, and rendered design checks. It does not invoke candidate package scripts. The trusted recipe discovers only server and web tests, so it does not recursively run operator preparation tests. Desktop and operator checks are separate repository checks.
+
+Rendered checks use a protected build and test fixture. Hidden Electron runs under a separately proven Seatbelt profile for its whole process tree. Chromium’s nested Seatbelt initialisation is disabled because macOS refuses nesting. Page code has no Node integration. The profile permits only the fixture port and isolated scratch writes. Rendering fails closed if its denial proofs fail. New surface directories require validated render declarations; the later preview command supplies these to the recipe.
 
 ## Allow exact reviewed core files
 
