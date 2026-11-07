@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { command } from "./process.ts";
+import { command } from "../../core/process.ts";
 
 // Each bad page changes one rule of the otherwise readable, labelled fixture.
 const cases = [

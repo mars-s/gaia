@@ -2,9 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { renderCandidate, renderProfile } from "./render/index.ts";
-import { command } from "./process.ts";
-import { freePort } from "./sandbox.ts";
+import { renderCandidate, renderProfile } from "../../core/render/index.ts";
+import { command } from "../../core/process.ts";
+import { freePort } from "../../core/sandbox.ts";
 import { z } from "zod";
 
 test("the real protected renderer captures all baseline variants hidden with fixture-only data", { skip: process.platform !== "darwin", timeout: 180000 }, async () => {
@@ -36,8 +36,8 @@ test("the renderer fails closed on an invalid sandbox and its profile cannot gra
 
 test("declared surfaces force their own states and source defects cannot bypass trusted checks", { skip: process.platform !== "darwin", timeout: 180000 }, async () => {
   const { cp, symlink } = await import("node:fs/promises");
-  const { Surfaces } = await import("./render/schema.ts");
-  const { importable } = await import("./install.ts");
+  const { Surfaces } = await import("../../core/render/schema.ts");
+  const { importable } = await import("../../core/install.ts");
   const stage = await mkdtemp("/private/tmp/gaia-render-surface-");
   const dependencies = resolve("node_modules");
   try {
@@ -64,4 +64,36 @@ test("declared surfaces force their own states and source defects cannot bypass 
     await writeFile(appPath, 'throw new Error("PLANTED_PAGE_EXCEPTION");\n'+original);
     await assert.rejects(renderCandidate({stage,core:resolve("."),dependencies}), /PLANTED_PAGE_EXCEPTION/);
   } finally { await rm(stage, { recursive: true, force: true }); }
+});
+
+test("a native renderer crash exits directly while its window stays offscreen", {skip:process.platform!=="darwin",timeout:40000}, async () => {
+  const {cp,symlink,readdir} = await import("node:fs/promises");
+  const {randomUUID} = await import("node:crypto");
+  const trusted = await mkdtemp("/private/tmp/gaia-render-crash-");
+  const nonce=randomUUID();
+  try {
+    for(const path of ["core","packages/protocol","package.json","tsconfig.json"]) await cp(resolve(path),join(trusted,path),{recursive:true});
+    await symlink(resolve("node_modules"),join(trusted,"node_modules"));
+    const browser=join(trusted,"core/render/browser.mjs"),source=await readFile(browser,"utf8");
+    const probe=`const marker=job.scratch+'/renderer-pid.json'; fs.writeFileSync(marker+'.new',JSON.stringify({rendererPid:window.webContents.getOSProcessId(),browserPid:process.pid,nonce:${JSON.stringify(nonce)}})); fs.renameSync(marker+'.new',marker); await new Promise(resolve=>setTimeout(resolve,10000));`;
+    assert(source.includes('await window.webContents.debugger.sendCommand("Runtime.enable");'));
+    await writeFile(browser,source.replace('await window.webContents.debugger.sendCommand("Runtime.enable");',probe));
+    const started=Date.now(); let finished=false,killed=false;
+    const run=renderCandidate({stage:resolve("."),core:trusted,dependencies:resolve("node_modules")}).then(()=>{finished=true;return null;},error=>{finished=true;return error;});
+    while(!finished&&!killed&&Date.now()-started<25000) {
+      for(const entry of await readdir(join(trusted,".sandbox-profiles")).catch(()=>[])) {
+        const job=await readFile(join(trusted,".sandbox-profiles",entry,"job.json"),"utf8").then(text=>JSON.parse(text)).catch(()=>null); if(!job)continue;
+        const data=z.object({scratch:z.string()}).parse(job);
+        const raw=await readFile(join(data.scratch,"renderer-pid.json"),"utf8").catch(()=>null); if(!raw)continue;
+        const pid=z.object({rendererPid:z.number().int().positive(),browserPid:z.number().int().positive(),nonce:z.literal(nonce)}).parse(JSON.parse(raw));
+        assert.equal(await command("/bin/ps",["-p",String(pid.rendererPid),"-o","ppid="],trusted),String(pid.browserPid));
+        assert((await command("/bin/ps",["-p",String(pid.browserPid),"-o","args="],trusted)).includes(browser));
+        process.kill(pid.rendererPid,"SIGKILL"); killed=true; break;
+      }
+      if(!killed)await new Promise(resolve=>setTimeout(resolve,30));
+    }
+    const error=await run; assert(killed,"the test must stop only its verified renderer child");
+    assert(error instanceof Error); assert.match(error.message,/Native renderer exited: (killed|crashed)/);
+    assert(Date.now()-started<25000,"the crash must not wait for an Electron error dialog or the guardian deadline");
+  } finally {await rm(trusted,{recursive:true,force:true});}
 });

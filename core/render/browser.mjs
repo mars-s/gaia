@@ -29,7 +29,7 @@ app.whenReady().then(async () => {
   window.webContents.debugger.attach('1.3');
   window.webContents.debugger.on('message', (_event, method, params) => { if (method === 'Runtime.exceptionThrown') errors.push(JSON.stringify(params.exceptionDetails)); });
   window.webContents.on('console-message', event => { if (event.level === 'error') errors.push(event.message); });
-  window.webContents.on('render-process-gone', (_event, detail) => { throw Error('Renderer exited: ' + detail.reason); });
+  window.webContents.on('render-process-gone', (_event, detail) => { process.stderr.write('Native renderer exited: ' + detail.reason); app.exit(1); });
   const evaluate = code => window.webContents.executeJavaScriptInIsolatedWorld(999, [{ code }]);
   const wait = async code => { for (let i = 0; i < 150; i++) { if (await evaluate(code)) return; await new Promise(resolve => setTimeout(resolve, 20)); } throw Error('Render readiness deadline: ' + code + '\n' + await evaluate('document.documentElement.outerHTML') + '\n' + errors.join('\n')); };
   for (const width of [1000, 320]) for (const theme of ['light', 'dark']) for (const state of (job.surface ? [undefined, 'empty', 'loading', 'error'] : [undefined])) {
