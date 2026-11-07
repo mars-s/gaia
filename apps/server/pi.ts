@@ -1,3 +1,4 @@
+import { reviewedSelfChange } from "./self-change-review.ts";
 import { defaultPlanModel } from "../../core/plan-models.ts";
 import { SetupProposalPlan, setupPurposeGuidance } from "./setup-proposal.ts";
 import { ExperienceCreate } from "../../packages/protocol/experiences.ts";
@@ -225,7 +226,7 @@ export async function createPi(
         }
       : workspaceTools.extension,
   );
-  for (const extension of extensions) registry.install(extension);
+  for (const extension of extensions) registry.install(reviewedSelfChange(extension));
   const homeExtensions = [...registry.snapshot().installed()];
   const { harness } = await openRecoveredHarness(
     await openNodeSqliteStorage(path),
@@ -281,6 +282,7 @@ export async function createPi(
           models: auth.models,
           settings,
           ...options.experiences,
+          extensions: options.experiences?.extensions?.map(reviewedSelfChange),
           readSelection: () => {
             const { modelId, thinkingLevel } = home.controls();
             return { modelId, ...(thinkingLevel === undefined ? {} : { thinkingLevel }) };
@@ -289,7 +291,7 @@ export async function createPi(
           readOwner: () => readOwnerState(dirname(path)),
           capabilities: experienceCapabilities,
           extensionsForJob: async (binding) => [
-            ...((await options.experiences?.extensionsForJob?.(binding)) ?? []),
+            ...((await options.experiences?.extensionsForJob?.(binding)) ?? []).map(reviewedSelfChange),
             ...(toolHost && options.tools
               ? [
                   toolHost.extension(
