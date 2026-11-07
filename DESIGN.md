@@ -1,43 +1,54 @@
 # Gaia client design
 
-The user's corrective brief replaces the previous labelled web form with a minimal conversation. The overnight brief adds the reference model-and-effort popover and image attachments. Follow `SPEC.md` for library choices.
+The client follows [SPEC.md](SPEC.md). These rules describe the shared design used by the hand-built UI and new surfaces. The Pi subscription backend stays in place. Prefer Base UI for new primitives under the spec’s library policy.
 
-## Surface
+1. **Feel and three principles.** A quiet notebook that talks back. (1) One conversation, one surface. (2) Emphasis is earned by the primary action. (3) Same thing, same look, everywhere.
+2. **Tokens.** Only semantic tokens in product CSS. Primitive ramps live only in token files.
+   - Colour roles: `--color-surface-page`, `--color-surface-raised`, `--color-surface-sunken`, `--color-surface-hover`, `--color-surface-selected`; `--color-line`, `--color-line-strong`; `--color-ink`, `--color-ink-2`, `--color-ink-3`; `--color-accent`, `--color-accent-strong`, `--color-accent-soft`; `--color-primary-fill`, `--color-primary-ink`; `--color-link`, `--color-link-hover`; `--color-danger`, `--color-danger-soft`; `--color-focus`. Light page white, dark page `#121212`.
+   - Spacing scale: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64. Named: gutter 24 (16 below 640), message gap 24, turn gap 32, row 8 by 10, bubble 10 by 16, composer bottom 24.
+   - Radii: xs 4, sm 8, md 12, lg 16, bubble 20, composer 24, full.
+   - Motion: hover 150 ms ease, popover 150 ms ease-out, exit 120 ms ease-in, card 200 ms ease-out, drawer 240 ms, pulse 1800 ms. Respect reduced motion.
+   - Focus: 2 px `--color-focus` outline, 2 px offset, visible in both themes.
+3. **The three button styles** (plus two non-buttons).
+   - Primary (`primary-action`): `--color-primary-fill` with white ink, AA in both themes. At most one per surface. It is the one thing the owner most likely does next.
+   - Secondary (`secondary-action`): raised surface, hairline, ink text. For every other real action, including "Open" in lists.
+   - Quiet (`quiet-action`): text only, `--color-ink-2`, zero inline padding so text sits on the column edge, 36 px hit area. For "Not now", "Refresh", creation rows.
+   - Not buttons: inline link (`inline-link`, prose only) and icon button (36 px, bare at rest, 20 px glyph, needs an accessible name).
+   - Sizes: small 32, default 36, large 44 (welcome only). Radius sm.
+   - Destructive: secondary style with danger text, separated from its neighbour by at least 16 px, never bare red text beside a button.
+4. **Grid.** Reading column text 680 px, box 728 px, gutters 24 (16 below 640). Sidebar 240 px, padding 12, rows 8 by 10, icon column 24 plus 8 gap, so labels land on one edge. Every text in the main area starts on the column's text edge (L); trailing controls end on R. Title bar 52 px, one row at every width.
+5. **Type scale.** System sans; weights 400, 500, 600 only. hero 20/28 600; section 16/22 600; message 15/24; ui 14/20 (500 for labels and selected rows); label 13/18; caption 12/16; code 13/20 mono.
+6. **Shared parts.** Reuse these compositions. The kit at `apps/web/ui/` collects them for new surfaces.
 
-Operate mode. The task is to connect once, then write and read messages. A single 52px title bar shares the page background. On macOS, Electron's real inset traffic lights sit beside the quiet Gaia name. Only connected users see the account control.
+   | Part | Source | Example |
+   | --- | --- | --- |
+   | Status pill, neutral or accent | [status-pill.tsx](apps/web/status-pill.tsx) | `<StatusPill tone="accent">Main chat</StatusPill>` |
+   | Proposal card, full or compact | [proposal-card.tsx](apps/web/proposal-card.tsx) | `<ProposalCardContent compact title="About you" status="Optional" body="Fit Gaia around your work." primary="Start" onAccept={start} onDismiss={dismiss} />` |
+   | Row with icon column | [experiences/index.tsx](apps/web/experiences/index.tsx) | `setup-list-row` with `setup-row-meta` and `setup-row-actions` |
+   | Assistant turn head | [assistant-head.tsx](apps/web/assistant-head.tsx) | `<AssistantHead name="Gaia" />` |
+   | Notice line | [progress-row.tsx](apps/web/progress-row.tsx) | `<ReplyNotice message="Connection lost." onRetry={retry} />` |
+   | Empty composition | [empty-chat.tsx](apps/web/empty-chat.tsx) | `<EmptyChat onStarter={send} />` |
+   | Menu | [experiences/index.tsx](apps/web/experiences/index.tsx) | Main chat menu with `Menu.RadioItem` rows |
+   | Listbox | [settings-index.tsx](apps/web/settings-index.tsx) | `<SettingsHeading id="setups-title">Setups</SettingsHeading>` |
+   | File chip | [image-previews.tsx](apps/web/image-previews.tsx) | `DraftImages` in the shared composer |
 
-Disconnected users see a centred, 320px-wide welcome group. The pending screen contains browser handoff and optional help. Connected users see a conversation up to 768px wide, with a bottom composer and small empty prompt. Account settings replace the conversation temporarily, without an overlay.
-
-## Tokens and type
-
-Use Board UI semantic tokens and `cx()`. The system sans is intentional for a desktop utility. Titles use `text-title-3-semibold`; text and controls use the Board UI body and caption composites.
-
-| Role                            | Light                          | Dark                          |
-| ------------------------------- | ------------------------------ | ----------------------------- |
-| Page                            | `background-full`, white       | `background-full`, #121212    |
-| Composer and user message       | `background-secondary-default` | Same semantic token           |
-| Primary text                    | `text-primary`                 | Same semantic token           |
-| Supporting text and placeholder | `text-secondary`, neutral-600  | `text-secondary`, neutral-400 |
-| Control border                  | `border-button-default`        | Same semantic token           |
-| Focus                           | `border-focus-ring`            | Same semantic token           |
-
-Supporting text overrides the upstream faint neutral defaults for readability. Theme follows the system and updates live. The native window background and overlay controls follow the same light and dark backgrounds.
-
-## Composition
-
-Model, effort and attachment actions belong in the compact composer. Keep navigation optional and avoid decorative graphics, gradients and permanent auth panels. The installed Board UI SocialButton, IconButton and Textarea currently provide sign-in, actions and input. They may be retained or replaced under the spec's library policy. Paid templates are not used.
-
-The minimal pill keeps a left plus menu, inline model name and pink send control. The model name opens a restrained themed popover with model radio rows, a divider and a discrete effort range with Faster and Smarter cues. Every effort value comes from Pi's model metadata. Image-capable models offer Attach images in the plus menu. Image thumbnails sit above the input, with named removal buttons. At 320px the model control moves to a second input row, preserving room to type. There are no microphone, branch or usage placeholders. Compact context remains in the plus menu.
-
-
-Messages have 32px separation. User text has a quiet secondary fill and aligns right. Assistant text sits directly on the page. The composer remains available when the transcript scrolls. At 320px, content has 16px side insets. Hover, focus and disabled states use the installed component vocabulary. No authored animation is needed.
-
-## Behaviour
-
-Sign-in opens once for each URL during a flow, including repeated SSE snapshots and StrictMode effect replay. Browser retry is explicit. Manual-code entry stays in a disclosure. Drafts survive failed sends and disconnects. Keyboard send uses the same guard as the button and respects IME composition. Retry appears only with a failed reply. The transcript follows new replies unless the owner scrolls up.
-
-Text and image drafts use IndexedDB and wait for a durable save before release reload. New edits survive earlier send completion. Image previews release object URLs. Images remain visible in failed messages and retry uses their stored references. Optional setup shows an initial question once, then the conversation carries one missing question at a time. Skip setup is quiet and can stop an active setup turn. Save still confirms only the displayed proposal.
-
-## Verification boundary
-
-Code, unit checks and the mechanical detector support the implementation handoff. They do not establish visual quality or prove default-browser profile selection. The parent owns desktop launch, screenshots, live auth and interaction verification.
+7. **States every new surface must have.**
+   - Empty: one composition. A glyph or tile, one line in plain words, optionally up to three starters. Centred slightly above the optical centre. No second paragraph.
+   - Loading (ordinary surface data, for example a list or pane fetching its contents, not agent work): nothing for the first 300 ms, then the quiet pattern (avatar or tile plus dots) or skeleton rows for lists over a known shape. No words and no labelled spinner for this kind of loading.
+   - Agent task progress (work Gaia is doing for the owner) is a different thing and always follows the SPEC.md progress rule: avatar pulse and Stop with no words until real activity exists, then quiet task-specific wording supplied by the agent from real execution; never timers or generic phrases.
+   - Error: danger glyph, one plain sentence, the cause only if the system knows it, a secondary "Try again", and a caption second path when one exists.
+   - 320 px: 16 px gutters, one title row, no horizontal page scroll, controls drop to a second row rather than shrink, names and actions never truncate, ellipsis only on long free text.
+   - Dark: tokens only, so dark comes free. Check every fill against the page; no light box on a dark page.
+8. **Copy rules.** Australian English, sentence case, curly apostrophes, no em or en dashes, no exclamation marks. Buttons are verbs ("Open", "Add task"). One name per thing (setup, main chat, Original chat). State the consequence before the click ("This becomes your main chat"). Never invent progress words, causes or features.
+9. **Never do.**
+   - Accent-coloured text for actions inside a list.
+   - A horizontally scrolling tab strip.
+   - Layout space reserved for something hidden at rest.
+   - `object-fit: contain` on image previews.
+   - A second card style, a fifth avatar language, or a new pill shape.
+   - A second header or a repeated title.
+   - Status that looks like a button.
+   - The only way to do something hidden in an overflow menu.
+   - Raw colours or raw spacing outside token files.
+   - New rules appended to the end of `style.css` to override old ones.
+   - Swinging a control to the opposite extreme to answer one complaint.
