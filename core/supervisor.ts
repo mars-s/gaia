@@ -18,6 +18,7 @@ import { command, cleanEnv, stop } from "./process.ts";
 import { safeFile, verifyProtected } from "./install.ts";
 import { designPack } from "./design/pack.ts";
 import { recipe } from "./recipe.ts";
+import { previewChange, sourceIdentity, previewImages } from "./preview.ts";
 import { waitHealth } from "./sandbox.ts";
 import { compatible } from "./schema.ts";
 import { probes } from "./probes.ts";
@@ -324,6 +325,15 @@ export class Supervisor {
         "Self-change is disabled in safe mode. Review the failures locally.",
       );
     this.busy = true;
+    if (input.kind === "preview") {
+      try {
+        const entry = this.history.find(change => change.id === input.id && change.outcome === "staged");
+        if (!entry || entry.base !== this.state.active.release) throw new Error("Stale or missing stage. Stage again from the active release.");
+        entry.previews = await previewChange(this.options, entry, input.surfaces);
+        await this.saveHistory();
+        return { ...entry, images: await previewImages(this.options.data, entry) };
+      } finally { this.busy = false; }
+    }
     if (input.kind === "stage") {
       try {
         return await this.stage(input.reason, input.edits);
@@ -348,6 +358,9 @@ export class Supervisor {
       }
       if (entry.base !== this.state.active.release)
         throw new Error("Stale proposal. Stage again from the active release.");
+      if (input.kind === "submit" && /^(?:\+\+\+ b\/|diff --git a\/)apps\/web\//m.test(entry.diff)) {
+        if (!entry.previews || entry.previews.hash !== await sourceIdentity(join(this.options.data, "staging", entry.id))) throw new Error("apps/web: a matching preview is required before submit. Preview this stage again.");
+      }
       entry.outcome = "queued";
       entry.detail =
         "Checks queued. Deployment waits for the current reply to finish.";
@@ -510,6 +523,7 @@ export class Supervisor {
         core,
         dependencies,
         release: previous.release,
+        surfaces: entry.previews?.surfaces ?? [],
         record: async (result) => {
           entry.checks.push(result);
           await this.saveHistory();

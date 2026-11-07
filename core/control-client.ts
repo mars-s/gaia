@@ -8,7 +8,7 @@ export function control(socket: string, command: Command): Promise<unknown> {
         path: "/",
         method: "POST",
         headers: { "content-type": "application/json" },
-        timeout: 15000,
+        timeout: command.kind === "preview" ? 180000 : 15000,
       },
       (res) => {
         let text = "";

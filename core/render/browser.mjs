@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session, nativeTheme } from 'electron';
+import { app, BrowserWindow, session, nativeTheme, nativeImage } from 'electron';
 import fs from 'node:fs';
 import process from 'node:process';
 import { URL } from 'node:url';
@@ -61,7 +61,16 @@ app.whenReady().then(async () => {
     if (!state) {
       const file = `${job.scenario}-${width}-${theme}.png`;
       fs.writeFileSync(job.scratch + '/' + file, (await window.webContents.capturePage(undefined, {stayHidden:true})).toPNG());
-      shots.push({ file, width, theme });
+      const picture = nativeImage.createFromPath(job.scratch + '/' + file);
+      fs.writeFileSync(job.scratch + '/' + file.replace('.png', '.jpg'), picture.toJPEG(75));
+      let changed = 0;
+      if (job.compare) {
+        const previous = nativeImage.createFromPath(job.scratch + '/before/' + file).toBitmap(), current = picture.toBitmap();
+        if (previous.length !== current.length) throw Error('Preview image dimensions differ');
+        const masks = await evaluate(`Array.from(document.querySelectorAll('[data-preview-surface]')).map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right,bottom:r.bottom};})`);
+        for (let pixel = 0; pixel < current.length; pixel += 4) if (!masks.some(r => (pixel/4)%picture.getSize().width >= r.x && (pixel/4)%picture.getSize().width < r.right && Math.floor(pixel/4/picture.getSize().width) >= r.y && Math.floor(pixel/4/picture.getSize().width) < r.bottom) && [0,1,2].some(channel => Math.abs(previous[pixel+channel]-current[pixel+channel]) > 4)) changed++;
+      }
+      shots.push({ file, width, theme, changed: changed / (width * (width === 320 ? 700 : 760)) });
       if (window.isVisible() || window.isFocused()) throw Error("Capture must remain hidden and unfocused");
     }
     await evaluate(fs.readFileSync(job.axe, 'utf8'));

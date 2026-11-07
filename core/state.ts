@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { open, readFile, rename, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import { Surfaces } from "./render/schema.ts";
 export const Pair = z.object({
   release: z.string().regex(/^[a-f0-9]{40}$/),
   generation: z.string().uuid(),
@@ -63,10 +64,12 @@ export const Command = z.discriminatedUnion("kind", [
     reason: z.string().min(1).max(1000),
     edits: z.array(Edit).min(1).max(30),
   }),
+  z.object({ kind: z.literal("preview"), id: z.string().uuid(), surfaces: Surfaces.default([]) }),
   z.object({ kind: z.literal("submit"), id: z.string().uuid() }),
   z.object({ kind: z.literal("revert"), id: z.string().uuid() }),
 ]);
 export type Command = z.infer<typeof Command>;
+export const Preview = z.object({ hash: z.string(), surfaces: Surfaces, shots: z.array(z.object({ name: z.string(), scenario: z.string(), width: z.number(), theme: z.enum(["light", "dark"]), before: z.string(), after: z.string() })), alsoChanged: z.array(z.string()) });
 export const Change = z.object({
   id: z.string().uuid(),
   reason: z.string(),
@@ -85,6 +88,7 @@ export const Change = z.object({
     "interrupted",
   ]),
   detail: z.string(),
+  previews: Preview.optional(),
 });
 export type Change = z.infer<typeof Change>;
 export async function atomic(path: string, value: unknown) {

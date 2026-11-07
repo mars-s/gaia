@@ -6,5 +6,5 @@ export const Surface = z.object({ name: z.string().regex(/^[a-z][a-z0-9-]{0,47}$
   z.object({ kind: z.literal("wait"), ...target }).strict(),
   z.object({ kind: z.literal("press"), key: z.enum(["Escape", "Enter", "Tab", "Space", "ArrowDown", "ArrowUp"]) }).strict(),
 ])).max(8) }).strict();
-export const Surfaces = z.array(Surface).max(6).refine(items => new Set(items.map(item => item.name)).size === items.length, "Surface names must be unique");
+export const Surfaces = z.array(Surface).max(6).refine(items => new Set(items.map(item => item.name)).size === items.length, "Surface names must be unique").refine(items => items.every(item => !["empty", "answer", "proposal", "setups", "failed"].includes(item.name)), "Surface names must not replace baseline screens");
 export type Surface = z.infer<typeof Surface>;

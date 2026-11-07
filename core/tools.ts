@@ -5,7 +5,7 @@ import {
   LiveDoc,
 } from "@earendil-works/pi-durable";
 import { z } from "zod";
-import { Command } from "./state.ts";
+import { Command, Change } from "./state.ts";
 import { control } from "./control-client.ts";
 import { DesignTurns } from "./design/pack.ts";
 export function selfChangeTools(socket: string) {
@@ -66,6 +66,10 @@ export function selfChangeTools(socket: string) {
               try { design = await control(socket, { kind: "design" }); }
               catch (error) { turns.forget(String(api.conversationId)); throw error; }
             }
+          }
+          if (input.kind === "preview") {
+            const preview = z.object({ images: z.array(z.object({ name: z.string(), data: z.string(), mimeType: z.literal("image/jpeg") })) }).parse(result);
+            return { output: [{ type: "text" as const, text: JSON.stringify(Change.parse(result)) }, ...preview.images.flatMap(image => [{ type: "text" as const, text: image.name }, { type: "image" as const, data: image.data, mimeType: image.mimeType }])] };
           }
           return {
             output: [

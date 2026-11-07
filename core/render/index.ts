@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile, realpath, rm, cp } from "node:fs/promises";
 import { join } from "node:path";
 import { command, guarded, cleanEnv, stop } from "../process.ts";
 import { Surfaces, type Surface } from "./schema.ts";
@@ -17,8 +17,8 @@ export async function renderProfile(stage: string, core: string, dependencies: s
   catch (error) { await rm(trusted, { recursive: true, force: true }); throw error; }
   return { policy, trusted };
 }
-export async function renderCandidate({ stage, core, dependencies, surfaces = [] }: { stage: string; core: string; dependencies: string; surfaces?: Surface[] }) {
-  await mkdir(join(stage, "dist"), { recursive: true }); await mkdir(join(core, ".sandbox-profiles"), { recursive: true });
+export async function renderCandidate({ stage, core, dependencies, surfaces = [], before }: { before?: string; stage: string; core: string; dependencies: string; surfaces?: Surface[] }) {
+  await mkdir(join(stage, "dist/web"), { recursive: true }); await mkdir(join(core, ".sandbox-profiles"), { recursive: true });
   const scratch = await mkdtemp(join(stage, "dist/.render-"));
   surfaces = Surfaces.parse(surfaces);
   const webroot = join(scratch, "webroot");
@@ -40,7 +40,8 @@ export async function renderCandidate({ stage, core, dependencies, surfaces = []
         if (server.exitCode !== null || Date.now() > deadline) throw new Error(`Design fixture failed: ${logs.slice(-4000)}`);
         await new Promise(resolve => setTimeout(resolve, 30));
       }
-      const job = join(trusted, "job.json"); await writeFile(job, JSON.stringify({ origin, scratch: data, scenario, surface: surfaces.find(surface => surface.name === scenario), axe: join(dependencies, "axe-core/axe.min.js") }));
+      if (before) await cp(join(before, scenario), join(data, "before"), { recursive: true });
+      const job = join(trusted, "job.json"); await writeFile(job, JSON.stringify({ origin, scratch: data, compare: Boolean(before), scenario, surface: surfaces.find(surface => surface.name === scenario), axe: join(dependencies, "axe-core/axe.min.js") }));
       const electron: string = (await import(join(dependencies, "electron/index.js"))).default;
       // Chromium cannot nest Seatbelt. The verified outer profile confines the whole process tree.
       const output = await command("/usr/bin/sandbox-exec", ["-f", policy, electron, "--no-sandbox", join(core, "core/render/browser.mjs"), job], data, 30000);

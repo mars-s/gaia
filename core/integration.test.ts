@@ -114,6 +114,7 @@ test(
         }),
       );
     const submit = async (entry: Change) => {
+      if (entry.diff.includes("diff --git a/apps/web/")) await control(socket, { kind: "preview", id: entry.id, surfaces: [] });
       await control(socket, { kind: "submit", id: entry.id });
       return finish(entry.id);
     };
