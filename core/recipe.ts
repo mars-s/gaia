@@ -1,4 +1,5 @@
 import { designPack } from "./design/pack.ts";
+import { sourceIdentity } from "./preview.ts";
 import { join } from "node:path";
 import { writeFile, readdir, readFile, rm } from "node:fs/promises";
 import { command, failureDetail } from "./process.ts";
@@ -34,6 +35,7 @@ export async function recipe({
   record,
   surfaces = [],
   data = stage,
+  previewHash,
 }: {
   stage: string;
   core: string;
@@ -42,6 +44,7 @@ export async function recipe({
   record: (result: string) => Promise<void>;
   surfaces?: Surface[];
   data?: string;
+  previewHash?: string;
 }) {
   const profile = await sandboxProfile(stage, core, dependencies);
   const bin = (path: string) => join(dependencies, path);
@@ -140,6 +143,10 @@ export async function recipe({
     stage,
   ]);
   try {
+    if (previewHash && previewHash === (await sourceIdentity(stage))) {
+      await record("rendered design checks: passed (matching trusted preview)");
+      return;
+    }
     surfaces = await readSurfaces(stage);
     const rendered = await renderCandidate({
       stage,

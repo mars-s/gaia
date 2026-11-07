@@ -667,6 +667,7 @@ export class Supervisor {
         dependencies,
         release: previous.release,
         surfaces: entry.previews?.surfaces ?? [],
+        previewHash: entry.previews?.hash,
         record: async (result) => {
           entry.checks.push(result);
           await this.saveHistory();

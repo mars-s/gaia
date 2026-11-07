@@ -241,6 +241,11 @@ test(
           );
           const promotion = await submit(entry);
           assert.equal(promotion.outcome, "accepted", promotion.detail);
+          assert(
+            promotion.checks.includes(
+              "rendered design checks: passed (matching trusted preview)",
+            ),
+          );
           assert.deepEqual(
             (
               await readdir(join(data, "releases", promotion.commit!, "dist"))
