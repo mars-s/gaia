@@ -9,7 +9,8 @@ test("primary controls use white labels and the same AA fill in both themes", ()
   assert.match(theme, /--color-primary-fill: var\(--color-accent-700\)/);
   assert.match(theme, /--color-primary-ink: var\(--color-white\)/);
   const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
-  const colour = /--color-accent-700: oklch\(([\d.]+)% ([\d.]+) ([\d.]+)\)/.exec(css);
+  const tokens = readFileSync(new URL("./styles/tokens.css", import.meta.url), "utf8");
+  const colour = /--color-accent-700: oklch\(([\d.]+)% ([\d.]+) ([\d.]+)\)/.exec(tokens);
   assert(colour);
   const lightness = Number(colour[1]) / 100;
   const chroma = Number(colour[2]);
