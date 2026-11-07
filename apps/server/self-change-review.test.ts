@@ -18,6 +18,7 @@ const output = [{ type: "text" as const, text: JSON.stringify({ id: "08c519e7-e9
 
 test("critic rubric matches protected compact questions and rejects malformed scores or evidence", async () => {
   for (const question of readFileSync("core/design/rubric-compact.md", "utf8").trim().split("\n")) assert(criticPrompt.includes(question));
+  for (const stable of ["never per-row Make main", "heading opens a listbox", "compact proposal card", "zero reserved space", "16 px solid plus 16 px fade", "never a hash", "cover-cropped", "Stop matches"]) assert(criticPrompt.includes(stable));
   assert(!Critique.safeParse({ ...critique, score: 11 }).success);
   assert(!Critique.safeParse({ ...critique, blocking: Array(6).fill(critique.blocking[0]) }).success);
   const faux = fauxProvider({ provider: "openai-codex", models: [{ id: "gpt-6.1-sol" }], tokensPerSecond: 100000 });
