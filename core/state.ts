@@ -56,6 +56,7 @@ export function patchText(source: string, edit: Edit) {
 export const Command = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("status") }),
   z.object({ kind: z.literal("history") }),
+  z.object({ kind: z.literal("design") }),
   z.object({ kind: z.literal("read"), path: z.string() }),
   z.object({
     kind: z.literal("stage"),

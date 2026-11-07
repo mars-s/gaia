@@ -16,6 +16,7 @@ import {
 } from "./state.ts";
 import { command, cleanEnv, stop } from "./process.ts";
 import { safeFile, verifyProtected } from "./install.ts";
+import { designPack } from "./design/pack.ts";
 import { recipe } from "./recipe.ts";
 import { waitHealth } from "./sandbox.ts";
 import { compatible } from "./schema.ts";
@@ -302,6 +303,7 @@ export class Supervisor {
         selfModification: this.state.kind !== "safe",
       };
     if (input.kind === "history") return { version: 1, changes: this.history };
+    if (input.kind === "design") return { design: await designPack(join(this.options.data, "releases", this.state.active.release), this.options.core) };
     if (input.kind === "read") {
       const root = join(
         this.options.data,

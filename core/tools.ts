@@ -2,11 +2,14 @@ import {
   defineExtension,
   defineTool,
   section,
+  LiveDoc,
 } from "@earendil-works/pi-durable";
 import { z } from "zod";
 import { Command } from "./state.ts";
 import { control } from "./control-client.ts";
+import { DesignTurns } from "./design/pack.ts";
 export function selfChangeTools(socket: string) {
+  const turns = new DesignTurns();
   return defineExtension({
     name: "gaia-self-change",
     sections: [
@@ -27,7 +30,7 @@ export function selfChangeTools(socket: string) {
             command: {
               type: "string",
               description:
-                'JSON command. Examples: {"kind":"read","path":"apps/web/main.tsx"}, {"kind":"stage","reason":"Add a heading","edits":[{"path":"apps/web/main.tsx","find":"exact existing text","replace":"replacement text"}]}, {"kind":"submit","id":"UUID"}, {"kind":"history"}, {"kind":"status"}, {"kind":"revert","id":"UUID"}.',
+                'JSON command. Use {"kind":"design"} for the current UI design pack. The first UI read or stage in each turn automatically includes it. Examples: {"kind":"read","path":"apps/web/main.tsx"}, {"kind":"stage","reason":"Add a heading","edits":[{"path":"apps/web/main.tsx","find":"exact existing text","replace":"replacement text"}]}, {"kind":"submit","id":"UUID"}, {"kind":"history"}, {"kind":"status"}, {"kind":"revert","id":"UUID"}.',
             },
             activity: {
               type: "string",
@@ -53,11 +56,22 @@ export function selfChangeTools(socket: string) {
               context,
             );
           const input = Command.parse(JSON.parse(inputArgs.command));
+          const result = await control(socket, input);
+          const ui = (input.kind === "read" && input.path.startsWith("apps/web/")) || (input.kind === "stage" && input.edits.some(edit => edit.path.startsWith("apps/web/")));
+          let design: unknown;
+          if (ui) {
+            const live = await api.snapshot(LiveDoc, api.conversationId, context);
+            const turn = String(live?.run?.first ?? live?.run?.inputs.join(",") ?? api.taskId);
+            if (turns.first(String(api.conversationId), turn)) {
+              try { design = await control(socket, { kind: "design" }); }
+              catch (error) { turns.forget(String(api.conversationId)); throw error; }
+            }
+          }
           return {
             output: [
               {
                 type: "text",
-                text: JSON.stringify(await control(socket, input)),
+                text: JSON.stringify(design === undefined ? result : { result, design }),
               },
             ],
           };
