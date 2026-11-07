@@ -1,3 +1,4 @@
+import { Action } from "./ui";
 import { useEffect } from "react";
 import { SharedComposer } from "./shared-composer";
 import {
@@ -58,13 +59,13 @@ export function Composer({
       {busyElsewhere && (
         <p role="status" className="text-caption-1-regular text-text-secondary">
           {busyName ?? "Another conversation"} is working.{" "}
-          <button
+          <Action
             type="button"
             className="quiet-action quiet-link"
             onClick={() => controller.select(busy)}
           >
             Open conversation
-          </button>
+          </Action>
         </p>
       )}
       {!controller.safeMode && !controller.workspace.ready() && !offline && (
@@ -72,13 +73,13 @@ export function Composer({
           {controller.workspace.error
             ? "Workspace unavailable."
             : "Checking conversation status…"}{" "}
-          <button
+          <Action
             className="quiet-action quiet-link"
             type="button"
             onClick={() => void controller.workspace.refresh()}
           >
             Retry
-          </button>
+          </Action>
         </p>
       )}
       {scope.kind === "area" &&
@@ -102,12 +103,12 @@ export function Composer({
           className="flex flex-wrap items-center gap-2 text-text-secondary"
         >
           <p>{state.message}</p>
-          <button
+          <Action
             className="quiet-action"
             onClick={() => void entry.draft.load()}
           >
             Retry draft
-          </button>
+          </Action>
         </div>
       ) : state.kind === "ready" && state.durability === "memory" ? (
         <div
@@ -115,12 +116,12 @@ export function Composer({
           className="flex flex-wrap items-center gap-2 text-text-secondary"
         >
           <p>Your draft is kept in this window. Storage is unavailable.</p>
-          <button
+          <Action
             className="quiet-action"
             onClick={() => entry.draft.retrySave()}
           >
             Retry saving
-          </button>
+          </Action>
         </div>
       ) : null}
       {images.length > 0 && !supportsImages && (

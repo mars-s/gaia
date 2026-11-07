@@ -1,3 +1,4 @@
+import { Action } from "../ui";
 import { sessionTiles } from "../session-tiles";
 import { setupContext } from "../setup-context";
 import { SetupGlyph } from "../setup-glyph";
@@ -168,7 +169,7 @@ export function ExperienceConversation({
           </Button>
         ); })}
       </div>
-      <button
+      <Action
         type="button"
         className="quiet-action sidebar-new disabled:cursor-not-allowed"
         disabled={creating}
@@ -186,7 +187,7 @@ export function ExperienceConversation({
           <RiAddLine className="size-4" aria-hidden />
         </span>
         <span>{newLabel}</span>
-      </button>
+      </Action>
       {adding && (
         <form
           className="mt-3 flex flex-col gap-3"
@@ -236,10 +237,10 @@ export function ExperienceConversation({
         </form>
       )}
       <div className="sidebar-footer">
-        <button className="quiet-action sidebar-original" onClick={() => { controller.original(); onOriginal?.(); setNavigation(false); }}>
+        <Action className="quiet-action sidebar-original" onClick={() => { controller.original(); onOriginal?.(); setNavigation(false); }}>
           <span className="sidebar-glyph"><SetupGlyph layout="single" /></span>
           <span>Original chat</span>
-        </button>
+        </Action>
       </div>
     </nav>
   );
@@ -257,14 +258,14 @@ export function ExperienceConversation({
         <div className="app-bar-column reading-column">
           <div className="flex min-w-0 items-center gap-2">
             {layout !== "single" && (
-              <button
+              <Action
                 ref={toggle}
                 className="quiet-action app-control drawer-toggle"
                 aria-label={`Open ${collection}`}
                 onClick={() => setNavigation(true)}
               >
                 <RiMenuLine className="size-5" aria-hidden />
-              </button>
+              </Action>
             )}
             {layout === "single" ? switcher : <div className="scope-title">{scopeHead}<span className="narrow-setup-context">{profile.profile.plan.title}</span></div>}
           </div>
@@ -512,23 +513,23 @@ function ScopeConversation({
         {saved.kind === "error" && (
           <p role="alert">
             {saved.message}{" "}
-            <button
+            <Action
               className="quiet-action quiet-link"
               onClick={() => void entry.draft.load()}
             >
               Retry draft
-            </button>
+            </Action>
           </p>
         )}
         {saved.kind === "ready" && saved.durability === "memory" && (
           <p role="alert" className="text-text-secondary">
             Your draft is kept in this window. Storage is unavailable.{" "}
-            <button
+            <Action
               className="quiet-action quiet-link"
               onClick={() => entry.draft.retrySave()}
             >
               Retry saving
-            </button>
+            </Action>
           </p>
         )}
         {entry.reading > 0 && (
@@ -739,16 +740,16 @@ function JobRows({
             </ErrorMessage>
           )}
         {jobActive(job) ? (
-          <button
+          <Action
             className="quiet-action quiet-link"
             disabled={entry.actions.has(job.id) || state.kind === "stopping"}
             aria-label={`Stop ${job.title}`}
             onClick={() => void controller.stop(scope, job)}
           >
             Stop
-          </button>
+          </Action>
         ) : (
-          <button
+          <Action
             className="secondary-action retry-button"
             disabled={entry.actions.has(job.id)}
             onClick={() =>
@@ -758,7 +759,7 @@ function JobRows({
             }
           >
             Try again
-          </button>
+          </Action>
         )}
       </ProgressRow>
       {state.kind === "failed" && (
@@ -813,12 +814,12 @@ export function RetryConfirmation({
           ? "This action may already have happened. Trying again could repeat it."
           : "Gaia already started an action in this attempt. Trying again runs the whole request again, so that action may happen twice."}
       </p>
-      <button className="quiet-action quiet-link" disabled={disabled} onClick={onConfirm}>
+      <Action className="quiet-action quiet-link" disabled={disabled} onClick={onConfirm}>
         {uncertain ? "Repeat action" : "Run it again"}
-      </button>
-      <button className="quiet-action quiet-link" onClick={onCancel}>
+      </Action>
+      <Action className="quiet-action quiet-link" onClick={onCancel}>
         Cancel
-      </button>
+      </Action>
     </div>
   );
 }

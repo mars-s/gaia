@@ -1,3 +1,4 @@
+import { Action } from "./ui";
 import { ProposalCardContent } from "./proposal-card";
 import { useState } from "react";
 import { Button } from "@/components/base/buttons/button";
@@ -131,7 +132,7 @@ export function ProfilePanel({
         </>
       ) : null}
       {!account && state.kind !== "ready" && state.kind !== "skipped" && (
-        <button
+        <Action
           className="quiet-action text-text-secondary"
           disabled={skipDisabled}
           onClick={() => onAction("skip")}
@@ -139,7 +140,7 @@ export function ProfilePanel({
           {state.kind === "interview" || state.kind === "proposed"
             ? "Skip interview"
             : "Not now"}
-        </button>
+        </Action>
       )}
       {account && state.kind !== "new" && (
         <>

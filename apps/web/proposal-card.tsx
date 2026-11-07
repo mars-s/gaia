@@ -1,3 +1,4 @@
+import { Action } from "./ui";
 import type { ReactNode } from "react";
 import { StatusPill } from "./status-pill";
 import { Button } from "./components/base/buttons/button";
@@ -26,7 +27,7 @@ export function ProposalCardContent({ title, status, body, children, primary, pr
     {children}
     <div className="proposal-actions flex flex-wrap items-center gap-3">
       <Button aria-label={primaryLabel} variant="primary" size="small" disabled={disabled} onClick={onAccept}>{primary}</Button>
-      <button className="quiet-action text-text-secondary" disabled={skipDisabled} onClick={onDismiss}>Not now</button>
+      <Action className="quiet-action text-text-secondary" disabled={skipDisabled} onClick={onDismiss}>Not now</Action>
     </div>
   </>;
 }

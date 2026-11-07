@@ -1,3 +1,4 @@
+import { Action } from "./ui";
 import { RiFileCopyLine, RiCheckLine } from "@remixicon/react";
 import {
   useEffect,
@@ -25,7 +26,7 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
-    <button
+    <Action
       type="button"
       className="copy-action quiet-action"
       aria-label={label}
@@ -49,6 +50,6 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
       <span className="sr-only" aria-live="polite">
         {status}
       </span>
-    </button>
+    </Action>
   );
 }

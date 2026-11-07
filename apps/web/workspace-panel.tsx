@@ -1,3 +1,4 @@
+import { Action } from "./ui";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
 import type {
@@ -23,9 +24,9 @@ export function WorkspaceProposalPanel({
     return error ? (
       <p role="alert" className="text-caption-1-regular text-text-secondary">
         Workspace could not be loaded.{" "}
-        <button type="button" className="quiet-action quiet-link" onClick={onRetry}>
+        <Action type="button" className="quiet-action quiet-link" onClick={onRetry}>
           Retry setup
-        </button>
+        </Action>
       </p>
     ) : null;
   const proposal = state.proposal;
@@ -71,9 +72,9 @@ export function WorkspaceProposalPanel({
       {error && (
         <p role="alert" className="text-text-error-primary">
           {error}{" "}
-          <button type="button" className="quiet-action quiet-link" onClick={onRetry}>
+          <Action type="button" className="quiet-action quiet-link" onClick={onRetry}>
             Refresh proposal
-          </button>
+          </Action>
         </p>
       )}
       <Button
@@ -122,7 +123,7 @@ export function WorkspaceNavigation({
             ? selected.kind === "home"
             : selected.kind === "area" && selected.areaId === scope.areaId;
         return (
-          <button
+          <Action
             key={scope.kind === "home" ? "home" : scope.areaId}
             type="button"
             title={purpose}
@@ -134,7 +135,7 @@ export function WorkspaceNavigation({
             onClick={() => onSelect(scope)}
           >
             {label}
-          </button>
+          </Action>
         );
       })}
     </nav>

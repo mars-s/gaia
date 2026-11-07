@@ -1,3 +1,4 @@
+import { Action } from "./ui";
 import type { ReactNode } from "react";
 
 export const starters = ["Help me plan my week", "Give me separate Bots for home, study and work", "What can you do on this machine?"] as const;
@@ -16,7 +17,7 @@ export function EmptyChat({
       <div className="empty-composition">
         {avatar}
         <h1 className="text-hero">{text}</h1>
-        {onStarter && <ul className="starter-list" aria-label="Suggestions">{starters.map(text => <li key={text}><button className="starter" onClick={() => onStarter(text)}>{text}</button></li>)}</ul>}
+        {onStarter && <ul className="starter-list" aria-label="Suggestions">{starters.map(text => <li key={text}><Action className="starter" onClick={() => onStarter(text)}>{text}</Action></li>)}</ul>}
       </div>
     </div>
   );

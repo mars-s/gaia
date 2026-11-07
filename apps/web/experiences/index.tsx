@@ -1,3 +1,4 @@
+import { Action } from "../ui";
 import { SettingsHeading } from "../settings-index";
 import { StatusPill } from "../status-pill";
 import { Menu } from "@base-ui/react/menu";
@@ -157,12 +158,12 @@ export function SetupSettings({
       {controller.error && (
         <p role="alert" className="text-text-error-primary">
           {controller.error}{" "}
-          <button
+          <Action
             className="quiet-action quiet-link"
             onClick={() => void controller.refresh()}
           >
             Retry
-          </button>
+          </Action>
         </p>
       )}
       <ul className="flex w-full min-w-0 flex-col divide-y divide-separator-border">
@@ -280,10 +281,10 @@ export function SetupSettings({
           }}
         />
       )}
-      <button className="quiet-action setup-create" disabled={pending} onClick={() => setCreating(!creating)}>
+      <Action className="quiet-action setup-create" disabled={pending} onClick={() => setCreating(!creating)}>
         <RiAddLine aria-hidden="true" size={16} />
         {creating ? "Cancel" : "Create a setup manually"}
-      </button>
+      </Action>
       {creating && (
         <ProposalForm
           disabled={pending}

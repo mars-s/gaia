@@ -1,3 +1,4 @@
+import { Action } from "./ui";
 import { type ReactNode } from "react";
 import { RiErrorWarningLine } from "@remixicon/react";
 import { Button } from "./components/base/buttons/button";
@@ -67,9 +68,9 @@ export function ReplyNotice({
           {message.includes("Settings") ? (
             <>
               {message.split("Settings")[0]}
-              <button className="inline-link" onClick={onSettings}>
+              <Action className="inline-link" onClick={onSettings}>
                 Settings
-              </button>
+              </Action>
               .
             </>
           ) : (
@@ -103,9 +104,9 @@ export function FailurePath({
     return (
       <p className="failure-path">
         If this keeps happening, check your plan in{" "}
-        <button className="inline-link" onClick={onSettings}>
+        <Action className="inline-link" onClick={onSettings}>
           Settings
-        </button>
+        </Action>
         .
       </p>
     );

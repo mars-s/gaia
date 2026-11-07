@@ -1,3 +1,4 @@
+import { IconButton } from "./ui";
 import { cx } from "./utils/cx";
 import { useEffect, useState } from "react";
 import { RiCloseLine, RiImageLine } from "@remixicon/react";
@@ -41,14 +42,14 @@ function Thumbnail({
       )}
       {remove && <div className="draft-file-copy"><p title={name}>{name}</p><p>{mimeType === "image/png" ? "PNG image" : mimeType === "image/jpeg" ? "JPEG image" : "WebP image"}{failed ? ", preview unavailable" : ""}</p></div>}
       {remove && (
-        <button
+        <IconButton
           type="button"
           className="remove-image"
-          aria-label={`Remove ${name}`}
+          label={`Remove ${name}`}
           onClick={remove}
         >
           <RiCloseLine className="size-3.5" aria-hidden />
-        </button>
+        </IconButton>
       )}
       {!remove && <figcaption>
         {name}
