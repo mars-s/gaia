@@ -132,13 +132,19 @@ test("SIGKILL of a command owner still kills its hanging process group", async (
 
 test("failure detail keeps the final 40 lines and at most 4 KB of UTF-8 with stage-relative paths", () => {
   const stage = "/private/tmp/gaia-stage";
-  const lines = Array.from({ length: 80 }, (_, index) => `${stage}/apps/web/fixture.test.ts:${index} failed`);
+  const lines = Array.from(
+    { length: 80 },
+    (_, index) => `${stage}/apps/web/fixture.test.ts:${index} failed`,
+  );
   const detail = failureDetail(new Error(lines.join("\n")), stage);
   assert.equal(detail.split("\n").length, 40);
   assert.match(detail, /^apps\/web\/fixture.test.ts:40/);
   assert.match(detail, /fixture.test.ts:79 failed$/);
   assert.doesNotMatch(detail, /private\/tmp/);
-  const long = failureDetail(new Error("é".repeat(6000) + "ASSERTION END"), stage);
+  const long = failureDetail(
+    new Error("é".repeat(6000) + "ASSERTION END"),
+    stage,
+  );
   assert(Buffer.byteLength(long) <= 4096);
   assert(long.endsWith("ASSERTION END"));
   assert.doesNotMatch(long, /\uFFFD/);
@@ -146,8 +152,17 @@ test("failure detail keeps the final 40 lines and at most 4 KB of UTF-8 with sta
 
 test("failure details remove core, dependency, data and home paths as well as stage paths", () => {
   const stage = "/Users/private-owner/gaia/data/staging/id";
-  const roots = ["/Users/private-owner/gaia/core", "/Users/private-owner/gaia/data/dependencies", "/Users/private-owner/gaia/data", "/Users/private-owner"];
-  const output = failureDetail(new Error([stage, ...roots.map(root => root + "/sentinel")].join("\n")), stage, roots);
+  const roots = [
+    "/Users/private-owner/gaia/core",
+    "/Users/private-owner/gaia/data/dependencies",
+    "/Users/private-owner/gaia/data",
+    "/Users/private-owner",
+  ];
+  const output = failureDetail(
+    new Error([stage, ...roots.map((root) => root + "/sentinel")].join("\n")),
+    stage,
+    roots,
+  );
   for (const root of [stage, ...roots]) assert(!output.includes(root));
   assert(!output.includes("private-owner"));
   assert(output.includes("sentinel"));

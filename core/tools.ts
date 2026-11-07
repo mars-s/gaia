@@ -2,15 +2,12 @@ import {
   defineExtension,
   defineTool,
   section,
-  LiveDoc,
 } from "@earendil-works/pi-durable";
 import { z } from "zod";
 import { Command, Change } from "./state.ts";
 import { control } from "./control-client.ts";
 import { reviewPreview } from "./critic.ts";
-import { DesignTurns } from "./design/pack.ts";
 export function selfChangeTools(socket: string) {
-  const turns = new DesignTurns();
   return defineExtension({
     name: "gaia-self-change",
     sections: [
@@ -57,37 +54,74 @@ export function selfChangeTools(socket: string) {
               context,
             );
           const input = Command.parse(JSON.parse(inputArgs.command));
-          if (input.kind === "review") throw new Error("The model cannot supply its own critic review or score.");
+          if (input.kind === "review")
+            throw new Error(
+              "The model cannot supply its own critic review or score.",
+            );
           let result = await control(socket, input);
-          const ui = (input.kind === "read" && input.path.startsWith("apps/web/")) || (input.kind === "stage" && input.edits.some(edit => edit.path.startsWith("apps/web/")));
-          let design: unknown;
-          let designError: string | undefined;
-          if (ui) {
-            const live = await api.snapshot(LiveDoc, api.conversationId, context);
-            const turn = String(live?.run?.first ?? live?.run?.inputs.join(",") ?? api.taskId);
-            if (turns.first(String(api.conversationId), turn)) {
-              try { design = await control(socket, { kind: "design" }); }
-              catch { turns.forget(String(api.conversationId)); designError = "Design pack unavailable. The command succeeded."; }
-            }
-          }
           if (input.kind === "preview") {
-            const preview = z.object({ images: z.array(z.object({ name: z.string(), data: z.string(), mimeType: z.literal("image/jpeg") })) }).parse(result);
+            const preview = z
+              .object({
+                images: z.array(
+                  z.object({
+                    name: z.string(),
+                    data: z.string(),
+                    mimeType: z.literal("image/jpeg"),
+                  }),
+                ),
+              })
+              .parse(result);
             let reviewError: string | undefined;
             try {
-              const output = preview.images.flatMap(image => [{ type: "text" as const, text: image.name }, { type: "image" as const, data: image.data, mimeType: image.mimeType }]);
-              const critique = await reviewPreview({ models: api.models, model: (await api.agent(context)).model, output });
+              const output = preview.images.flatMap((image) => [
+                { type: "text" as const, text: image.name },
+                {
+                  type: "image" as const,
+                  data: image.data,
+                  mimeType: image.mimeType,
+                },
+              ]);
+              const critique = await reviewPreview({
+                models: api.models,
+                model: (await api.agent(context)).model,
+                output,
+              });
               const entry = Change.parse(result);
-              result = await control(socket, { kind: "review", id: entry.id, hash: entry.previews!.hash, critique });
+              result = await control(socket, {
+                kind: "review",
+                id: entry.id,
+                hash: entry.previews!.hash,
+                critique,
+              });
             } catch {
-              reviewError = "The separate plan review was unavailable. Preview checks passed. You may submit; no critic score was recorded.";
+              reviewError =
+                "The separate plan review was unavailable. Preview checks passed. You may submit; no critic score was recorded.";
             }
-            return { output: [{ type: "text" as const, text: JSON.stringify(Change.parse(result)) }, ...(reviewError ? [{type: "text" as const, text: reviewError}] : []), ...preview.images.flatMap(image => [{ type: "text" as const, text: image.name }, { type: "image" as const, data: image.data, mimeType: image.mimeType }])] };
+            return {
+              output: [
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(Change.parse(result)),
+                },
+                ...(reviewError
+                  ? [{ type: "text" as const, text: reviewError }]
+                  : []),
+                ...preview.images.flatMap((image) => [
+                  { type: "text" as const, text: image.name },
+                  {
+                    type: "image" as const,
+                    data: image.data,
+                    mimeType: image.mimeType,
+                  },
+                ]),
+              ],
+            };
           }
           return {
             output: [
               {
                 type: "text",
-                text: JSON.stringify(designError ? { result, designError } : design === undefined ? result : { result, design }),
+                text: JSON.stringify(result),
               },
             ],
           };

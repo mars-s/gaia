@@ -7,9 +7,22 @@ import { renderCandidate } from "./render/index.ts";
 test("a failing render removes its scratch directory", async () => {
   const stage = await mkdtemp("/private/tmp/gaia-render-cleanup-");
   try {
-    await assert.rejects(renderCandidate({ stage, core: resolve("."), dependencies: resolve("node_modules") }));
-    assert.deepEqual((await readdir(join(stage, "dist"))).filter(name => name.startsWith(".render-")), []);
-  } finally { await rm(stage, { recursive: true, force: true }); }
+    await assert.rejects(
+      renderCandidate({
+        stage,
+        core: resolve("."),
+        dependencies: resolve("node_modules"),
+      }),
+    );
+    assert.deepEqual(
+      (await readdir(join(stage, "dist"))).filter((name) =>
+        name.startsWith(".render-"),
+      ),
+      [],
+    );
+  } finally {
+    await rm(stage, { recursive: true, force: true });
+  }
 });
 
 test("preview retention keeps one active cache and at most ten changes", async () => {
@@ -29,5 +42,7 @@ test("preview retention keeps one active cache and at most ten changes", async (
     assert.equal((await readdir(join(data, "previews/changes"))).length, 10);
     await prunePreviews(data, "0", "1", "2");
     assert.equal((await readdir(join(data, "previews/changes"))).length, 10);
-  } finally { await rm(data, { recursive: true, force: true }); }
+  } finally {
+    await rm(data, { recursive: true, force: true });
+  }
 });

@@ -21,16 +21,57 @@ Stable design answers are fixed. Main chat uses one Settings row with a menu but
 Fixed owner choices are never defects: pixel robots bot-00 to bot-07 in Bots; avatar pulse and Stop without words until real activity, then agent-supplied task-specific progress, never timers or generic phrases; Australian English, curly apostrophes, no long dashes; true statements only; Pi subscription backend with no API-key UI.
 Return only JSON with critic:"advisory", score:0..10, summary, blocking:[{issue,shots:[exact screenshot names]}] (at most five), minor:[{issue,shots:[exact screenshot names]}]. Blocking means a design concern, never permission to veto submission. Do not infer behaviours the screenshots do not show.`;
 
-export async function reviewPreview({ models, model, output }: { models: Models; model: ModelRef | undefined; output: ToolExecutionResult["output"] }): Promise<Critique> {
-  const selected = model && ["openai-codex", "anthropic"].includes(model.provider) ? models.getModel(model.provider, model.modelId) : undefined;
-  if (!selected) throw new Error("A connected ChatGPT or Claude plan model is required for review.");
-  const content = (output ?? []).filter(block => block.type === "image" || (block.type === "text" && /^(before|after)-[a-z0-9-]+\.jpg$/.test(block.text)));
-  if (!content.some(block => block.type === "image")) throw new Error("Preview screenshots are required for review.");
-  const response = await models.completeSimple(selected, { systemPrompt: criticPrompt, messages: [{ role: "user", content, timestamp: Date.now() }] }, { reasoning: "high", maxTokens: 2500, signal: AbortSignal.timeout(90000) });
-  if (response.stopReason === "error" || response.stopReason === "aborted") throw new Error("Plan review did not finish.");
-  const value = Critique.parse(JSON.parse(response.content.filter(block => block.type === "text").map(block => block.text).join("")));
-  const names = new Set(content.filter(block => block.type === "text").map(block => block.text));
-  if ([...value.blocking, ...value.minor].some(issue => issue.shots.some(shot => !names.has(shot)))) throw new Error("Review cited an unknown screenshot.");
+export async function reviewPreview({
+  models,
+  model,
+  output,
+}: {
+  models: Models;
+  model: ModelRef | undefined;
+  output: ToolExecutionResult["output"];
+}): Promise<Critique> {
+  const selected =
+    model && ["openai-codex", "anthropic"].includes(model.provider)
+      ? models.getModel(model.provider, model.modelId)
+      : undefined;
+  if (!selected)
+    throw new Error(
+      "A connected ChatGPT or Claude plan model is required for review.",
+    );
+  const content = (output ?? []).filter(
+    (block) =>
+      block.type === "image" ||
+      (block.type === "text" &&
+        /^(before|after)-[a-z0-9-]+\.jpg$/.test(block.text)),
+  );
+  if (!content.some((block) => block.type === "image"))
+    throw new Error("Preview screenshots are required for review.");
+  const response = await models.completeSimple(
+    selected,
+    {
+      systemPrompt: criticPrompt,
+      messages: [{ role: "user", content, timestamp: Date.now() }],
+    },
+    { reasoning: "high", maxTokens: 2500, signal: AbortSignal.timeout(90000) },
+  );
+  if (response.stopReason === "error" || response.stopReason === "aborted")
+    throw new Error("Plan review did not finish.");
+  const value = Critique.parse(
+    JSON.parse(
+      response.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join(""),
+    ),
+  );
+  const names = new Set(
+    content.filter((block) => block.type === "text").map((block) => block.text),
+  );
+  if (
+    [...value.blocking, ...value.minor].some((issue) =>
+      issue.shots.some((shot) => !names.has(shot)),
+    )
+  )
+    throw new Error("Review cited an unknown screenshot.");
   return value;
 }
-

@@ -177,8 +177,25 @@ app.server.on("request", async (req, res) => {
         );
       if (req.method === "GET" && action.startsWith("images/")) {
         const [, id, file] = action.split("/");
-        const image = z.object({ data: z.string(), mimeType: z.literal("image/jpeg") }).parse(await control(env.GAIA_CONTROL_SOCKET, (await import("./state.ts")).Command.parse({ kind: "image", id, file })));
-        res.writeHead(200, { "Content-Type": image.mimeType, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }); res.end(Buffer.from(image.data, "base64")); return;
+        const image = z
+          .object({ data: z.string(), mimeType: z.literal("image/jpeg") })
+          .parse(
+            await control(
+              env.GAIA_CONTROL_SOCKET,
+              (await import("./state.ts")).Command.parse({
+                kind: "image",
+                id,
+                file,
+              }),
+            ),
+          );
+        res.writeHead(200, {
+          "Content-Type": image.mimeType,
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+        });
+        res.end(Buffer.from(image.data, "base64"));
+        return;
       }
       if (
         req.method !== "POST" ||

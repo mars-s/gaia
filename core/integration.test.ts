@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, writeFile, readdir } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  writeFile,
+  readdir,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -114,7 +121,8 @@ test(
         }),
       );
     const submit = async (entry: Change) => {
-      if (entry.diff.includes("diff --git a/apps/web/")) await control(socket, { kind: "preview", id: entry.id, surfaces: [] });
+      if (entry.diff.includes("diff --git a/apps/web/"))
+        await control(socket, { kind: "preview", id: entry.id, surfaces: [] });
       await control(socket, { kind: "submit", id: entry.id });
       return finish(entry.id);
     };
@@ -233,13 +241,37 @@ test(
           );
           const promotion = await submit(entry);
           assert.equal(promotion.outcome, "accepted", promotion.detail);
-          assert.deepEqual((await readdir(join(data, "releases", promotion.commit!, "dist"))).filter(name => name.startsWith(".render-")), []);
-          const shot = promotion.previews?.shots[0]; assert(shot);
-          const image = await fetch(`${base}/api/v1/selfmod/images/${promotion.id}/${shot.after}`);
-          assert.equal(image.status, 200); assert.equal(image.headers.get("content-type"), "image/jpeg");
+          assert.deepEqual(
+            (
+              await readdir(join(data, "releases", promotion.commit!, "dist"))
+            ).filter((name) => name.startsWith(".render-")),
+            [],
+          );
+          const shot = promotion.previews?.shots[0];
+          assert(shot);
+          const image = await fetch(
+            `${base}/api/v1/selfmod/images/${promotion.id}/${shot.after}`,
+          );
+          assert.equal(image.status, 200);
+          assert.equal(image.headers.get("content-type"), "image/jpeg");
           assert((await image.arrayBuffer()).byteLength > 1000);
-          assert.equal((await fetch(`${base}/api/v1/selfmod/images/${promotion.id}/${shot.after}`, { headers: { "sec-fetch-site": "cross-site" } })).status, 403);
-          assert.equal((await fetch(`${base}/api/v1/selfmod/images/${promotion.id}/after-missing.jpg`)).status, 400);
+          assert.equal(
+            (
+              await fetch(
+                `${base}/api/v1/selfmod/images/${promotion.id}/${shot.after}`,
+                { headers: { "sec-fetch-site": "cross-site" } },
+              )
+            ).status,
+            403,
+          );
+          assert.equal(
+            (
+              await fetch(
+                `${base}/api/v1/selfmod/images/${promotion.id}/after-missing.jpg`,
+              )
+            ).status,
+            400,
+          );
           const newHtml = await (await fetch(base + "/")).text();
           const newCssPath = /href="([^"]+\.css)"/.exec(newHtml)?.[1];
           assert(newCssPath);
@@ -272,7 +304,11 @@ test(
           );
           const result = await finish(reverted.id);
           assert.equal(result.outcome, "accepted", result.detail);
-          assert.equal(result.previews?.shots.length, 20, "Revert retains its own before and after shots");
+          assert.equal(
+            result.previews?.shots.length,
+            20,
+            "Revert retains its own before and after shots",
+          );
           const state = await readState(data);
           stable = state.active;
           assert.equal(
@@ -355,7 +391,8 @@ test(
             tokensPerSecond: 100000,
           });
           auth.models.setProvider(faux.provider);
-          auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
+          auth.planAvailability.connectedProviders = () =>
+            new Set(["openai-codex"]);
           const reason = "Model-authored source fixture";
           faux.setResponses([
             (context) => {

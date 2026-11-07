@@ -18,7 +18,12 @@ import { command, cleanEnv, stop, failureDetail } from "./process.ts";
 import { safeFile, verifyProtected } from "./install.ts";
 import { designPack } from "./design/pack.ts";
 import { recipe } from "./recipe.ts";
-import { previewChange, stagedIdentity, previewImages, uiChanged } from "./preview.ts";
+import {
+  previewChange,
+  stagedIdentity,
+  previewImages,
+  uiChanged,
+} from "./preview.ts";
 import { waitHealth } from "./sandbox.ts";
 import { compatible } from "./schema.ts";
 import { probes } from "./probes.ts";
@@ -297,9 +302,16 @@ export class Supervisor {
     }
   }
   async handle(input: Command): Promise<unknown> {
-    try { return await this.dispatch(input); }
-    catch (error) {
-      throw new Error(failureDetail(error, this.options.data, [this.options.core, this.options.dependencies]), { cause: error });
+    try {
+      return await this.dispatch(input);
+    } catch (error) {
+      throw new Error(
+        failureDetail(error, this.options.data, [
+          this.options.core,
+          this.options.dependencies,
+        ]),
+        { cause: error },
+      );
     }
   }
   private async dispatch(input: Command): Promise<unknown> {
@@ -312,11 +324,29 @@ export class Supervisor {
       };
     if (input.kind === "history") return { version: 1, changes: this.history };
     if (input.kind === "image") {
-      const entry = this.history.find(change => change.id === input.id);
-      if (!entry?.previews?.shots.some(shot => shot.before === input.file || shot.after === input.file)) throw new Error("Change image not found");
-      return { data: (await readFile(join(this.options.data, "previews/changes", entry.id, input.file))).toString("base64"), mimeType: "image/jpeg" };
+      const entry = this.history.find((change) => change.id === input.id);
+      if (
+        !entry?.previews?.shots.some(
+          (shot) => shot.before === input.file || shot.after === input.file,
+        )
+      )
+        throw new Error("Change image not found");
+      return {
+        data: (
+          await readFile(
+            join(this.options.data, "previews/changes", entry.id, input.file),
+          )
+        ).toString("base64"),
+        mimeType: "image/jpeg",
+      };
     }
-    if (input.kind === "design") return { design: await designPack(join(this.options.data, "releases", this.state.active.release), this.options.core) };
+    if (input.kind === "design")
+      return {
+        design: await designPack(
+          join(this.options.data, "releases", this.state.active.release),
+          this.options.core,
+        ),
+      };
     if (input.kind === "read") {
       const root = join(
         this.options.data,
@@ -339,33 +369,101 @@ export class Supervisor {
     this.busy = true;
     if (input.kind === "review") {
       try {
-        const entry = this.history.find(change => change.id === input.id && change.outcome === "staged");
-        if (!entry?.previews || entry.previews.hash !== input.hash) throw new Error("Review does not match the preview");
-        entry.critique = input.critique; await this.saveHistory(); return entry;
-      } finally { this.busy = false; }
+        const entry = this.history.find(
+          (change) => change.id === input.id && change.outcome === "staged",
+        );
+        if (!entry?.previews || entry.previews.hash !== input.hash)
+          throw new Error("Review does not match the preview");
+        entry.critique = input.critique;
+        await this.saveHistory();
+        return entry;
+      } finally {
+        this.busy = false;
+      }
     }
     if (input.kind === "preview") {
       this.busy = false;
       this.previewing = true;
       try {
-        const entry = this.history.find(change => change.id === input.id && change.outcome === "staged");
-        if (!entry || entry.base !== this.state.active.release) throw new Error("Stale or missing stage. Stage again from the active release.");
-        delete entry.previews; delete entry.critique; await this.saveHistory();
-        entry.previews = await previewChange(this.options, entry, input.surfaces);
+        const entry = this.history.find(
+          (change) => change.id === input.id && change.outcome === "staged",
+        );
+        if (!entry || entry.base !== this.state.active.release)
+          throw new Error(
+            "Stale or missing stage. Stage again from the active release.",
+          );
+        delete entry.previews;
+        delete entry.critique;
         await this.saveHistory();
-        return { ...entry, images: await previewImages(this.options.data, entry) };
+        entry.previews = await previewChange(
+          this.options,
+          entry,
+          input.surfaces,
+        );
+        await this.saveHistory();
+        return {
+          ...entry,
+          images: await previewImages(this.options.data, entry),
+        };
       } catch (error) {
-        const entry = this.history.find(change => change.id === input.id), paths = Buffer.from(entry?.diff.match(/^diff --git .+$/gm)?.join("; ") ?? "unknown").subarray(0, 1000).toString("utf8"), tail = Buffer.from(failureDetail(error, join(this.options.data, "staging", input.id), [this.options.core, this.options.dependencies, this.options.data]).split("\n").slice(-35).join("\n")).subarray(-2800).toString("utf8"), detail = `Preview failed. Changed files: ${paths}\n${tail}`;
-        if (entry) { entry.checks.push(detail); await this.saveHistory(); } throw new Error(detail, { cause: error });
-      } finally { this.previewing = false; }
+        const entry = this.history.find((change) => change.id === input.id),
+          paths = Buffer.from(
+            entry?.diff.match(/^diff --git .+$/gm)?.join("; ") ?? "unknown",
+          )
+            .subarray(0, 1000)
+            .toString("utf8"),
+          tail = Buffer.from(
+            failureDetail(error, join(this.options.data, "staging", input.id), [
+              this.options.core,
+              this.options.dependencies,
+              this.options.data,
+            ])
+              .split("\n")
+              .slice(-35)
+              .join("\n"),
+          )
+            .subarray(-2800)
+            .toString("utf8"),
+          detail = `Preview failed. Changed files: ${paths}\n${tail}`;
+        if (entry) {
+          entry.checks.push(detail);
+          await this.saveHistory();
+        }
+        throw new Error(detail, { cause: error });
+      } finally {
+        this.previewing = false;
+      }
+    }
+    if (input.kind === "discard") {
+      try {
+        const entry = this.history.find(
+          (change) => change.id === input.id && change.outcome === "staged",
+        );
+        if (!entry) throw new Error("Staged change not found");
+        await command(
+          "git",
+          [
+            "worktree",
+            "remove",
+            "--force",
+            join(this.options.data, "staging", entry.id),
+          ],
+          join(this.options.data, "repo"),
+        );
+        entry.outcome = "interrupted";
+        entry.detail = "Staged draft discarded.";
+        await this.saveHistory();
+        return entry;
+      } finally {
+        this.busy = false;
+      }
     }
     if (input.kind === "stage") {
       try {
         const entry = await this.stage(input.reason, input.edits);
         if (input.source) entry.source = input.source;
-        const older = this.history.find(change => change.id === input.supersedes && change.outcome === "staged" && JSON.stringify(change.source) === JSON.stringify(entry.source));
-        if (older) { older.outcome = "interrupted"; older.detail = "Replaced by a revised proposal."; }
-        await this.saveHistory(); return entry;
+        await this.saveHistory();
+        return entry;
       } finally {
         this.busy = false;
       }
@@ -387,8 +485,18 @@ export class Supervisor {
       }
       if (entry.base !== this.state.active.release)
         throw new Error("Stale proposal. Stage again from the active release.");
-      if (input.kind === "submit" && await uiChanged(join(this.options.data, "staging", entry.id))) {
-        if (!entry.previews || entry.previews.hash !== await stagedIdentity(join(this.options.data, "staging", entry.id))) throw new Error("apps/web: a matching preview is required before submit. Preview this stage again.");
+      if (
+        input.kind === "submit" &&
+        (await uiChanged(join(this.options.data, "staging", entry.id)))
+      ) {
+        if (
+          !entry.previews ||
+          entry.previews.hash !==
+            (await stagedIdentity(join(this.options.data, "staging", entry.id)))
+        )
+          throw new Error(
+            "apps/web: a matching preview is required before submit. Preview this stage again.",
+          );
       }
       entry.outcome = "queued";
       entry.detail =
@@ -423,7 +531,10 @@ export class Supervisor {
     for (const edit of edits) {
       const path = await safeFile(stage, edit.path);
       await mkdir(join(path, ".."), { recursive: true });
-      await writeFile(path, patchText("text" in edit ? "" : await readFile(path, "utf8"), edit));
+      await writeFile(
+        path,
+        patchText("text" in edit ? "" : await readFile(path, "utf8"), edit),
+      );
     }
     await verifyProtected(stage, this.protected);
     await command(
@@ -547,9 +658,10 @@ export class Supervisor {
       entry.outcome = "checking";
       await this.saveHistory();
       await verifyProtected(stage, this.protected);
-      if (!entry.previews && await uiChanged(stage)) entry.previews = await previewChange(this.options, entry, []);
+      if (!entry.previews && (await uiChanged(stage)))
+        entry.previews = await previewChange(this.options, entry, []);
       await recipe({
-    data,
+        data,
         stage,
         core,
         dependencies,
@@ -561,7 +673,13 @@ export class Supervisor {
         },
       });
       await verifyProtected(stage, this.protected);
-      if (entry.previews && entry.previews.hash !== await stagedIdentity(stage)) throw new Error("apps/web: source changed after preview; stage and preview again");
+      if (
+        entry.previews &&
+        entry.previews.hash !== (await stagedIdentity(stage))
+      )
+        throw new Error(
+          "apps/web: source changed after preview; stage and preview again",
+        );
       await command(
         "git",
         [
@@ -639,7 +757,11 @@ export class Supervisor {
       entry.detail = "Code and conversation generation promoted.";
     } catch (error) {
       const outcome = switching ? "rolled-back" : "rejected";
-      entry.detail = failureDetail(error, stage, [this.options.core, this.options.dependencies, this.options.data]);
+      entry.detail = failureDetail(error, stage, [
+        this.options.core,
+        this.options.dependencies,
+        this.options.data,
+      ]);
       const failures = this.state.failures + 1;
       if (switching) await this.halt();
       await this.persist({

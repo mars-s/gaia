@@ -111,10 +111,17 @@ export async function stop(child: ChildProcess) {
   }
 }
 
-export function failureDetail(error: unknown, stage: string, roots: string[] = []): string {
+export function failureDetail(
+  error: unknown,
+  stage: string,
+  roots: string[] = [],
+): string {
   let detail = error instanceof Error ? error.message : String(error);
-  for (const root of [...new Set([stage, ...roots, homedir()])].sort((a, b) => b.length - a.length)) {
-    if (root === stage) detail = detail.replaceAll(`${stage}/`, "").replaceAll(stage, ".");
+  for (const root of [...new Set([stage, ...roots, homedir()])].sort(
+    (a, b) => b.length - a.length,
+  )) {
+    if (root === stage)
+      detail = detail.replaceAll(`${stage}/`, "").replaceAll(stage, ".");
     else if (root.length > 1) detail = detail.replaceAll(root, "<private>");
   }
   const message = detail
@@ -125,5 +132,8 @@ export function failureDetail(error: unknown, stage: string, roots: string[] = [
     .slice(-40)
     .join("\n");
   const bytes = Buffer.from(message);
-  return bytes.subarray(Math.max(0, bytes.length - 4096)).toString("utf8").replace(/^\uFFFD+/, "");
+  return bytes
+    .subarray(Math.max(0, bytes.length - 4096))
+    .toString("utf8")
+    .replace(/^\uFFFD+/, "");
 }
