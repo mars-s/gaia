@@ -29,3 +29,31 @@ test("primary controls use white labels and the same AA fill in both themes", ()
   assert.match(css, /primary-action[^}]*background: var\(--color-primary-fill\);[^}]*color: var\(--color-primary-ink\)/);
   assert.match(css, /composer-send[^}]*background: var\(--color-primary-fill\);[^}]*color: var\(--color-primary-ink\)/);
 });
+
+test("muted ink clears every neutral surface and dark focus clears the strongest surface", () => {
+  const theme = readFileSync(new URL("./styles/theme.css", import.meta.url), "utf8");
+  const values = [...theme.matchAll(/--color-ink-3: oklch\(([\d.]+)% 0 none\)/g)].map(match => Number(match[1]) / 100);
+  assert.equal(values.length, 2);
+  const channel = 235 / 255;
+  const selectedLight = ((channel + .055) / 1.055) ** 2.4;
+  assert((selectedLight + .05) / (values[0] ** 3 + .05) >= 4.6);
+  const selectedDark = .269 ** 3;
+  assert((values[1] ** 3 + .05) / (selectedDark + .05) >= 4.6);
+  const focus = /--color-focus: oklch\(([\d.]+)% ([\d.]+) ([\d.]+)\)/.exec(theme);
+  assert(focus);
+  const L = Number(focus[1]) / 100, C = Number(focus[2]), h = Number(focus[3]) * Math.PI / 180;
+  const a = C * Math.cos(h), b = C * Math.sin(h);
+  const l = (L + .3963377774*a + .2158037573*b) ** 3, m = (L - .1055613458*a - .0638541728*b) ** 3, s = (L - .0894841775*a - 1.291485548*b) ** 3;
+  const rgb = [4.0767416621*l - 3.3077115913*m + .2309699292*s, -1.2684380046*l + 2.6097574011*m - .3413193965*s, -.0041960863*l - .7034186147*m + 1.707614701*s].map(value => Math.max(0, Math.min(1, value)));
+  const luminance = .2126*rgb[0] + .7152*rgb[1] + .0722*rgb[2];
+  assert((luminance + .05) / (selectedDark + .05) >= 3.1);
+});
+
+test("danger hover uses a labelled page fill and a visible focus ring", () => {
+  const css = readFileSync(new URL("./style.css", import.meta.url), "utf8");
+  const kit = readFileSync(new URL("./ui/ui.css", import.meta.url), "utf8");
+  for (const source of [css, kit]) {
+    assert.match(source, /(?:plan-disconnect\.quiet-action|ui-danger):hover \{ background: var\(--color-surface-page\); text-decoration: underline/);
+    assert.match(source, /(?:plan-disconnect\.quiet-action|ui-danger):focus-visible \{ outline: 2px solid var\(--color-focus\); outline-offset: 2px/);
+  }
+});

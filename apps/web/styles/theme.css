@@ -1253,7 +1253,7 @@
   --color-line-strong: var(--color-neutral-300);
   --color-ink: var(--color-neutral-950);
   --color-ink-2: var(--color-neutral-600);
-  --color-ink-3: var(--color-neutral-500);
+  --color-ink-3: oklch(52.1% 0 none);
   --color-accent: var(--color-primary-fill);
   --color-accent-strong: var(--color-accent-600);
   --color-link: var(--color-accent-700);
@@ -1310,7 +1310,7 @@
   --color-line-strong: var(--color-neutral-700);
   --color-ink: var(--color-neutral-50);
   --color-ink-2: var(--color-neutral-400);
-  --color-ink-3: var(--color-neutral-500);
+  --color-ink-3: oklch(64.6% 0 none);
   --color-accent: var(--color-primary-fill);
   --color-accent-strong: var(--color-accent-300);
   --color-link: var(--color-accent-300);
@@ -1318,7 +1318,7 @@
   --color-accent-ink: var(--color-neutral-950);
   --color-accent-soft: var(--color-accent-950);
   --color-danger: var(--color-red-400);
-  --color-focus: var(--color-primary-fill);
+  --color-focus: oklch(57.9% 0.223 3.958);
   --color-danger-soft: color-mix(
     in oklab,
     var(--color-red-400) 16%,

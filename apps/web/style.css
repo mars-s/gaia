@@ -1540,6 +1540,8 @@ nav[aria-label="Bots"] .new-icon { width: 24px; }
 .connection-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: var(--radius-full); background: var(--color-ink-3); }
 .plan-connection[data-connected="true"] .connection-dot { background: var(--color-notification-success-foreground); }
 .settings-content .plan-disconnect.quiet-action { color: var(--color-danger); }
+.settings-content .plan-disconnect.quiet-action:hover { background: var(--color-surface-page); text-decoration: underline; }
+.settings-content .plan-disconnect.quiet-action:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 
 .suggestion-caption { font-size: 12px; line-height: 16px; color: var(--color-ink-2); }

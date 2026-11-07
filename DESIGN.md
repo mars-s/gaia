@@ -9,6 +9,7 @@ The client follows [SPEC.md](SPEC.md). These rules describe the shared design us
    - Radii: xs 4, sm 8, md 12, lg 16, bubble 20, composer 24, full.
    - Motion: hover 150 ms ease, popover 150 ms ease-out, exit 120 ms ease-in, card 200 ms ease-out, drawer 240 ms, pulse 1800 ms. Respect reduced motion.
    - Focus: 2 px `--color-focus` outline, 2 px offset, visible in both themes.
+   - Text inks reach 4.5:1 against their supported surfaces in both themes. Focus reaches 3:1 against every surface. Hairline and control-border tokens are exempt. Never rely on a border alone to identify a control.
 3. **The three button styles** (plus two non-buttons).
    - Primary (`primary-action`): `--color-primary-fill` with white ink, AA in both themes. At most one per surface. It is the one thing the owner most likely does next.
    - Secondary (`secondary-action`): raised surface, hairline, ink text. For every other real action, including "Open" in lists.

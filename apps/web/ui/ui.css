@@ -9,6 +9,8 @@
 .ui-checkbox[data-checked] { background: var(--color-primary-fill); }
 .ui-tooltip { padding: var(--space-row-y) var(--space-row-x); border-radius: var(--radius-sm); background: var(--color-surface-raised); color: var(--color-ink); box-shadow: var(--shadow-level-2); }
 .ui-danger { color: var(--color-danger); margin-inline-start: var(--space-gutter-narrow); }
+.ui-danger:hover { background: var(--color-surface-page); text-decoration: underline; }
+.ui-danger:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 [data-ui="action"][data-size="small"] { min-height: 2rem; }
 [data-ui="action"][data-size="large"] { min-height: 2.75rem; }
 .ui-text-field:focus-visible, .ui-checkbox:focus-visible, .ui-icon-button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
