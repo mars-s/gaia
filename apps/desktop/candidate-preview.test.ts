@@ -33,6 +33,13 @@ test("preview binds hidden fixture shots to source, reuses before shots and leav
     assert.deepEqual(result.previews?.alsoChanged, []);
     const before = join(data, "previews/before"), keys = await readdir(before);
     assert.equal(keys.length, 1);
+    const baseline = join(data, "previews/baseline", release);
+    for (const scenario of await readdir(baseline)) {
+      if (scenario === "ready") continue;
+      const files = await readdir(join(baseline, scenario));
+      assert.equal(files.length, 8);
+      assert(files.every(file => /\.(png|jpg)$/.test(file)), "baseline cache must contain images only");
+    }
     const ready = await readFile(join(before, keys[0], "ready"), "utf8");
     assert.equal(ready, release);
     for (const shot of result.previews!.shots) for (const side of [shot.before, shot.after]) {

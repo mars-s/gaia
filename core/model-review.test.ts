@@ -80,3 +80,102 @@ test("the model cannot submit its own critic review or score", async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("the protected tool records only its independent critic result and a low score stays advisory", async () => {
+  const { createServer } = await import("node:http");
+  const { DatabaseSync } = await import("node:sqlite");
+  const { randomUUID } = await import("node:crypto");
+  const { fauxProvider, fauxAssistantMessage, fauxToolCall } =
+    await import("@earendil-works/pi-ai");
+  const { createAuth } = await import("./auth.ts");
+  const { createPi } = await import("../apps/server/pi.ts");
+  const { selfChangeTools } = await import("./tools.ts");
+  const root = await mkdtemp("/private/tmp/gaia-trusted-critic-");
+  const id = randomUUID(),
+    shot = "after-empty-320-light.jpg";
+  const entry = {
+    id,
+    reason: "Fixture",
+    at: "now",
+    base: "fixture",
+    commit: null,
+    diff: "PRIVATE_DIFF",
+    checks: [],
+    outcome: "staged",
+    detail: "Fixture",
+    previews: { hash: "source", surfaces: [], shots: [], alsoChanged: [] },
+  };
+  const critique = {
+    critic: "advisory",
+    score: 1,
+    summary: "Independent concern",
+    blocking: [{ issue: "Too busy", shots: [shot] }],
+    minor: [],
+  };
+  let saved = 0;
+  const server = createServer(async (request, response) => {
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    const input = JSON.parse(body);
+    if (input.kind === "review") {
+      saved++;
+      assert.equal(input.hash, "source");
+      assert.deepEqual(input.critique, critique);
+      response.end(JSON.stringify({ ...entry, critique: input.critique }));
+    } else
+      response.end(
+        JSON.stringify({
+          ...entry,
+          images: [{ name: shot, data: "ZmFrZQ==", mimeType: "image/jpeg" }],
+        }),
+      );
+  });
+  const socket = join(root, "control.sock");
+  await new Promise<void>((resolve) => server.listen(socket, resolve));
+  const db = new DatabaseSync(join(root, "auth.sqlite")),
+    auth = createAuth(db);
+  const faux = fauxProvider({
+    provider: "openai-codex",
+    models: [{ id: "gpt-6.1-sol", reasoning: true }],
+    tokensPerSecond: 100000,
+  });
+  auth.models.setProvider(faux.provider);
+  auth.planAvailability.connectedProviders = () => new Set(["openai-codex"]);
+  const pi = await createPi(join(root, "pi.sqlite"), auth, [
+    selfChangeTools(socket),
+  ]);
+  try {
+    faux.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("self_change", {
+          command: JSON.stringify({ kind: "preview", id }),
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        assert(!JSON.stringify(context).includes("PRIVATE_OWNER_CHAT"));
+        assert(!JSON.stringify(context).includes("PRIVATE_DIFF"));
+        assert(JSON.stringify(context).includes(shot));
+        return fauxAssistantMessage(JSON.stringify(critique));
+      },
+      (context) => {
+        assert(JSON.stringify(context).includes("Independent concern"));
+        return fauxAssistantMessage("The stage can be submitted.");
+      },
+    ]);
+    await pi.run({
+      text: "PRIVATE_OWNER_CHAT",
+      requestId: randomUUID(),
+      onText() {},
+      signal: new AbortController().signal,
+    });
+    assert.equal(saved, 1);
+    assert.equal(entry.outcome, "staged");
+  } finally {
+    await pi.close();
+    auth.close();
+    db.close();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await rm(root, { recursive: true, force: true });
+  }
+});

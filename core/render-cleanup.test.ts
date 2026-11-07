@@ -46,3 +46,21 @@ test("preview retention keeps one active cache and at most ten changes", async (
     await rm(data, { recursive: true, force: true });
   }
 });
+
+test("an expired preview deadline refuses before starting renderer work", async () => {
+  const stage = await mkdtemp("/private/tmp/gaia-render-deadline-");
+  try {
+    await assert.rejects(
+      renderCandidate({
+        stage,
+        core: resolve("."),
+        dependencies: resolve("node_modules"),
+        deadline: Date.now() - 1,
+      }),
+      /Preview deadline exceeded/,
+    );
+    await assert.rejects(readdir(join(stage, "dist")), /ENOENT/);
+  } finally {
+    await rm(stage, { recursive: true, force: true });
+  }
+});

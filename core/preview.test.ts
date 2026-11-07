@@ -238,6 +238,10 @@ test("old history still parses; history images and critique stay bound to their 
       edits: [{ path: "apps/web/fixture.css", text: "revised" }],
     });
     await f.supervisor.handle({ kind: "discard", id: entry.id });
+    await assert.rejects(
+      readFile(join(f.data, "staging", entry.id, "apps/web/fixture.css")),
+      /ENOENT/,
+    );
     assert.equal(entry.outcome, "interrupted");
     assert.equal(entry.detail, "Staged draft discarded.");
   } finally {
