@@ -371,7 +371,7 @@ export function App() {
       icon={accountOpen ? RiCloseLine : RiSettings3Line}
       aria-label={accountOpen ? "Close settings" : "Account settings"}
       aria-expanded={accountOpen}
-      aria-controls="account-settings"
+      aria-controls={accountOpen && connected ? "account-settings" : undefined}
       onClick={() => { setSettingsSection("plan-title"); setAccountOpen(!accountOpen); }}
     />
   );
