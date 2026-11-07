@@ -7,6 +7,7 @@ import {
 import { z } from "zod";
 import { Command, Change } from "./state.ts";
 import { control } from "./control-client.ts";
+import { reviewPreview } from "./critic.ts";
 import { DesignTurns } from "./design/pack.ts";
 export function selfChangeTools(socket: string) {
   const turns = new DesignTurns();
@@ -56,7 +57,8 @@ export function selfChangeTools(socket: string) {
               context,
             );
           const input = Command.parse(JSON.parse(inputArgs.command));
-          const result = await control(socket, input);
+          if (input.kind === "review") throw new Error("The model cannot supply its own critic review or score.");
+          let result = await control(socket, input);
           const ui = (input.kind === "read" && input.path.startsWith("apps/web/")) || (input.kind === "stage" && input.edits.some(edit => edit.path.startsWith("apps/web/")));
           let design: unknown;
           let designError: string | undefined;
@@ -70,7 +72,16 @@ export function selfChangeTools(socket: string) {
           }
           if (input.kind === "preview") {
             const preview = z.object({ images: z.array(z.object({ name: z.string(), data: z.string(), mimeType: z.literal("image/jpeg") })) }).parse(result);
-            return { output: [{ type: "text" as const, text: JSON.stringify(Change.parse(result)) }, ...preview.images.flatMap(image => [{ type: "text" as const, text: image.name }, { type: "image" as const, data: image.data, mimeType: image.mimeType }])] };
+            let reviewError: string | undefined;
+            try {
+              const output = preview.images.flatMap(image => [{ type: "text" as const, text: image.name }, { type: "image" as const, data: image.data, mimeType: image.mimeType }]);
+              const critique = await reviewPreview({ models: api.models, model: (await api.agent(context)).model, output });
+              const entry = Change.parse(result);
+              result = await control(socket, { kind: "review", id: entry.id, hash: entry.previews!.hash, critique });
+            } catch {
+              reviewError = "The separate plan review was unavailable. Preview checks passed. You may submit; no critic score was recorded.";
+            }
+            return { output: [{ type: "text" as const, text: JSON.stringify(Change.parse(result)) }, ...(reviewError ? [{type: "text" as const, text: reviewError}] : []), ...preview.images.flatMap(image => [{ type: "text" as const, text: image.name }, { type: "image" as const, data: image.data, mimeType: image.mimeType }])] };
           }
           return {
             output: [

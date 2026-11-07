@@ -62,7 +62,7 @@ test("old history still parses; history images and critique stay bound to their 
     entry.previews = { hash: "fixture-identity", surfaces: [], shots: [{ name: "empty-320-light", scenario: "empty", width: 320, theme: "light", before: "before-empty-320-light.jpg", after: file }], alsoChanged: ["empty-320-light"] };
     await mkdir(join(f.data, "previews/changes", entry.id), { recursive: true });
     await writeFile(join(f.data, "previews/changes", entry.id, file), Buffer.from([255, 216, 255, 217]));
-    const critique = { critic: "fresh" as const, score: 1, summary: "Review found issues", blocking: [{ issue: "Layout changed", shots: [file] }], minor: [] };
+    const critique = { critic: "advisory" as const, score: 1, summary: "Review found issues", blocking: [{ issue: "Layout changed", shots: [file] }], minor: [] };
     await assert.rejects(f.supervisor.handle({ kind: "review", id: entry.id, hash: "stale", critique }), /does not match/);
     const reviewed = ManagedChange.parse(await f.supervisor.handle({ kind: "review", id: entry.id, hash: "fixture-identity", critique }));
     assert.equal(reviewed.critique?.score, 1);

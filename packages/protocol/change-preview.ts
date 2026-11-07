@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const Issue = z.object({ issue: z.string().min(1).max(500), shots: z.array(z.string().min(1).max(120)).min(1).max(10) }).strict();
-export const ChangeCritique = z.object({ critic: z.literal("fresh"), score: z.number().min(0).max(10), summary: z.string().min(1).max(500), blocking: z.array(Issue).max(5), minor: z.array(Issue).max(10) }).strict();
+export const ChangeCritique = z.object({ critic: z.preprocess(value => value === "fresh" ? "advisory" : value, z.literal("advisory")), score: z.number().min(0).max(10), summary: z.string().min(1).max(500), blocking: z.array(Issue).max(5), minor: z.array(Issue).max(10) }).strict();
 export const ChangeSource = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("original"), answerMessageId: z.string().min(1).max(200) }),
   z.object({ kind: z.literal("experience"), profileId: z.string().uuid(), scopeId: z.string().uuid(), answerMessageId: z.string().min(1).max(200) }),

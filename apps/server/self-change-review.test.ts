@@ -13,7 +13,7 @@ import { Critique, criticPrompt, reviewPreview } from "./self-change-review.ts";
 import { readFileSync } from "node:fs";
 
 const name = "after-empty-320-light.jpg";
-const critique = { critic: "fresh", score: 2, summary: "The next action is hard to find.", blocking: [{ issue: "Action is unclear", shots: [name] }], minor: [] };
+const critique = { critic: "advisory", score: 2, summary: "The next action is hard to find.", blocking: [{ issue: "Action is unclear", shots: [name] }], minor: [] };
 const output = [{ type: "text" as const, text: JSON.stringify({ id: "08c519e7-e982-45fa-ac70-1fe245b20c77", previews: { hash: "fixture" }, diff: "PRIVATE_DIFF_MUST_NOT_REACH_CRITIC" }) }, { type: "text" as const, text: name }, { type: "image" as const, data: "ZmFrZS1maXh0dXJlLWltYWdl", mimeType: "image/jpeg" }];
 
 test("critic rubric matches protected compact questions and rejects malformed scores or evidence", async () => {
