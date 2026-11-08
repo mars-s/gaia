@@ -46,7 +46,7 @@ export function leaseStore(lease: PlanLease): CredentialStore {
         socket.destroy();
       } catch { fail(); }
     });
-  }).finally(() => { pending = undefined; });
+  }).catch(() => { throw new Error(LEASE_UNAVAILABLE); }).finally(() => { pending = undefined; });
   return {
     async read(id) { return id !== lease.provider ? undefined : cached && cached.expires > Date.now() ? cached : fetch(); },
     async modify(id) { if (id !== lease.provider) throw new Error(LEASE_UNAVAILABLE); return fetch(); },

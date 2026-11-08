@@ -87,3 +87,9 @@ test("lease environment strips the key even on invalid input", () => {
   assert.equal(env.GAIA_PLAN_LEASE_KEY, undefined);
   assert.throws(() => planLease(env), { message: LEASE_UNAVAILABLE });
 });
+
+
+test("invalid socket paths also use the fixed auth error", async () => {
+  const store = leaseStore({ socket: "/tmp/invalid\0socket", key: "x".repeat(43), provider: "openai-codex" });
+  await assert.rejects(store.read("openai-codex"), (error: Error) => error.message === LEASE_UNAVAILABLE && error.cause === undefined);
+});
