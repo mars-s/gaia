@@ -7,7 +7,9 @@ const { values } = parseArgs({ options: {
 } });
 try {
   process.exitCode = await broker({ ownerData: values["owner-data"] ?? "", data: values.data ?? "", provider: z.enum(["openai-codex", "anthropic"]).parse(values.provider), port: Number(values.port), hours: Number(values.hours) });
-} catch {
-  process.stderr.write("Plan lease could not start. Check the arguments and stop the owner runtime first.\n");
+} catch (error) {
+  const message = error instanceof Error && error.message === "That plan is not signed in on your Gaia."
+    ? error.message : "Plan lease could not start. Check the arguments and stop the owner runtime first.";
+  process.stderr.write(message + "\n");
   process.exitCode = 1;
 }

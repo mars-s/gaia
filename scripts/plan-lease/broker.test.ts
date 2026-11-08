@@ -181,3 +181,14 @@ test("retired fixture refuses before opening any credential store", async () => 
   assert.notEqual(code, 0);
   assert.match(output, /This unsafe live fixture is retired/);
 });
+
+test("CLI reports a missing sign-in without endpoint diagnostics", async (t) => {
+  const f = await fixture(t);
+  const db = new DatabaseSync(join(f.owner, "credentials/oauth.sqlite")); db.exec("DELETE FROM credentials"); db.close();
+  const child = spawn(process.execPath, ["--import", "tsx", "scripts/plan-lease/cli.ts", "--owner-data", f.owner, "--data", f.data, "--provider", "openai-codex", "--port", "4347"], { stdio: ["ignore", "pipe", "pipe"] });
+  let errors = "";
+  child.stderr.on("data", (chunk) => { errors += chunk; });
+  const [code] = await once(child, "exit");
+  assert.equal(code, 1);
+  assert.equal(errors, "That plan is not signed in on your Gaia.\n");
+});
