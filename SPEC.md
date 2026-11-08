@@ -1,6 +1,6 @@
 # Gaia: product spec and architecture
 
-Status: locked v1.5, 5 Nov 2026. Decisions from Avi, 1 to 5 Nov 2026.
+Status: locked v1.6, 8 Nov 2026. Decisions from Avi, 1 to 8 Nov 2026.
 
 Changelog:
 - v0.2 (4 Nov 2026): sign-in and model traffic through Pi's built-in OAuth; Electron gets full terminal and file access; generative UI is real code changes through the self-mod pipeline.
@@ -10,6 +10,7 @@ Changelog:
 - v1.3 (5 Nov 2026): Avi authorised UI library and stack decisions for the overnight work. Base UI is preferred for new primitives. Radix is permitted where needed; assistant-ui, shadcn and existing React Aria or Board UI components may be used when they fit. Libraries must be free and openly licensed. Add genuine Pi effort controls and image attachments, and make onboarding progress after answers.
 - v1.4 (5 Nov 2026): Avi authorised four isolated experience profiles as parallel acceptance cases: Dots-style central chat, Grokbot-style area Bots, Duet-style shared-memory channels and Hermes-style sessions. Add concurrent background work, subordinate agents, actual local Mac CLI and Agent Desktop tools, hosted web search through the existing Pi ChatGPT/Codex subscription, and task-specific plain-language activity using the supplied visual reference. Profile setup stays explicit and owner-confirmed. Existing owner data is preserved.
 - v1.5 (5 Nov 2026): Founder reconciliation under Avi's delegated product authority. Chat shapes are called setups. Gaia proposes setups as cards in the conversation, with Use this setup and Not now. Not now hides a proposal and keeps its data. A confirmed setup can become the main chat through an explicit owner action, and the original chat stays listed and usable. The onboarding interview is offered after the first useful answer and is never offered again once skipped. New explicit facts in a sessions setup are shared across its sessions, and older facts keep their scope. Progress shows only the avatar until real activity exists. Retrying an attempt that started a machine action needs the owner's confirmation. The model menu never ranks models by parsing names. The independent-job runtime stays the conversation engine until measured gates justify a change. Protocol changes stay additive until callers migrate.
+- v1.6 (8 Nov 2026): The owner approved a verification-only plan lease for isolated test copies while the owner's Gaia is stopped. It remains off unless started by hand.
 
 ## One-line pitch
 
@@ -23,6 +24,7 @@ Gaia is an open-source agent you run on your own machine. It starts as a single 
 - Self-change is normal and safe: staged, checked, health-probed, auto-rolled back.
 - Local and owned: data, credentials and memory stay on the owner's machine.
 - Plan sign-in, no API keys: Claude and ChatGPT plans through Pi's built-in OAuth; all model traffic routed through Pi.
+  A verification-only plan lease lets an isolated test copy use the owner's plan while the owner's Gaia is stopped. It is off unless the owner starts it by hand.
 - The owner holds the power: full machine access by default, and the responsibility that comes with it.
 - Plain by default: a minimal, themeable interface using free, openly licensed components and editable theme tokens. Prefer Base UI for new primitives. Existing React Aria and Board UI components may remain; Radix, assistant-ui and shadcn are permitted when they fit. Choose for the actual interaction, footprint and accessibility.
 - Open from day one: Apache 2.0, commercial use allowed.
