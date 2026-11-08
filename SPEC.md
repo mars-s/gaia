@@ -3,6 +3,8 @@
 Status: locked v1.6, 8 Nov 2026. Decisions from Avi, 1 to 8 Nov 2026.
 
 Changelog:
+- v1.6 (8 Nov 2026): Avi locked the north star (`docs/northstar.md`): one input, and the view builds itself. The owner asks in plain words or drops in files (CSV, DOCX and PDF first), and Gaia answers with a view built for it, in place, from the shared kit. Refining the request reshapes the same view. Views and saved spaces, starting with a canvas, are declarative data drawn only from the shared kit. Lasting new parts, file types and surfaces remain real code through the self-mod pipeline.
+- Approval record (8 Nov 2026): Avi approved changes 1 to 9 in the north star product plan exactly as written. The conditional local decision model sentence remains excluded.
 - v0.2 (4 Nov 2026): sign-in and model traffic through Pi's built-in OAuth; Electron gets full terminal and file access; generative UI is real code changes through the self-mod pipeline.
 - v1.0 (4 Nov 2026): locked. Homelab hosting requirements added as v0.1 musts (see `docs/hosting.md`).
 - v1.1 (4 Nov 2026): Avi removed the fixed 1 GB RAM requirement. RAM allocation can grow as homelab capacity is freed up.
@@ -14,15 +16,16 @@ Changelog:
 
 ## One-line pitch
 
-Gaia is an open-source agent you run on your own machine. It starts as a single chat box and grows its own interface, tools, clients and agents around how you work. An Apache 2.0, self-hosted replacement for Hermes Agent that feels like Grok Bot. One owner per install.
+Gaia is an open-source agent you run on your own machine. It starts as a single chat box and grows its own interface, tools, clients and agents around how you work. Ask in plain words, or drop in a file, and the view builds itself. An Apache 2.0, self-hosted replacement for Hermes Agent that feels like Grok Bot. One owner per install.
 
 ## Principles
 
-- Seed, not suite: ships with a chat box and nothing else. Everything else is grown on request.
-- The chat is the app. Generated UI grows out of it, not around it.
+- Seed, not suite: ships with a chat box and nothing else visible. Views, spaces and new interfaces are grown on request.
+- The chat is the app. Views, spaces and generated UI grow out of it, not around it.
+- The view builds itself: Gaia answers an intent with a view made for it, from the shared kit, in place. Refinements reshape the same view. No dashboards, tabs or filters to set up.
 - Headless brain: the server owns no UI. Every UI is a client of one public protocol.
 - Self-change is normal and safe: staged, checked, health-probed, auto-rolled back.
-- Local and owned: data, credentials and memory stay on the owner's machine.
+- Local and owned: data, credentials, memory and dropped files stay on the owner's machine. Files are parsed locally. Only the parts a request needs go to the owner's chosen plan model through Pi.
 - Plan sign-in, no API keys: Claude and ChatGPT plans through Pi's built-in OAuth; all model traffic routed through Pi.
   A verification-only plan lease lets an isolated test copy use the owner's plan while the owner's Gaia is stopped. It is off unless the owner starts it by hand.
 - The owner holds the power: full machine access by default, and the responsibility that comes with it.
@@ -72,7 +75,8 @@ flowchart TD
 - Server: headless Node service on Pi Durable. Runs agents, durable workflows, compaction, tools and MCP.
 - Providers: sign-in uses pi-ai's built-in Anthropic (Claude plan) and OpenAI Codex (ChatGPT plan) subscription logins. All model traffic goes through Pi, including native web search.
 - Supervisor: a tiny, never self-modified process that starts the server, probes health and owns rollback.
-- Generative UI: real code changes to the app itself. The AI may change any part of the UI, through the self-mod pipeline. The server serves the current UI modules; clients load them.
+- Views and spaces: per-request views and saved spaces are versioned, validated data. Clients draw them only from shared kit parts. Numbers come only from local queries over the owner's files or from quotes verified against them. No model-written code, markup or styles runs at render time, and no deploy is needed.
+- Generative UI: new kit parts, file types, view types, space types and surfaces are real code changes through the self-mod pipeline. The AI may change any part of the UI this way. The server serves the current UI modules; clients load them.
 - Electron client: pairs once with a one-time code, like a Grok Bot computer, then gives the agent full terminal and file access on the Mac. No sandbox or command scoping in v0.1.
 - Memory: empty by default behind a pluggable memory interface (for example Hindsight).
 
@@ -97,8 +101,9 @@ flowchart TD
 | Events | Streamed messages, tool-call hints, compaction notices, agent status |
 | Tools | Calls, results, client-side tools (full terminal, files) offered by a client |
 | Approvals | Permission prompts, self-mod approvals, decisions |
-| Files | Upload, download, previews |
+| Files | Upload, download, previews, local parsing of CSV, DOCX and PDF |
 | Gen UI | Versioned UI code bundles and modules served by the server; clients load and hot-swap them, falling back to the last good bundle |
+| Views | View specs in messages, refinement, saved spaces and canvas operations, all versioned data drawn from the kit; unknown parts fall back to their text |
 | Admin | Change history, revert, safe mode, diagnostics |
 
 Ships with a TypeScript SDK and a client conformance suite. Breaking changes bump the major version.
@@ -127,6 +132,8 @@ Hosting (detail in `docs/hosting.md`):
 | Protocol v1, SDK, conformance suite | Generated Android and Next.js clients |
 | Electron client, full terminal and file access | iOS client; optional restricted mode |
 | Memory interface, empty default | Hindsight adapter |
+| Intent views from dropped CSV, DOCX and PDF files, in-place refinement, a canvas space | Board and document spaces, more file types, live external sources |
+| Local matcher for suggestions; the plan model chooses views | Optional on-device decision model, if measured gates pass |
 
 ## Borrow from Aegis and Mars
 
@@ -140,7 +147,7 @@ Hosting (detail in `docs/hosting.md`):
 - Terminal access: unrestricted by design. A bad agent action can damage the Mac; the owner accepts that. Restricted mode comes later.
 - Self-mod failures: tests that pass but break UX, migrations that cannot roll back, corrupted data. Needs data snapshots, not just code.
 - Public address: needs TLS, pairing codes, device tokens, rate limits; default to LAN or tunnel only.
-- Decided: gen UI is real app code changed through the self-mod pipeline, not declarative data.
+- Decided: lasting UI is real app code changed through the self-mod pipeline. Per-request views and saved spaces are declarative data drawn only from the shared kit, and the kit grows only through the self-mod pipeline.
 - Open: how generated clients get signed and distributed.
 
 ## Milestone plan
@@ -180,3 +187,9 @@ Trying again after an attempt that started a machine action needs the owner's co
 The local Mac capability follows the existing full-owner-access decision. Shell and Agent Desktop are actual tools with process lifetime control and safe environment handling. Candidate checks, probes and safe mode receive no machine tools. The protected self-change allowlist and auth remain protected. Same-user shell access is not a malicious-agent isolation boundary.
 
 The acceptance loop uses isolated profile data, owned local form and webhook fixtures, deterministic runtime tests, real subscription requests and native UI checks. Missing capabilities are implemented and the failed scenario is rerun. Sourced bot assets include licence and provenance. One checked commit concerns one behaviour.
+
+## Intent views increment
+
+One input. The owner types or drops files, and Gaia builds a view from the shared kit: table, chart, stats, document reader, summary with cited quotes, comparison or timeline. A refinement reshapes the current view in place and is shown as a refinement, never as a copied owner message. "Make me a canvas" creates a saved canvas of file cards, notes, views and links that the owner and Gaia both arrange. Gaia edits a canvas only through typed operations and never edits an original file.
+
+The progress rule is unchanged. A skeleton in the exact shape of the coming view is surface loading and carries no words. Model-written labels follow the copy rules. Each kit part used by views passes the rendered checks and is judged before the model may use it. Views work in every setup, and safe mode shows views as plain text.
