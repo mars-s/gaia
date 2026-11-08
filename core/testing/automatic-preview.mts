@@ -18,7 +18,7 @@ mock.module("../process.ts", {
     ...processTools,
     command: async (file: string, args: string[], cwd: string) =>
       file === "/usr/bin/sandbox-exec"
-        ? ""
+        ? "# skipped 0"
         : processTools.command(file, args, cwd),
   },
 });

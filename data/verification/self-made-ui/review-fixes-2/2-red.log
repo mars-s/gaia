@@ -1,0 +1,30 @@
+✔ the real recipe returns a failing unit assertion in checks and stops before build (1264.065125ms)
+✖ the real recipe rejects an undocumented kit export before build (1231.398625ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2932.252125
+
+✖ failing tests:
+
+test at core/recipe.test.ts:1:2083
+✖ the real recipe rejects an undocumented kit export before build (1231.398625ms)
+  AssertionError [ERR_ASSERTION]: typecheck: passed
+  lint: passed
+  unit tests: passed
+  design pack: failed
+  UI kit export needs a description and @example: Bad
+      at TestContext.<anonymous> (/Users/avi/Developer/vibe/gaia/core/recipe.test.ts:144:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

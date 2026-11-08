@@ -50,12 +50,18 @@ export async function recipe({
   const bin = (path: string) => join(dependencies, path);
   const run = async (name: string, args: string[]) => {
     try {
-      await command(
+      const output = await command(
         "/usr/bin/sandbox-exec",
         ["-f", profile, process.execPath, ...args],
         stage,
       );
-      await record(`${name}: passed`);
+      let skipped = 0;
+      if (name === "unit tests") {
+        const summary = [...output.matchAll(/^# skipped (\d+)$/gm)].at(-1);
+        if (!summary) throw new Error("Unit test skip summary unavailable");
+        skipped = Number(summary[1]);
+      }
+      await record(`${name}: passed${skipped ? ` (${skipped} skipped)` : ""}`);
     } catch (error) {
       await record(
         `${name}: failed\n${failureDetail(error, stage, [core, dependencies, data])}`,
@@ -106,6 +112,7 @@ export async function recipe({
     "--import",
     bin("tsx/dist/loader.mjs"),
     "--test",
+    "--test-reporter=tap",
     ...tests,
   ]);
   try {

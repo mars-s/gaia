@@ -118,7 +118,7 @@ test(
         copyFile("eslint.config.js", join(core, "eslint.config.js")),
         writeFile(
           join(stage, "apps/web/failure.test.ts"),
-          'import {test} from "node:test"; test("passing fixture", () => {});',
+          'import {test} from "node:test"; test("passing fixture", () => {}); for (let i=0;i<3;i++) test(`native fixture ${i}`, {skip:"native process tests unavailable in sandbox"}, () => {});',
         ),
       ]);
       await mkdir(join(stage, "apps/web/ui"));
@@ -141,7 +141,10 @@ test(
           },
         }),
       );
-      assert(checks.includes("unit tests: passed"), checks.join("\n"));
+      assert(
+        checks.includes("unit tests: passed (3 skipped)"),
+        checks.join("\n"),
+      );
       assert.match(checks.at(-1)!, /^design pack: failed\n.*@example/s);
       assert(!checks.some((check) => check.startsWith("build")));
     } finally {
