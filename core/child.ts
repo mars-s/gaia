@@ -150,7 +150,7 @@ app.server.on("request", async (req, res) => {
         mode,
         schema: 1,
         ...(lease ? { planLease: true } : {}),
-        provider: test ? "deterministic-test-only" : "pi-openai-codex",
+        provider: lease ? lease.provider : test ? "deterministic-test-only" : "pi-openai-codex",
       });
     if (url.pathname.startsWith("/api/v1/probe/")) {
       if (req.headers["x-gaia-probe"] !== env.GAIA_PROBE_TOKEN)

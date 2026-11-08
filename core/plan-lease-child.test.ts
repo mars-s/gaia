@@ -13,8 +13,9 @@ import { freePort, sandboxProfile } from "./sandbox.ts";
 import { atomic, Command } from "./state.ts";
 import { command, cleanEnv } from "./process.ts";
 
-for (const scenario of ["broker-down", "fake-broker", "inert"]) test(`managed child ${scenario} strips keys and keeps auth isolated`, { timeout: 30000 }, async (t) => {
+for (const scenario of ["broker-down", "fake-broker", "inert", "anthropic"]) test(`managed child ${scenario} strips keys and keeps auth isolated`, { timeout: 30000 }, async (t) => {
   const leased = scenario !== "inert";
+  const provider = scenario === "anthropic" ? "anthropic" : "openai-codex";
   const root = await mkdtemp(join(tmpdir(), "gl-child-"));
   const source = resolve(".");
   const core = join(root, "core");
@@ -39,7 +40,7 @@ for (const scenario of ["broker-down", "fake-broker", "inert"]) test(`managed ch
     await once(server, "listening");
     t.after(() => new Promise<void>((resolve) => server.close(() => resolve())));
   }
-  const child = spawn(process.execPath, ["--import", join(source, "node_modules/tsx/dist/loader.mjs"), join(core, "core/child.ts"), ...(leased ? ["--plan-lease"] : [])], { stdio: ["ignore", "pipe", "pipe", "ipc"], env: { ...cleanEnv(), GAIA_RELEASE: pair.release, GAIA_RELEASE_DIR: release, GAIA_GENERATION: generation, GAIA_DATA_DIR: data, GAIA_CREDENTIALS: credentials, GAIA_HOST: "127.0.0.1", GAIA_PORT: String(port), GAIA_PROBE_TOKEN: "test", GAIA_CONTROL_SOCKET: join(root, "control.sock"), GAIA_PLAN_LEASE_SOCKET: brokerSocket, GAIA_PLAN_LEASE_KEY: "x".repeat(43), GAIA_PLAN_LEASE_PROVIDER: "openai-codex" } });
+  const child = spawn(process.execPath, ["--import", join(source, "node_modules/tsx/dist/loader.mjs"), join(core, "core/child.ts"), ...(leased ? ["--plan-lease"] : [])], { stdio: ["ignore", "pipe", "pipe", "ipc"], env: { ...cleanEnv(), GAIA_RELEASE: pair.release, GAIA_RELEASE_DIR: release, GAIA_GENERATION: generation, GAIA_DATA_DIR: data, GAIA_CREDENTIALS: credentials, GAIA_HOST: "127.0.0.1", GAIA_PORT: String(port), GAIA_PROBE_TOKEN: "test", GAIA_CONTROL_SOCKET: join(root, "control.sock"), GAIA_PLAN_LEASE_SOCKET: brokerSocket, GAIA_PLAN_LEASE_KEY: "x".repeat(43), GAIA_PLAN_LEASE_PROVIDER: provider } });
   const exited = once(child, "exit");
   let logs = "";
   child.stdout?.on("data", (chunk) => { logs += chunk; });
@@ -53,6 +54,7 @@ for (const scenario of ["broker-down", "fake-broker", "inert"]) test(`managed ch
   assert(health, logs);
   assert.equal(health.mode, "stable");
   assert.equal(health.planLease, leased ? true : undefined);
+  assert.equal(health.provider, leased ? provider : "pi-openai-codex");
   const env = JSON.parse(await readFile(join(root, "env.json"), "utf8"));
   assert.equal(env.GAIA_PLAN_LEASE_KEY, leased ? undefined : "x".repeat(43));
   const request = (path: string, body?: unknown) => fetch(base + "/api/v1/" + path, { method: body ? "POST" : "GET", headers: { "Content-Type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) });
