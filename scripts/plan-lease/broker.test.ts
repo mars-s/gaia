@@ -263,3 +263,18 @@ process.disconnect();
   db.close();
   assert.deepEqual(await readdir(join(f.owner, "control")), ["manifest.json"]);
 });
+
+test("a best-effort scan failure still reports leases and releases owner locks", async (t) => {
+  const f = await fixture(t);
+  const logs: string[] = [];
+  const code = await broker(f.options, {
+    log: (line) => logs.push(line),
+    launch() {
+      return spawn(process.execPath, ["-e", `require('node:fs').rmdirSync(${JSON.stringify(f.data)})`], { stdio: "ignore" });
+    },
+  });
+  assert.equal(code, 0);
+  assert(logs.includes("Lease token scan failed"));
+  assert(logs.includes("Leases granted: 0"));
+  assert.deepEqual(await readdir(join(f.owner, "control")), ["manifest.json"]);
+});

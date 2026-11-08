@@ -121,8 +121,12 @@ export async function broker(input: z.input<typeof Options>, hooks: Hooks = {}) 
           }
         }
       }
-      await scan(data);
-      log(`Lease tokens found in test data: ${found.length ? found.join(", ") : "none"}`);
+      try {
+        await scan(data);
+        log(`Lease tokens found in test data: ${found.length ? found.join(", ") : "none"}`);
+      } catch {
+        log("Lease token scan failed");
+      }
       log(`Leases granted: ${granted}`);
     }
   }).finally(() => {
