@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { z } from "zod";
 import { test, type TestContext } from "node:test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
@@ -191,4 +192,71 @@ test("CLI reports a missing sign-in without endpoint diagnostics", async (t) => 
   const [code] = await once(child, "exit");
   assert.equal(code, 1);
   assert.equal(errors, "That plan is not signed in on your Gaia.\n");
+});
+
+for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) test(`repeated ${signal} during cleanup preserves an in-flight rotated credential`, { timeout: 20000 }, async (t) => {
+  const f = await fixture(t);
+  const entry = join(f.root, "signals.mts");
+  await writeFile(entry, `
+import {spawn} from 'node:child_process';
+import {broker} from ${JSON.stringify(join(process.cwd(), "scripts/plan-lease/broker.ts"))};
+import {openaiCodexProvider} from ${JSON.stringify(join(process.cwd(), "node_modules/@earendil-works/pi-ai/dist/providers/openai-codex.js"))};
+let release;
+const gate = new Promise(resolve => { release = resolve; });
+process.on('message', message => { if(message === 'release') release(); });
+process.exitCode = await broker(${JSON.stringify(f.options)}, {
+  configure(auth) {
+    const real = openaiCodexProvider();
+    auth.models.setProvider({...real, auth:{oauth:{...real.auth.oauth,
+      async refresh(current) {
+        process.send('refreshing');
+        await gate;
+        return {...current, access:'synthetic-new-access', refresh:'synthetic-saved-rotation', expires:Date.now()+7200000};
+      }
+    }}});
+  },
+  launch(command, args, options) {
+    const child = spawn(process.execPath, ['-e','setInterval(()=>{},1000)'], {stdio:'ignore'});
+    child.once('exit', () => process.send('child-exited'));
+    process.send({socket:options.env.GAIA_PLAN_LEASE_SOCKET, key:options.env.GAIA_PLAN_LEASE_KEY});
+    return child;
+  }
+});
+process.disconnect();
+`);
+  const runner = spawn(process.execPath, ["--import", "tsx", entry], { stdio: ["ignore", "pipe", "pipe", "ipc"] });
+  const exited = once(runner, "exit");
+  let output = "";
+  const events: unknown[] = [];
+  runner.on("message", (message) => events.push(message));
+  runner.stdout?.on("data", (chunk) => { output += chunk; });
+  runner.stderr?.on("data", (chunk) => { output += chunk; });
+  t.after(async () => { if (runner.exitCode === null && runner.signalCode === null) { runner.send("release"); runner.kill("SIGTERM"); } await exited; });
+  async function until(ready: () => boolean) {
+    for (let i = 0; i < 400; i++) { if (ready()) return; await new Promise((resolve) => setTimeout(resolve, 10)); }
+    assert.fail("Signal fixture did not reach the expected state.");
+  }
+  await until(() => events.some((event) => typeof event === "object" && event !== null));
+  const info = z.object({ socket: z.string(), key: z.string() }).parse(events.find((event) => typeof event === "object" && event !== null));
+  const client = createConnection(info.socket);
+  client.on("error", () => {});
+  client.on("data", () => {});
+  await once(client, "connect");
+  client.write(JSON.stringify({ key: info.key, provider: "openai-codex" }) + "\n");
+  await until(() => events.includes("refreshing"));
+  runner.kill(signal);
+  await until(() => events.includes("child-exited"));
+  runner.kill(signal);
+  await until(() => output.includes("Finishing up. Please wait."));
+  assert.equal(runner.signalCode, null);
+  runner.send("release");
+  await exited;
+  client.destroy();
+  assert.equal(runner.signalCode, null);
+  assert(output.includes("Leases granted:"));
+  assert(!output.includes(info.key) && !output.includes("synthetic-saved-rotation"));
+  const db = new DatabaseSync(join(f.owner, "credentials/oauth.sqlite"), { readOnly: true });
+  assert(String(db.prepare("SELECT value FROM credentials WHERE provider='openai-codex'").get()?.value).includes("synthetic-saved-rotation"));
+  db.close();
+  assert.deepEqual(await readdir(join(f.owner, "control")), ["manifest.json"]);
 });

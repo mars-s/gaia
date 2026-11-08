@@ -25,6 +25,14 @@ export async function broker(input: z.input<typeof Options>, hooks: Hooks = {}) 
   await stat(join(owner, "credentials/oauth.sqlite"));
   const now = hooks.now ?? Date.now;
   const log = hooks.log ?? ((line: string) => process.stdout.write(line + "\n"));
+  let child: ChildProcess | undefined;
+  let finishing = false;
+  const signals = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
+  const forward = (signal: NodeJS.Signals) => {
+    if (child && !finishing) child.kill(signal === "SIGHUP" ? "SIGTERM" : signal);
+    else log("Finishing up. Please wait.");
+  };
+  for (const signal of signals) process.on(signal, forward);
   return withOwnerLock(owner, true, async () => {
     const db = new DatabaseSync(join(owner, "credentials/oauth.sqlite"));
     const auth = createAuth(db);
@@ -84,20 +92,19 @@ export async function broker(input: z.input<typeof Options>, hooks: Hooks = {}) 
       server.listen(socket);
       await new Promise<void>((resolve, reject) => { server.once("listening", resolve); server.once("error", reject); });
       const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("GAIA_")));
-      const child = (hooks.launch ?? spawn)(process.execPath, ["--import", resolve("node_modules/tsx/dist/loader.mjs"), resolve("core/main.ts"), "--plan-lease"], {
+      child = (hooks.launch ?? spawn)(process.execPath, ["--import", resolve("node_modules/tsx/dist/loader.mjs"), resolve("core/main.ts"), "--plan-lease"], {
         stdio: "inherit", env: { ...env, GAIA_DATA_DIR: data, GAIA_HOST: "127.0.0.1", GAIA_PORT: String(options.port), GAIA_PLAN_LEASE_SOCKET: socket, GAIA_PLAN_LEASE_KEY: key, GAIA_PLAN_LEASE_PROVIDER: options.provider },
       });
-      const forward = (signal: NodeJS.Signals) => { child.kill(signal); };
-      process.on("SIGINT", forward); process.on("SIGTERM", forward);
       const timer = setTimeout(() => log("Lease time is up"), Math.max(0, deadline - now()));
       log(`Plan lease ${options.provider} until ${new Date(deadline).toISOString()} at http://127.0.0.1:${options.port}`);
       try {
-        return await new Promise<number>((resolve, reject) => { child.once("error", reject); child.once("exit", (code) => resolve(code ?? 1)); });
+        return await new Promise<number>((resolve, reject) => { child!.once("error", reject); child!.once("exit", (code) => resolve(code ?? 1)); });
       } finally {
         clearTimeout(timer);
-        process.off("SIGINT", forward); process.off("SIGTERM", forward);
+        finishing = true;
       }
     } finally {
+      finishing = true;
       if (server.listening) await new Promise<void>((resolve) => server.close(() => resolve()));
       if (directory) await rm(directory, { recursive: true, force: true });
       await auth.close(); db.close();
@@ -117,5 +124,7 @@ export async function broker(input: z.input<typeof Options>, hooks: Hooks = {}) 
       log(`Lease tokens found in test data: ${found.length ? found.join(", ") : "none"}`);
       log(`Leases granted: ${granted}`);
     }
+  }).finally(() => {
+    for (const signal of signals) process.off(signal, forward);
   });
 }
