@@ -20,7 +20,7 @@ type Hooks = { launch?: (command: string, args: string[], options: SpawnOptions)
 export async function broker(input: z.input<typeof Options>, hooks: Hooks = {}) {
   const options = Options.parse(input);
   const [owner, data] = await Promise.all([realpath(options.ownerData), realpath(options.data)]);
-  if (owner === data || owner.startsWith(data + sep) || data.startsWith(owner + sep)) throw new Error("Use separate owner and test data directories.");
+  if (owner === data || owner.startsWith(join(data, sep)) || data.startsWith(join(owner, sep))) throw new Error("Use separate owner and test data directories.");
   await stat(join(owner, "control/manifest.json"));
   await stat(join(owner, "credentials/oauth.sqlite"));
   const now = hooks.now ?? Date.now;

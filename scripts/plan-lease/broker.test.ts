@@ -111,7 +111,7 @@ for (const lock of ["supervisor.lock", "bootstrap.lock", "owner-upgrade.lock"]) 
 test("broker refuses overlapping paths including symlinks and invalid options", async (t) => {
   const f = await fixture(t);
   const link = join(f.root, "link"); await symlink(f.owner, link);
-  for (const data of [f.owner, join(f.owner, "control"), f.root, link]) await assert.rejects(broker({ ...f.options, data }));
+  for (const data of [f.owner, join(f.owner, "control"), f.root, link, "/"]) await assert.rejects(broker({ ...f.options, data }));
   for (const port of [4317, 8096, 8264, 8090, 1.5, 0, 65536]) assert(!Options.safeParse({ ...f.options, port }).success);
   assert(!Options.safeParse({ ...f.options, hours: 13 }).success);
   assert(!Options.safeParse({ ...f.options, host: "0.0.0.0" }).success);
