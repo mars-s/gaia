@@ -60,7 +60,7 @@ export const Quote = z.strictObject({
 export const ViewNode = z.strictObject({
   key: Id,
   type: Id,
-  props: z.record(z.string(), z.unknown()),
+  props: z.record(z.string(), z.json()),
   alt: Label,
   get children() {
     return z.array(ViewNode).max(8).optional();

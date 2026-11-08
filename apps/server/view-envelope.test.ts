@@ -42,6 +42,13 @@ test("additive file and view envelopes preserve old messages", () => {
   };
   assert.equal(ViewSpec.safeParse(view).success, true);
   assert.equal(
+    ViewSpec.safeParse({
+      ...view,
+      root: { ...view.root, props: { handler: () => 1 } },
+    }).success,
+    false,
+  );
+  assert.equal(
     ViewSpec.safeParse({ ...view, title: "<script>" }).success,
     false,
   );
