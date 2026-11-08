@@ -4,6 +4,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { mkdtemp, mkdir, readFile, writeFile, symlink, rm, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { openaiCodexProvider } from "@earendil-works/pi-ai/providers/openai-codex";
@@ -14,7 +15,7 @@ import { broker } from "./broker.ts";
 
 const source = fileURLToPath(new URL("../../", import.meta.url));
 for (const leased of [true, false]) test(`real broker, bootstrap, main, supervisor and child keep lease opt-in ${leased}`, { timeout: 60000 }, async () => {
-  const root = await mkdtemp("/private/tmp/gl-launch-");
+  const root = await mkdtemp(join(process.platform === "darwin" ? "/private/tmp" : tmpdir(), "gl-launch-"));
   const previousCwd = process.cwd();
   const owner = join(root, "owner");
   const data = join(root, "test");
@@ -92,9 +93,12 @@ for (const leased of [true, false]) test(`real broker, bootstrap, main, supervis
     assert.match(log, leased ? /Leases granted: [1-9]/ : /Leases granted: 0/);
     assert.deepEqual(await readdir(join(owner, "control")), ["manifest.json"]);
   } finally {
-    child?.kill("SIGTERM");
-    if (session) await session;
-    process.chdir(previousCwd);
-    await rm(root, { recursive: true, force: true });
+    try {
+      child?.kill("SIGTERM");
+      if (session) await session;
+    } finally {
+      process.chdir(previousCwd);
+      await rm(root, { recursive: true, force: true });
+    }
   }
 });
