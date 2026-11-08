@@ -1,0 +1,52 @@
+✖ automatic preview timeout or failure is advisory for a many-surface Revert, while the recipe render still gates it (2042.363166ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2109.212708
+
+✖ failing tests:
+
+test at core/automatic-preview.test.ts:1:103
+✖ automatic preview timeout or failure is advisory for a many-surface Revert, while the recipe render still gates it (2042.363166ms)
+  Error: Command failed: /opt/homebrew/Cellar/node@24/24.21.0/bin/node --experimental-test-module-mocks --import tsx core/testing/automatic-preview.mts
+  (node:47533) ExperimentalWarning: Module mocking is an experimental feature and might change at any time
+  (Use `node --trace-warnings ...` to show where the warning was created)
+  (node:47533) DeprecationWarning: mock.module(): options.namedExports is deprecated. Use options.exports instead.
+  node:internal/modules/run_main:107
+      triggerUncaughtException(
+      ^
+  
+  AssertionError [ERR_ASSERTION]: Preview deadline exceeded
+  + actual - expected
+  
+  + 'rejected'
+  - 'accepted'
+  
+      at <anonymous> (/Users/avi/Developer/vibe/gaia/core/testing/automatic-preview.mts:148:12) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'rejected',
+    expected: 'accepted',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+  
+  Node.js v24.21.0
+  
+      at genericNodeError (node:internal/errors:986:15)
+      at wrappedFn (node:internal/errors:540:14)
+      at ChildProcess.exithandler (node:child_process:417:12)
+      at ChildProcess.emit (node:events:514:28)
+      at maybeClose (node:internal/child_process:1141:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:306:5) {
+    code: 1,
+    killed: false,
+    signal: null,
+    cmd: '/opt/homebrew/Cellar/node@24/24.21.0/bin/node --experimental-test-module-mocks --import tsx core/testing/automatic-preview.mts',
+    stdout: '',
+    stderr: "(node:47533) ExperimentalWarning: Module mocking is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:47533) DeprecationWarning: mock.module(): options.namedExports is deprecated. Use options.exports instead.\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Preview deadline exceeded\n+ actual - expected\n\n+ 'rejected'\n- 'accepted'\n\n    at <anonymous> (/Users/avi/Developer/vibe/gaia/core/testing/automatic-preview.mts:148:12) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: 'rejected',\n  expected: 'accepted',\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.21.0\n"
+  }

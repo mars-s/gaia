@@ -1,0 +1,28 @@
+
+> typecheck
+> tsc --noEmit
+
+
+> typecheck:desktop
+> tsc --project apps/desktop/tsconfig.json --noEmit
+
+
+> lint
+> eslint .
+
+accepted: Preview deadline exceeded; 12 surfaces; full render passed; failures=0
+accepted: Renderer unavailable; 12 surfaces; full render passed; failures=0
+rejected: Preview deadline exceeded; 12 surfaces; full render blocked bad change; failures=1
+✔ automatic preview timeout or failure is advisory for a many-surface Revert, while the recipe render still gates it (5448.100458ms)
+✔ UI submit requires a preview for the exact source, including unstaged and new files (3221.215833ms)
+✔ old history still parses; history images and critique stay bound to their preview (1666.2315ms)
+✔ the real recipe returns a failing unit assertion in checks and stops before build (1997.141208ms)
+✔ the real recipe rejects an undocumented kit export before build (1544.042333ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5513.113

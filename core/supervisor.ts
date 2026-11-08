@@ -658,8 +658,16 @@ export class Supervisor {
       entry.outcome = "checking";
       await this.saveHistory();
       await verifyProtected(stage, this.protected);
-      if (!entry.previews && (await uiChanged(stage)))
-        entry.previews = await previewChange(this.options, entry, []);
+      if (!entry.previews && (await uiChanged(stage))) {
+        try {
+          entry.previews = await previewChange(this.options, entry, []);
+        } catch (error) {
+          entry.checks.push(
+            `preview images unavailable: ${failureDetail(error, stage, [core, dependencies, data])}`,
+          );
+          await this.saveHistory();
+        }
+      }
       await recipe({
         data,
         stage,
