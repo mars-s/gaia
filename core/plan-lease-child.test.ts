@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { createServer } from "node:net";
 import { mkdtemp, mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -12,7 +13,8 @@ import { freePort, sandboxProfile } from "./sandbox.ts";
 import { atomic, Command } from "./state.ts";
 import { command, cleanEnv } from "./process.ts";
 
-for (const leased of [true, false]) test(`managed child lease flag ${leased} strips keys and keeps auth isolated`, { timeout: 30000 }, async (t) => {
+for (const scenario of ["broker-down", "fake-broker", "inert"]) test(`managed child ${scenario} strips keys and keeps auth isolated`, { timeout: 30000 }, async (t) => {
+  const leased = scenario !== "inert";
   const root = await mkdtemp(join(tmpdir(), "gl-child-"));
   const source = resolve(".");
   const core = join(root, "core");
@@ -30,7 +32,14 @@ for (const leased of [true, false]) test(`managed child lease flag ${leased} str
   await atomic(join(data, "control/manifest.json"), { kind: "stable", active: pair, good: pair, failures: 0 });
   const port = await freePort();
   const credentials = join(root, "oauth.sqlite");
-  const child = spawn(process.execPath, ["--import", join(source, "node_modules/tsx/dist/loader.mjs"), join(core, "core/child.ts"), ...(leased ? ["--plan-lease"] : [])], { stdio: ["ignore", "pipe", "pipe", "ipc"], env: { ...cleanEnv(), GAIA_RELEASE: pair.release, GAIA_RELEASE_DIR: release, GAIA_GENERATION: generation, GAIA_DATA_DIR: data, GAIA_CREDENTIALS: credentials, GAIA_HOST: "127.0.0.1", GAIA_PORT: String(port), GAIA_PROBE_TOKEN: "test", GAIA_CONTROL_SOCKET: join(root, "control.sock"), GAIA_PLAN_LEASE_SOCKET: join(root, "missing.sock"), GAIA_PLAN_LEASE_KEY: "x".repeat(43), GAIA_PLAN_LEASE_PROVIDER: "openai-codex" } });
+  let leaseRequests = 0;
+  const brokerSocket = join(root, "missing.sock");
+  if (scenario === "fake-broker") {
+    const server = createServer((client) => client.once("data", () => { leaseRequests++; client.end('{"ok":false}\n'); })).listen(brokerSocket);
+    await once(server, "listening");
+    t.after(() => new Promise<void>((resolve) => server.close(() => resolve())));
+  }
+  const child = spawn(process.execPath, ["--import", join(source, "node_modules/tsx/dist/loader.mjs"), join(core, "core/child.ts"), ...(leased ? ["--plan-lease"] : [])], { stdio: ["ignore", "pipe", "pipe", "ipc"], env: { ...cleanEnv(), GAIA_RELEASE: pair.release, GAIA_RELEASE_DIR: release, GAIA_GENERATION: generation, GAIA_DATA_DIR: data, GAIA_CREDENTIALS: credentials, GAIA_HOST: "127.0.0.1", GAIA_PORT: String(port), GAIA_PROBE_TOKEN: "test", GAIA_CONTROL_SOCKET: join(root, "control.sock"), GAIA_PLAN_LEASE_SOCKET: brokerSocket, GAIA_PLAN_LEASE_KEY: "x".repeat(43), GAIA_PLAN_LEASE_PROVIDER: "openai-codex" } });
   const exited = once(child, "exit");
   let logs = "";
   child.stdout?.on("data", (chunk) => { logs += chunk; });
@@ -64,6 +73,7 @@ for (const leased of [true, false]) test(`managed child lease flag ${leased} str
     assert.deepEqual(state.thread.run, { kind: "error", message: "Sol could not finish this reply. Check your plan connection, then retry." });
     assert.equal((await (await fetch(base + "/healthz")).json()).mode, "stable");
   }
+  if (scenario === "fake-broker") assert(leaseRequests > 0);
   const db = new DatabaseSync(credentials, { readOnly: true });
   assert.equal(db.prepare("SELECT count(*) AS n FROM credentials").get()?.n, 0);
   db.close();
@@ -83,10 +93,24 @@ test("candidate sandbox denies the lease socket and owner credential writes", { 
   try {
     await writeFile(join(outside, "oauth.sqlite"), "synthetic-owner-store");
     await mkdir(join(root, ".scratch"));
-    const profile = await sandboxProfile(root, resolve("core"), resolve("node_modules"));
+    const profile = await sandboxProfile(root, root, resolve("node_modules"));
     const proof = join(root, "proof.mjs");
     await writeFile(proof, `import {createConnection} from 'node:net'; import {writeFileSync} from 'node:fs'; import assert from 'node:assert/strict'; assert.throws(()=>writeFileSync(${JSON.stringify(join(outside, "oauth.sqlite"))},'bad'), e=>e.code==='EPERM'||e.code==='EACCES'); await new Promise((resolve,reject)=>{const s=createConnection(${JSON.stringify(join(outside, "s"))}); s.on('error',e=>e.code==='EPERM'?resolve():reject(e)); s.on('connect',()=>{s.destroy();reject(Error('socket allowed'));});});`);
     await command("/usr/bin/sandbox-exec", ["-f", profile, process.execPath, proof], root);
     assert.equal(await readFile(join(outside, "oauth.sqlite"), "utf8"), "synthetic-owner-store");
   } finally { await new Promise<void>((resolve) => server.close(() => resolve())); await rm(root, { recursive: true, force: true }); await rm(outside, { recursive: true, force: true }); }
+});
+
+test("installed main refuses combining plan lease and deterministic provider", async () => {
+  const root = await mkdtemp(join(tmpdir(), "gl-flags-"));
+  try {
+    const installed = join(root, "installed");
+    await installCore(resolve("."), installed, resolve("node_modules"));
+    const child = spawn(process.execPath, ["--import", resolve("node_modules/tsx/dist/loader.mjs"), join(installed, "core/main.ts"), "--installed", "--plan-lease", "--test-provider"], { env: { ...cleanEnv(), GAIA_DATA_DIR: join(root, "data") }, stdio: ["ignore", "pipe", "pipe"] });
+    let errors = "";
+    child.stderr.on("data", (chunk) => { errors += chunk; });
+    const [code] = await once(child, "exit");
+    assert.notEqual(code, 0);
+    assert.match(errors, /Plan leases cannot use the test provider/);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });

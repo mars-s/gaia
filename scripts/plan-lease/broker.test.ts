@@ -39,6 +39,9 @@ function request(socket: string, value: unknown, raw = false) {
 
 test("broker holds ownership, lends only access, withstands abuse and cleans up", { timeout: 30000 }, async (t) => {
   const f = await fixture(t);
+  const previous = process.env.GAIA_ATTACK_MARKER;
+  process.env.GAIA_ATTACK_MARKER = "synthetic-untrusted-env";
+  t.after(() => { if (previous === undefined) delete process.env.GAIA_ATTACK_MARKER; else process.env.GAIA_ATTACK_MARKER = previous; });
   let child: ChildProcess | undefined;
   let env: NodeJS.ProcessEnv = {};
   let ready!: () => void;
