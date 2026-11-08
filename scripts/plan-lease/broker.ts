@@ -3,7 +3,8 @@ import { timingSafeEqual, randomBytes } from "node:crypto";
 import { createServer } from "node:net";
 import { chmod, mkdtemp, readFile, readdir, realpath, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { join, sep } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { createAuth } from "../../core/auth.ts";
 import { LeaseReply, LeaseRequest, LEASE_MS } from "../../core/plan-lease.ts";
@@ -92,7 +93,7 @@ export async function broker(input: z.input<typeof Options>, hooks: Hooks = {}) 
       server.listen(socket);
       await new Promise<void>((resolve, reject) => { server.once("listening", resolve); server.once("error", reject); });
       const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("GAIA_")));
-      child = (hooks.launch ?? spawn)(process.execPath, ["--import", resolve("node_modules/tsx/dist/loader.mjs"), resolve("core/main.ts"), "--plan-lease"], {
+      child = (hooks.launch ?? spawn)(process.execPath, ["--import", fileURLToPath(new URL("../../node_modules/tsx/dist/loader.mjs", import.meta.url)), fileURLToPath(new URL("../../core/main.ts", import.meta.url)), "--plan-lease"], {
         stdio: "inherit", env: { ...env, GAIA_DATA_DIR: data, GAIA_HOST: "127.0.0.1", GAIA_PORT: String(options.port), GAIA_PLAN_LEASE_SOCKET: socket, GAIA_PLAN_LEASE_KEY: key, GAIA_PLAN_LEASE_PROVIDER: options.provider },
       });
       const timer = setTimeout(() => log("Lease time is up"), Math.max(0, deadline - now()));

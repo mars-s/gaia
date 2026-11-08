@@ -56,7 +56,10 @@ test("broker holds ownership, lends only access, withstands abuse and cleans up"
       const real = openaiCodexProvider(); assert(real.auth.oauth);
       auth.models.setProvider({ ...real, auth: { oauth: { ...real.auth.oauth, async refresh(current) { refreshes++; return { ...current, access: "synthetic-refreshed", refresh: "synthetic-rotated", expires: Date.now() + 7200_000 }; } } } });
     },
-    launch(_command, _args, options) {
+    launch(command, args, options) {
+      assert.equal(command, process.execPath);
+      assert.equal(args.at(-1), "--plan-lease");
+      assert.equal(args.at(-2), join(process.cwd(), "core/main.ts"));
       env = options?.env ?? {};
       child = spawn(process.execPath, ["-e", "setInterval(()=>{},1000)"], { stdio: "ignore" });
       ready(); return child;
