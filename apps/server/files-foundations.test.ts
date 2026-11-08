@@ -123,3 +123,25 @@ test("single-column CSV uses the default delimiter without rejecting valid rows"
   if (parsed.kind !== "csv") assert.fail();
   assert.deepEqual(parsed.rows, [[1], [2]]);
 });
+
+test("quiescing drains accepted writes and refuses new file intake", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-file-drain-"));
+  try {
+    const store = openFiles(dir);
+    const pending = store.put({
+      name: "sales.csv",
+      data: Buffer.from("Sales\n1\n").toString("base64"),
+    });
+    assert.equal(store.busy(), true);
+    await store.quiesce();
+    const card = await pending;
+    assert.equal(store.busy(), false);
+    assert.equal((await store.read(card.file.sha)).card.kind, "csv");
+    await assert.rejects(
+      store.put({ name: "another.csv", data: "YQ==" }),
+      /shutting down/,
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

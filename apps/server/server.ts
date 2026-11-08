@@ -737,13 +737,13 @@ export function createChatServer({
     snapshot,
     async busy() {
       const experiences = await adapter.experiences?.busy();
-      return { legacy: Boolean(active), experiences };
+      return { legacy: Boolean(active) || files.busy(), experiences };
     },
     async quiesce() {
       closing = true;
       const experiences = adapter.experiences?.quiesce();
       active?.controller.abort();
-      await Promise.all([active?.done.catch(() => {}), experiences]);
+      await Promise.all([active?.done.catch(() => {}), experiences, files.quiesce()]);
       return experiences;
     },
     async close() {
@@ -752,6 +752,7 @@ export function createChatServer({
       active?.controller.abort();
       await active?.done.catch(() => {});
       await experiences;
+      await files.quiesce();
       for (const socket of serverSockets) socket.destroy();
       await new Promise<void>((resolve, reject) =>
         server.close((error) =>

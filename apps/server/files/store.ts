@@ -24,7 +24,9 @@ export function openFiles(dataDirectory: string) {
       ),
     };
   }
-  async function put(input: unknown) {
+  const writes = new Set<Promise<FileCard>>();
+  let closing = false;
+  async function ingest(input: unknown) {
     const upload = FileUpload.parse(input);
     const bytes = Buffer.from(upload.data, "base64");
     if (
@@ -104,5 +106,21 @@ export function openFiles(dataDirectory: string) {
       pending.delete(sha);
     }
   }
-  return { read, put };
+  function put(input: unknown) {
+    if (closing)
+      return Promise.reject(new Error("File intake is shutting down."));
+    const write = ingest(input);
+    writes.add(write);
+    void write.finally(() => writes.delete(write)).catch(() => {});
+    return write;
+  }
+  return {
+    read,
+    put,
+    busy: () => writes.size > 0,
+    async quiesce() {
+      closing = true;
+      await Promise.allSettled([...writes]);
+    },
+  };
 }
