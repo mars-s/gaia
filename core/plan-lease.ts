@@ -29,7 +29,8 @@ export function leaseStore(lease: PlanLease): CredentialStore {
     const socket = createConnection(lease.socket);
     let input = Buffer.alloc(0);
     const fail = () => { socket.destroy(); reject(new Error(LEASE_UNAVAILABLE)); };
-    socket.setTimeout(5000, fail);
+    const timer = setTimeout(fail, 5000);
+    socket.once("close", () => clearTimeout(timer));
     socket.on("error", fail);
     socket.on("end", fail);
     socket.on("connect", () => socket.write(JSON.stringify({ key: lease.key, provider: lease.provider }) + "\n"));

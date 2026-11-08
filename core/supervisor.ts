@@ -28,7 +28,9 @@ import { waitHealth } from "./sandbox.ts";
 import { compatible } from "./schema.ts";
 import { probes } from "./probes.ts";
 import { quiesce } from "./quiescence.ts";
+import type { PlanLease } from "./plan-lease.ts";
 export interface Options {
+  planLease?: PlanLease;
   data: string;
   core: string;
   dependencies: string;
@@ -201,7 +203,7 @@ export class Supervisor {
     });
   }
   private async boot() {
-    const { data, core, dependencies, host, port, testProvider } = this.options;
+    const { data, core, dependencies, host, port, testProvider, planLease } = this.options;
     const pair = this.state.active;
     const child = spawn(
       process.execPath,
@@ -211,6 +213,7 @@ export class Supervisor {
         join(core, "core/child.ts"),
         `--managed-child=${data}`,
         ...(testProvider ? ["--test-provider"] : []),
+        ...(planLease ? ["--plan-lease"] : []),
       ],
       {
         cwd: join(data, "releases", pair.release),
@@ -228,6 +231,7 @@ export class Supervisor {
           GAIA_PORT: String(port),
           GAIA_CONTROL_SOCKET: this.socket,
           GAIA_PROBE_TOKEN: this.token,
+          ...(planLease ? { GAIA_PLAN_LEASE_SOCKET: planLease.socket, GAIA_PLAN_LEASE_KEY: planLease.key, GAIA_PLAN_LEASE_PROVIDER: planLease.provider } : {}),
         },
       },
     );

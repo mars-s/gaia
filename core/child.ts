@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { join, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
+import { planLease, leaseStore } from "./plan-lease.ts";
 import { createAuth } from "./auth.ts";
 import { selfChangeTools } from "./tools.ts";
 import { readState } from "./state.ts";
@@ -24,6 +25,7 @@ const env = z
     GAIA_PROBE_TOKEN: z.string(),
   })
   .parse(process.env);
+const lease = process.argv.includes("--plan-lease") ? planLease(process.env) : undefined;
 const sandbox = process.argv.includes("--sandbox-probe");
 const test = sandbox || process.argv.includes("--test-provider");
 const { createChatServer: serverFactory, openDatabase } = (await import(
@@ -36,15 +38,15 @@ const { createPi: piFactory } = (await import(
   pathToFileURL(join(env.GAIA_RELEASE_DIR, "apps/server/pi.ts")).href
 )) as { createPi: typeof createPi };
 const credentials = new DatabaseSync(env.GAIA_CREDENTIALS);
-const auth = createAuth(credentials);
-if (!test) await auth.initialise(false);
+const auth = createAuth(credentials, lease && { provider: lease.provider, store: leaseStore(lease) });
+if (!test && !lease) await auth.initialise(false);
 const testAuth: AuthService = {
   status: () => ({ kind: "connected", model: "gpt-6.1-sol" }),
   connect() {},
   reply() {},
   async close() {},
 };
-const service: AuthService = test ? testAuth : { ...auth, async close() {} };
+const service: AuthService = test ? testAuth : { ...auth, ...(lease ? { disconnect: undefined } : {}), async close() {} };
 const deterministic = (): ChatAdapter => ({
   async run({ text, onText }) {
     onText(text);
@@ -91,7 +93,7 @@ const app = serverFactory({
             }),
           },
           tools:
-            mode === "safe"
+            mode === "safe" || lease
               ? undefined
               : {
                   receiptDirectory: join(env.GAIA_GENERATION, "tool-receipts"),
@@ -147,6 +149,7 @@ app.server.on("request", async (req, res) => {
         release: env.GAIA_RELEASE,
         mode,
         schema: 1,
+        ...(lease ? { planLease: true } : {}),
         provider: test ? "deterministic-test-only" : "pi-openai-codex",
       });
     if (url.pathname.startsWith("/api/v1/probe/")) {

@@ -6,6 +6,7 @@ import { spawn } from "node:child_process";
 import { z } from "zod";
 import { installCore, importBaseline, verifyProtected } from "./install.ts";
 import { Supervisor } from "./supervisor.ts";
+import { planLease } from "./plan-lease.ts";
 import { atomic } from "./state.ts";
 process.umask(0o077);
 const source = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -94,6 +95,7 @@ if (!process.argv.includes("--installed")) {
       join(installed, "core/main.ts"),
       "--installed",
       ...(process.argv.includes("--test-provider") ? ["--test-provider"] : []),
+      ...(process.argv.includes("--plan-lease") ? ["--plan-lease"] : []),
     ],
     {
       stdio: "inherit",
@@ -114,6 +116,9 @@ if (!process.argv.includes("--installed")) {
         JSON.parse(await readFile(join(source, "integrity.json"), "utf8")),
       ),
   );
+  if (process.argv.includes("--plan-lease") && process.argv.includes("--test-provider"))
+    throw new Error("Plan leases cannot use the test provider.");
+  const lease = process.argv.includes("--plan-lease") ? planLease(process.env) : undefined;
   const lock = join(data, "control/supervisor.lock");
   await lockFile(lock);
   try {
@@ -140,6 +145,7 @@ if (!process.argv.includes("--installed")) {
       host,
       port,
       testProvider: process.argv.includes("--test-provider"),
+      planLease: lease,
     });
     await supervisor.open();
     process.stdout.write(
