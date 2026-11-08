@@ -10,7 +10,7 @@
     "start": "tsx apps/server/main.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "tsx --test apps/server/*.test.ts apps/web/*.test.ts apps/desktop/*.test.ts core/*.test.ts scripts/owner-upgrade/*.test.ts",
+    "test": "tsx --test apps/server/*.test.ts apps/web/*.test.ts apps/desktop/*.test.ts core/*.test.ts scripts/owner-upgrade/*.test.ts scripts/plan-lease/*.test.ts",
     "test:experiences": "tsx --test apps/server/experience-*.test.ts apps/web/experience-*.test.ts",
     "test:owner-upgrade": "tsx --test scripts/owner-upgrade/*.test.ts",
     "owner-upgrade": "tsx scripts/owner-upgrade/cli.ts",
@@ -19,7 +19,8 @@
     "build:desktop": "tsc --project apps/desktop/tsconfig.json",
     "desktop": "npm run build:desktop && node apps/desktop/launch.mjs",
     "start:managed": "tsx core/main.ts",
-    "check:protocol": "tsx core/conformance.ts"
+    "check:protocol": "tsx core/conformance.ts",
+    "plan-lease": "tsx scripts/plan-lease/cli.ts"
   },
   "dependencies": {
     "@assistant-ui/core": "0.3.32",
