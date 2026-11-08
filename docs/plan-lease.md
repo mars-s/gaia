@@ -165,8 +165,8 @@ An upstream bearer token can remain usable until its provider-set expiry, even a
 
 The retired `data/verification/four-profiles/live-fixture.ts` contains only a refusal. Git history retains its old body. Merging replaces the owner checkout's ignored copy, so no separate copy step is needed. Its direct read-write owner-store pattern must never be used again.
 
-## Locked spec proposal
+## Owner-approved spec addition
 
-Proposed addition under plan sign-in, subject to the owner's separate decision. `SPEC.md` is unchanged:
+The owner approved this addition on 8 November 2026. It is recorded under plan sign-in in `SPEC.md` v1.6:
 
 > A verification-only plan lease lets an isolated test copy use the owner's plan while the owner's Gaia is stopped. It is off unless the owner starts it by hand.
