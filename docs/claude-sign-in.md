@@ -57,3 +57,5 @@ The credential store returns the post-write credential even when Pi's modify cal
 Each Account row offers Disconnect when connected, followed by a browser confirmation naming the selected plan. Removing one plan preserves the other. A failed login is retained as an optional per-plan `error` until reconnect or disconnect, without copying Pi's endpoint diagnostics. Settings stays open across sign-in so this feedback remains visible when another plan is connected. This error is kept in memory, not stored with tokens.
 
 Protocol v1 clients must accept any model string in `connection.model`, including Claude IDs. This widens the earlier literal GPT value; callers using that old literal need the updated schema before connecting Claude. The new per-plan `error` field is optional, like the earlier `plans`, connecting `provider`, and catalogue `provider` additions.
+
+For isolated verification while the owner's Gaia is stopped, see [the operator plan lease](plan-lease.md).
