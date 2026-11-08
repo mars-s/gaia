@@ -55,7 +55,7 @@ export async function recipe({
       );
       let skipped = 0;
       if (name === "unit tests") {
-        const summary = [...output.matchAll(/^# skipped (\d+)$/gm)].at(-1);
+        const summary = [...output.matchAll(/^ℹ skipped (\d+)$/gm)].at(-1);
         if (!summary) throw new Error("Unit test skip summary unavailable");
         skipped = Number(summary[1]);
       }
@@ -110,7 +110,7 @@ export async function recipe({
     "--import",
     bin("tsx/dist/loader.mjs"),
     "--test",
-    "--test-reporter=tap",
+    "--test-reporter=spec",
     ...tests,
   ]);
   try {

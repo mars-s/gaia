@@ -50,7 +50,7 @@ test(
         copyFile("eslint.config.js", join(core, "eslint.config.js")),
         writeFile(
           join(stage, "apps/web/failure.test.ts"),
-          'import {test} from "node:test"; import assert from "node:assert/strict"; test("planted assertion", () => assert.equal("actual", "EXPECTED_RECIPE_DETAIL"));',
+          'import {test} from "node:test"; import assert from "node:assert/strict"; test("planted assertion", () => assert.equal("actual", "EXPECTED_RECIPE_DETAIL")); for (let i=0;i<400;i++) test(`later passing fixture ${i}`, () => {});',
         ),
       ]);
       await assert.rejects(

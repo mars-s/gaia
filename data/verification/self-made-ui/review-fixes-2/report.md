@@ -10,9 +10,9 @@ Automatic promotion previews are advisory. A failure records a redacted `preview
 
 ## Test skip receipts
 
-The trusted recipe requests Node's TAP reporter and reads its final skip total. Receipts include `(N skipped)` when non-zero. A missing summary fails the check rather than implying complete coverage. Candidate test failures still block before build.
+The trusted recipe requests Node's explicit spec reporter and reads its final skip total. Receipts include `(N skipped)` when non-zero. A missing summary fails the check rather than implying complete coverage. Candidate test failures still block before build.
 
-`2-red.log` shows a real sandbox recipe with three skipped native fixtures reporting only `unit tests: passed`. `2-checks.log` records both typechecks, lint and 3 focused tests passing, no outer-suite skips. The real recipe fixture now verifies `unit tests: passed (3 skipped)` before its intentional design-pack failure. The deterministic promotion fixture supplies a zero-skip TAP summary.
+`2-red.log` shows a real sandbox recipe with three skipped native fixtures reporting only `unit tests: passed`. `2-checks.log` records both typechecks, lint and 3 focused tests passing, no outer-suite skips. The real recipe fixture now verifies `unit tests: passed (3 skipped)` before its intentional design-pack failure. The deterministic promotion fixture supplies a zero-skip spec summary.
 
 ## Dead input cleanup
 
@@ -21,3 +21,7 @@ Removed preview-command surfaces, previewChange's overwritten argument, recipe's
 `3-red.log` shows both the unwanted default surfaces field and the stale app-behaviour promise before cleanup. `3-checks.log` records both typechecks, lint and 17 focused tests passing, no skips. The dedicated input test replaces obsolete validation assertions against the removed field; persisted manifest validation remains covered by surfaces.test.ts.
 
 Deferred findings and reasoning are in ../follow-ups.md. Final build, protocol, load and full-suite logs will be saved beside this report after this commit, so the full suite runs on the final code HEAD. Final verification results are recorded in final-report.md. These final-run artefacts remain local to avoid changing the HEAD they verify.
+
+The first full run exposed TAP losing early assertion details from bounded receipts. `2-details-red.log` reproduces this with 400 later passing tests. The final recipe uses the explicit spec reporter, whose trailing failure summary preserves assertion details and whose skip total is still counted. The abandoned pre-correction standalone run is not a final verification result.
+
+The receipt-detail correction has its own failed-first proof and commit. `2-details-checks.log` records both typechecks, lint and 5 focused tests passing with no skips. This extra commit keeps the reporter correction separate from dead-input cleanup.

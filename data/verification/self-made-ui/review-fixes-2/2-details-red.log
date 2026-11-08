@@ -1,0 +1,69 @@
+✖ the real recipe returns a failing unit assertion in checks and stops before build (1441.477083ms)
+✔ the real recipe rejects an undocumented kit export before build (1401.322958ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3330.106666
+
+✖ failing tests:
+
+test at core/recipe.test.ts:1:324
+✖ the real recipe returns a failing unit assertion in checks and stops before build (1441.477083ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /EXPECTED_RECIPE_DETAIL/. Input:
+  
+  'unit tests: failed\n' +
+    '  ...\n' +
+    '# Subtest: later passing fixture 395\n' +
+    'ok 397 - later passing fixture 395\n' +
+    '  ---\n' +
+    '  duration_ms: 0.011875\n' +
+    "  type: 'test'\n" +
+    '  ...\n' +
+    '# Subtest: later passing fixture 396\n' +
+    'ok 398 - later passing fixture 396\n' +
+    '  ---\n' +
+    '  duration_ms: 0.01275\n' +
+    "  type: 'test'\n" +
+    '  ...\n' +
+    '# Subtest: later passing fixture 397\n' +
+    'ok 399 - later passing fixture 397\n' +
+    '  ---\n' +
+    '  duration_ms: 0.011958\n' +
+    "  type: 'test'\n" +
+    '  ...\n' +
+    '# Subtest: later passing fixture 398\n' +
+    'ok 400 - later passing fixture 398\n' +
+    '  ---\n' +
+    '  duration_ms: 0.015292\n' +
+    "  type: 'test'\n" +
+    '  ...\n' +
+    '# Subtest: later passing fixture 399\n' +
+    'ok 401 - later passing fixture 399\n' +
+    '  ---\n' +
+    '  duration_ms: 0.012208\n' +
+    "  type: 'test'\n" +
+    '  ...\n' +
+    '1..401\n' +
+    '# tests 401\n' +
+    '# suites 0\n' +
+    '# pass 400\n' +
+    '# fail 1\n' +
+    '# cancelled 0\n' +
+    '# skipped 0\n' +
+    '# todo 0\n' +
+    '# duration_ms 149.734041'
+  
+      at TestContext.<anonymous> (/Users/avi/Developer/vibe/gaia/core/recipe.test.ts:73:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "unit tests: failed\n  ...\n# Subtest: later passing fixture 395\nok 397 - later passing fixture 395\n  ---\n  duration_ms: 0.011875\n  type: 'test'\n  ...\n# Subtest: later passing fixture 396\nok 398 - later passing fixture 396\n  ---\n  duration_ms: 0.01275\n  type: 'test'\n  ...\n# Subtest: later passing fixture 397\nok 399 - later passing fixture 397\n  ---\n  duration_ms: 0.011958\n  type: 'test'\n  ...\n# Subtest: later passing fixture 398\nok 400 - later passing fixture 398\n  ---\n  duration_ms: 0.015292\n  type: 'test'\n  ...\n# Subtest: later passing fixture 399\nok 401 - later passing fixture 399\n  ---\n  duration_ms: 0.012208\n  type: 'test'\n  ...\n1..401\n# tests 401\n# suites 0\n# pass 400\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 149.734041",
+    expected: /EXPECTED_RECIPE_DETAIL/,
+    operator: 'match',
+    diff: 'simple'
+  }
