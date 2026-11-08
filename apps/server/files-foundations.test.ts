@@ -116,3 +116,10 @@ test("hostile inputs and worker time limits fail without storing a file", async 
     /not supported/,
   );
 });
+
+test("single-column CSV uses the default delimiter without rejecting valid rows", async () => {
+  const parsed = await parseInWorker(Buffer.from("Sales\n1\n2\n"));
+  assert.equal(parsed.kind, "csv");
+  if (parsed.kind !== "csv") assert.fail();
+  assert.deepEqual(parsed.rows, [[1], [2]]);
+});

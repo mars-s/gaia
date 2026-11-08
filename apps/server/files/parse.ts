@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { inflateRawSync } from "node:zlib";
 import mammoth from "mammoth";
 import { parseFragment, type DefaultTreeAdapterMap } from "parse5";
 import { extractText, getDocumentProxy } from "unpdf";
@@ -23,7 +24,7 @@ function csv(bytes: Buffer): ParsedFile {
     new TextDecoder("utf-8", { fatal: true }).decode(bytes),
     { skipEmptyLines: "greedy" },
   );
-  if (result.errors.length)
+  if (result.errors.some((error) => error.code !== "UndetectableDelimiter"))
     throw new Error("This CSV has invalid rows or quotes.");
   const [headers, ...raw] = result.data;
   if (
@@ -119,6 +120,23 @@ export function checkDocxZip(bytes: Buffer) {
       throw new Error("This DOCX has unsupported ZIP entries.");
     if (bytes.readUInt32LE(local + 22) !== size && !(flags & 8))
       throw new Error("This DOCX has inconsistent ZIP sizes.");
+    const compressed = bytes.readUInt32LE(offset + 20);
+    const dataStart =
+      local +
+      30 +
+      bytes.readUInt16LE(local + 26) +
+      bytes.readUInt16LE(local + 28);
+    if (dataStart + compressed > bytes.readUInt32LE(eocd + 16))
+      throw new Error("This DOCX has invalid compressed data.");
+    const compressedData = bytes.subarray(dataStart, dataStart + compressed);
+    const actual =
+      method === 0
+        ? compressedData
+        : inflateRawSync(compressedData, {
+            maxOutputLength: Math.min(size + 1, fileLimits.expandedBytes),
+          });
+    if (actual.length !== size)
+      throw new Error("This DOCX has inconsistent expanded sizes.");
     expanded += size;
     if (expanded > fileLimits.expandedBytes)
       throw new Error("This DOCX expands beyond the local size limit.");
