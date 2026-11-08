@@ -19,6 +19,9 @@ import {
   type Connection,
 } from "../../packages/protocol/index.ts";
 import { openOwnerProfile } from "./profile.ts";
+import { openFiles } from "./files/store.ts";
+import { generationDirectory } from "./data-path.ts";
+import { FileUpload, fileLimits } from "../../packages/protocol/files.ts";
 import { openAttachments, AttachmentError } from "./attachments.ts";
 import {
   ImageUpload,
@@ -100,6 +103,7 @@ export function createChatServer({
   rememberAreaRequests();
   const profile = openOwnerProfile(db);
   const attachments = openAttachments(db);
+  const files = openFiles(generationDirectory(db));
   const saved = db.prepare("SELECT value FROM chat WHERE id=1").get();
   let thread: Thread = saved
     ? Thread.parse(JSON.parse(String(saved.value)))
@@ -438,7 +442,9 @@ export function createChatServer({
         throw new HttpError(404, "Not found.");
       const input = await body(
         req,
-        url.pathname === "/api/v1/attachments" ||
+        url.pathname === "/api/v1/files"
+          ? Math.ceil(fileLimits.bytes / 3) * 4 + 4096
+          : url.pathname === "/api/v1/attachments" ||
           /^\/api\/v1\/areas\/[^/]+\/attachments$/.test(url.pathname) ||
           /^\/api\/v1\/experiences\/[^/]+\/scopes\/[^/]+\/attachments$/.test(
             url.pathname,
@@ -505,6 +511,12 @@ export function createChatServer({
         return json(202, snapshot());
       }
       switch (url.pathname) {
+        case "/api/v1/files": {
+          const parsed = FileUpload.safeParse(input);
+          if (!parsed.success) throw new HttpError(400, "Choose a CSV, DOCX or PDF up to 50 MB.");
+          try { return json(201, await files.put(parsed.data)); }
+          catch (error) { throw new HttpError(400, error instanceof Error ? error.message : "This file could not be read."); }
+        }
         case "/api/v1/attachments": {
           const parsed = ImageUpload.safeParse(input);
           if (!parsed.success)

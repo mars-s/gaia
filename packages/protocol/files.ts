@@ -72,3 +72,5 @@ export const FileCard = z.strictObject({
   fact: z.string(),
   preview: z.array(z.string()).max(6),
 });
+
+export type FileCard = z.infer<typeof FileCard>;

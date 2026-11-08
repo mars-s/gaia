@@ -396,3 +396,18 @@ test("disconnect refuses active independent jobs", async (t) => {
     error: "Wait for active jobs to finish before disconnecting a plan.",
   });
 });
+
+test("document upload uses existing host and write gates and stores locally", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "gaia-doc-http-"));
+  const live = await boot(dir);
+  try {
+    const upload = { name: "sales.csv", data: Buffer.from("Region,Sales\nEast,120\n").toString("base64") };
+    assert.equal((await live.request("/api/v1/files", "POST", upload, { origin: "https://evil.example" })).status, 403);
+    const response = await live.request("/api/v1/files", "POST", upload);
+    assert.equal(response.status, 201);
+    const value = await response.json();
+    assert.equal(value.kind, "csv");
+    assert.equal(value.fact, "CSV, 1 rows, 2 columns");
+    assert.equal((await live.request("/api/v1/files", "POST", { ...upload, data: "!!!" })).status, 400);
+  } finally { await live.app.close(); await rm(dir, { recursive: true, force: true }); }
+});
