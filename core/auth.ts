@@ -17,12 +17,12 @@ const OAuth = z
     expires: z.number(),
   })
   .catchall(z.unknown());
-export function createAuth(db: DatabaseSync) {
+export function createAuth(db: DatabaseSync, lease?: { provider: PlanProvider; store: CredentialStore }) {
   db.exec(
     "CREATE TABLE IF NOT EXISTS credentials (provider TEXT PRIMARY KEY, value TEXT NOT NULL)",
   );
   let queue: Promise<unknown> = Promise.resolve();
-  const store: CredentialStore = {
+  const store: CredentialStore = lease?.store ?? {
     async read(provider) {
       const row = db
         .prepare("SELECT value FROM credentials WHERE provider=?")
@@ -72,7 +72,7 @@ export function createAuth(db: DatabaseSync) {
   const anthropic = anthropicProvider();
   models.setProvider({ ...anthropic, auth: { oauth: anthropic.auth.oauth } });
   const connectedProviders = () =>
-    new Set(
+    lease ? new Set([lease.provider]) : new Set(
       db
         .prepare("SELECT provider FROM credentials")
         .all()
@@ -148,6 +148,10 @@ export function createAuth(db: DatabaseSync) {
       state = settled();
     },
     connect(provider: PlanProvider = "openai-codex") {
+      if (lease) {
+        loginErrors.set(provider, "Sign-in is off in this test copy. It uses the owner's plan.");
+        return;
+      }
       if (login) return;
       loginErrors.delete(provider);
       state = { kind: "connecting", provider };
