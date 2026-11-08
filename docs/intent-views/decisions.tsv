@@ -1,0 +1,8 @@
+ts	phase	decision	why	evidence	result
+2026-11-08T06:42:41.279468+00:00	spec	Recorded approved wording and kept hosted exception proposed	Owner approved only the exact changes	SPEC.md	verified
+2026-11-08T06:42:41.279619+00:00	protocol	Kept shared envelopes free of rendering dependencies	A later native renderer must consume the same data	packages/protocol/views.ts	verified
+2026-11-08T06:42:41.279625+00:00	files	Parsed files in bounded workers and drained writes before shutdown	Originals stay local and snapshots must wait for accepted writes	apps/server/files-foundations.test.ts	5 tests pass
+2026-11-08T06:42:41.279627+00:00	query	Evaluated typed queries and checked exact quote spans	Model text cannot become code or unverified numbers	apps/server/view-query.test.ts	3 tests pass
+2026-11-08T06:42:41.279628+00:00	decisions	Reserved worst-case fake-provider costs before dispatch	Concurrent and uncertain requests must respect the cap	apps/server/intent-decisions.test.ts	3 tests pass
+2026-11-08T06:42:41.279630+00:00	ui	Stopped before shared view kit implementation	The required Opus B0 brief and frames are absent	docs/intent-views/implementation.md	blocked
+2026-11-08T06:42:41.279631+00:00	checks	Ran focused checks including existing design and image compatibility	Independent foundations must preserve the seed app	data/verification/intent-views/focused.log	53 pass, 0 fail

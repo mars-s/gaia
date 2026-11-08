@@ -1,6 +1,6 @@
 # Gaia: product spec and architecture
 
-Status: locked v1.6, 8 Nov 2026. Decisions from Avi, 1 to 8 Nov 2026.
+Status: locked v1.6, 8 Nov 2026.
 
 Changelog:
 - v1.6 (8 Nov 2026): Avi locked the north star (`docs/northstar.md`): one input, and the view builds itself. The owner asks in plain words or drops in files (CSV, DOCX and PDF first), and Gaia answers with a view built for it, in place, from the shared kit. Refining the request reshapes the same view. Views and saved spaces, starting with a canvas, are declarative data drawn only from the shared kit. Lasting new parts, file types and surfaces remain real code through the self-mod pipeline.
