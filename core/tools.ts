@@ -28,7 +28,7 @@ export function selfChangeTools(socket: string) {
             command: {
               type: "string",
               description:
-                'JSON command. Use {"kind":"design"} for the current UI design pack. The first UI read or stage in each turn automatically includes it. Examples: {"kind":"read","path":"apps/web/main.tsx"}, {"kind":"stage","reason":"Add a heading","edits":[{"path":"apps/web/main.tsx","find":"exact existing text","replace":"replacement text"}]}, {"kind":"submit","id":"UUID"}, {"kind":"history"}, {"kind":"status"}, {"kind":"revert","id":"UUID"}.',
+                'JSON command. Use {"kind":"design"} for the current UI design pack. Examples: {"kind":"read","path":"apps/web/main.tsx"}, {"kind":"stage","reason":"Add a heading","edits":[{"path":"apps/web/main.tsx","find":"exact existing text","replace":"replacement text"}]}, {"kind":"submit","id":"UUID"}, {"kind":"history"}, {"kind":"status"}, {"kind":"revert","id":"UUID"}.',
             },
             activity: {
               type: "string",

@@ -395,11 +395,7 @@ export class Supervisor {
         delete entry.previews;
         delete entry.critique;
         await this.saveHistory();
-        entry.previews = await previewChange(
-          this.options,
-          entry,
-          input.surfaces,
-        );
+        entry.previews = await previewChange(this.options, entry);
         await this.saveHistory();
         return {
           ...entry,
@@ -660,7 +656,7 @@ export class Supervisor {
       await verifyProtected(stage, this.protected);
       if (!entry.previews && (await uiChanged(stage))) {
         try {
-          entry.previews = await previewChange(this.options, entry, []);
+          entry.previews = await previewChange(this.options, entry);
         } catch (error) {
           entry.checks.push(
             `preview images unavailable: ${failureDetail(error, stage, [core, dependencies, data])}`,
@@ -674,7 +670,6 @@ export class Supervisor {
         core,
         dependencies,
         release: previous.release,
-        surfaces: entry.previews?.surfaces ?? [],
         previewHash: entry.previews?.hash,
         record: async (result) => {
           entry.checks.push(result);

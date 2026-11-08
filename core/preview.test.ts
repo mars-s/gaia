@@ -113,22 +113,6 @@ test("UI submit requires a preview for the exact source, including unstaged and 
       f.supervisor.handle({ kind: "submit", id: quoted.id }),
       /matching preview is required/,
     );
-    assert(
-      !Command.safeParse({
-        kind: "preview",
-        id: change.id,
-        surfaces: [{ name: "empty", steps: [] }],
-      }).success,
-    );
-    assert(
-      !Command.safeParse({
-        kind: "preview",
-        id: change.id,
-        surfaces: [
-          { name: "tasks", steps: [{ kind: "evaluate", code: "unsafe" }] },
-        ],
-      }).success,
-    );
   } finally {
     await rm(f.data, { recursive: true, force: true });
   }

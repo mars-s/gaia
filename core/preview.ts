@@ -16,7 +16,7 @@ import { verifyProtected, hashes } from "./install.ts";
 import { renderCandidate } from "./render/index.ts";
 import { Preview, type Change } from "./state.ts";
 import type { Options } from "./supervisor.ts";
-import { readSurfaces, type Surface } from "./render/schema.ts";
+import { readSurfaces } from "./render/schema.ts";
 
 export async function sourceIdentity(stage: string) {
   const hash = createHash("sha256");
@@ -77,17 +77,13 @@ const Reports = z.array(
     ),
   }),
 );
-export async function previewChange(
-  options: Options,
-  entry: Change,
-  surfaces: Surface[],
-) {
+export async function previewChange(options: Options, entry: Change) {
   const deadline = Date.now() + 900000;
   const { data, core, dependencies } = options,
     stage = join(data, "staging", entry.id),
     active = join(data, "releases", entry.base);
   await verifyProtected(stage, await hashes(active));
-  surfaces = await readSurfaces(stage);
+  const surfaces = await readSurfaces(stage);
   const hash = await stagedIdentity(stage),
     key = createHash("sha256")
       .update(JSON.stringify([entry.base, surfaces]))

@@ -25,7 +25,7 @@ test("preview binds hidden fixture shots to source, reuses before shots and leav
     supervisor.state = { kind: "stable", active: pair, good: pair, failures: 0 };
     const original = await readFile(join(repo, "apps/web/styles/theme.css"), "utf8");
     const stage = Change.parse(await supervisor.handle({ kind: "stage", reason: "Preview the accent", edits: [{ path: "apps/web/styles/theme.css", text: original + "\n/* Preview identity proof */\n" }] }));
-    const raw = await supervisor.handle({ kind: "preview", id: stage.id, surfaces: [] });
+    const raw = await supervisor.handle({ kind: "preview", id: stage.id });
     const { z } = await import("zod");
     assert.equal(z.object({ images: z.array(z.object({ name: z.string(), data: z.string().min(1000), mimeType: z.literal("image/jpeg") })) }).parse(raw).images.length, 40);
     const result = Change.parse(raw);
@@ -47,7 +47,7 @@ test("preview binds hidden fixture shots to source, reuses before shots and leav
       assert.equal(bytes.subarray(0, 2).toString("hex"), "ffd8");
       assert(bytes.length > 1000);
     }
-    const again = Change.parse(await supervisor.handle({ kind: "preview", id: stage.id, surfaces: [] }));
+    const again = Change.parse(await supervisor.handle({ kind: "preview", id: stage.id }));
     assert.deepEqual(again.previews, result.previews);
     assert.deepEqual(await readdir(before), keys);
     assert.equal(supervisor.state.active.release, release);
@@ -55,7 +55,7 @@ test("preview binds hidden fixture shots to source, reuses before shots and leav
     assert.equal(supervisor.child, undefined);
     assert.equal(await readFile(join(repo, "apps/web/styles/theme.css"), "utf8"), original);
     const tint = Change.parse(await supervisor.handle({ kind: "stage", reason: "Preview a visible page tint", edits: [{ path: "apps/web/styles/theme.css", text: original.replace("--color-surface-page: var(--color-white);", "--color-surface-page: var(--color-neutral-50);") }] }));
-    const tinted = Change.parse(await supervisor.handle({ kind: "preview", id: tint.id, surfaces: [] }));
+    const tinted = Change.parse(await supervisor.handle({ kind: "preview", id: tint.id }));
     assert(tinted.previews?.alsoChanged.includes("empty-1000-light"), "baseline changes above half a percent must reach the card and critic");
     assert.deepEqual(await readdir(before), keys, "another stage from the same release reuses before shots");
   } finally { await rm(data, { recursive: true, force: true }); }

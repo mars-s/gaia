@@ -104,7 +104,6 @@ export default function Surface${i}(){const state=usePreviewState("filled");cons
           await supervisor.handle({
             kind: "preview",
             id: surfaces.id,
-            surfaces: [],
           }),
         );
         assert.equal(preview.previews?.surfaces.length, surfaceCount);

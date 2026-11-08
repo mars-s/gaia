@@ -95,7 +95,6 @@ export const Command = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("preview"),
     id: z.string().uuid(),
-    surfaces: Surfaces.default([]),
   }),
   z.object({ kind: z.literal("discard"), id: z.string().uuid() }),
   z.object({ kind: z.literal("submit"), id: z.string().uuid() }),

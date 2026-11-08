@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { writeFile, readdir, readFile, rm } from "node:fs/promises";
 import { command, failureDetail } from "./process.ts";
 import { renderCandidate } from "./render/index.ts";
-import { readSurfaces, type Surface } from "./render/schema.ts";
+import { readSurfaces } from "./render/schema.ts";
 import { sandboxProfile, candidateBoot } from "./sandbox.ts";
 export async function sourceFiles(
   root: string,
@@ -33,7 +33,6 @@ export async function recipe({
   dependencies,
   release,
   record,
-  surfaces = [],
   data = stage,
   previewHash,
 }: {
@@ -42,7 +41,6 @@ export async function recipe({
   dependencies: string;
   release: string;
   record: (result: string) => Promise<void>;
-  surfaces?: Surface[];
   data?: string;
   previewHash?: string;
 }) {
@@ -154,7 +152,7 @@ export async function recipe({
       await record("rendered design checks: passed (matching trusted preview)");
       return;
     }
-    surfaces = await readSurfaces(stage);
+    const surfaces = await readSurfaces(stage);
     const rendered = await renderCandidate({
       stage,
       core,

@@ -63,7 +63,6 @@ test(
       preview = f.supervisor.handle({
         kind: "preview",
         id: change.id,
-        surfaces: [],
       });
       void preview.catch(() => {});
       await new Promise((resolve) => setTimeout(resolve, 100));

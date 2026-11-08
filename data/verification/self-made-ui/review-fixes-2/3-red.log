@@ -1,0 +1,57 @@
+✖ preview command carries only its identity, with manifests defining surfaces (4.376875ms)
+✖ core tool description does not promise app-managed design-pack attachment (0.272166ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 774.598208
+
+✖ failing tests:
+
+test at core/preview-input.test.ts:1:176
+✖ preview command carries only its identity, with manifests defining surfaces (4.376875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      id: '64b9fe5f-1e8b-4d45-80d4-cb83633d1d58',
+      kind: 'preview',
+  +   surfaces: []
+    }
+  
+      at TestContext.<anonymous> (/Users/avi/Developer/vibe/gaia/core/preview-input.test.ts:9:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { kind: 'preview', id: '64b9fe5f-1e8b-4d45-80d4-cb83633d1d58', surfaces: [] },
+    expected: { kind: 'preview', id: '64b9fe5f-1e8b-4d45-80d4-cb83633d1d58' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at core/preview-input.test.ts:1:444
+✖ core tool description does not promise app-managed design-pack attachment (0.272166ms)
+  AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /first UI read or stage in each turn automatically includes it/. Input:
+  
+  '{"name":"gaia-self-change","sections":[{"key":"gaia-self-change"}],"tools":[{"name":"self_change","description":"Read editable source, stage real file changes, inspect history, submit a staged change, or revert an accepted change. All writes go through trusted checks and supervised promotion.","parameters":{"type":"object","properties":{"command":{"type":"string","description":"JSON command. Use {\\"kind\\":\\"design\\"} for the current UI design pack. The first UI read or stage in each turn automatically includes it. Examples: {\\"kind\\":\\"read\\",\\"path\\":\\"apps/web/main.tsx\\"}, {\\"kind\\":\\"stage\\",\\"reason\\":\\"Add a heading\\",\\"edits\\":[{\\"path\\":\\"apps/web/main.tsx\\",\\"find\\":\\"exact existing text\\",\\"replace\\":\\"replacement text\\"}]}, {\\"kind\\":\\"submit\\",\\"id\\":\\"UUID\\"}, {\\"kind\\":\\"history\\"}, {\\"kind\\":\\"status\\"}, {\\"kind\\":\\"revert\\",\\"id\\":\\"UUID\\"}."},"activity":{"type":"string","minLength":1,"maxLength":160,"description":"Brief plain-language description of this actual source operation and its target. Supply it when reading, staging, checking or reverting a change."}},"required":["command"],"additionalProperties":false}}]}'
+  
+      at TestContext.<anonymous> (/Users/avi/Developer/vibe/gaia/core/preview-input.test.ts:14:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '{"name":"gaia-self-change","sections":[{"key":"gaia-self-change"}],"tools":[{"name":"self_change","description":"Read editable source, stage real file changes, inspect history, submit a staged change, or revert an accepted change. All writes go through trusted checks and supervised promotion.","parameters":{"type":"object","properties":{"command":{"type":"string","description":"JSON command. Use {\\"kind\\":\\"design\\"} for the current UI design pack. The first UI read or stage in each turn automatically includes it. Examples: {\\"kind\\":\\"read\\",\\"path\\":\\"apps/web/main.tsx\\"}, {\\"kind\\":\\"stage\\",\\"reason\\":\\"Add a heading\\",\\"edits\\":[{\\"path\\":\\"apps/web/main.tsx\\",\\"find\\":\\"exact existing text\\",\\"replace\\":\\"replacement text\\"}]}, {\\"kind\\":\\"submit\\",\\"id\\":\\"UUID\\"}, {\\"kind\\":\\"history\\"}, {\\"kind\\":\\"status\\"}, {\\"kind\\":\\"revert\\",\\"id\\":\\"UUID\\"}."},"activity":{"type":"string","minLength":1,"maxLength":160,"description":"Brief plain-language description of this actual source operation and its target. Supply it when reading, staging, checking or reverting a change."}},"required":["command"],"additionalProperties":false}}]}',
+    expected: /first UI read or stage in each turn automatically includes it/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }

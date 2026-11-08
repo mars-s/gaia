@@ -1,0 +1,40 @@
+
+> typecheck
+> tsc --noEmit
+
+
+> typecheck:desktop
+> tsc --project apps/desktop/tsconfig.json --noEmit
+
+
+> lint
+> eslint .
+
+accepted: Preview deadline exceeded; 12 surfaces; full render passed; failures=0
+accepted: Renderer unavailable; 12 surfaces; full render passed; failures=0
+rejected: Preview deadline exceeded; 12 surfaces; full render blocked bad change; failures=1
+✔ automatic preview timeout or failure is advisory for a many-surface Revert, while the recipe render still gates it (4359.468875ms)
+✔ the protected pack lists actual kit exports, descriptions, examples and fixed choices (34.578ms)
+✔ inventory follows new exports and refuses escaping module paths (32.068625ms)
+✔ a design pack loads once in a turn, independently across conversations and new turns (0.18375ms)
+✔ real Pi tool results include the pack once per owner turn and explicit design remains available (233.020542ms)
+✔ a successful UI stage still returns its id when automatic design attachment fails (31.874667ms)
+✔ the app revision loop discards its superseded draft after the replacement succeeds (135.365625ms)
+✔ the model cannot submit its own critic review or score (333.292708ms)
+✔ the protected tool records only its independent critic result and a low score stays advisory (60.403875ms)
+✔ required-state preview provider is protected and the kit inventory remains readable (19.007709ms)
+✔ preview command carries only its identity, with manifests defining surfaces (2.127375ms)
+✔ core tool description does not promise app-managed design-pack attachment (0.143042ms)
+✔ UI submit requires a preview for the exact source, including unstaged and new files (2256.73325ms)
+✔ old history still parses; history images and critique stay bound to their preview (1490.951958ms)
+✔ the real recipe returns a failing unit assertion in checks and stops before build (1248.921417ms)
+✔ the real recipe rejects an undocumented kit export before build (1185.983167ms)
+✔ seven persisted surface declarations survive unrelated changes and revert (54.473291ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4427.2635

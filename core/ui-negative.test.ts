@@ -167,7 +167,6 @@ test(
               supervisor.handle({
                 kind: "preview",
                 id: change.id,
-                surfaces: [],
               }),
               planted.rule,
             );
@@ -178,7 +177,6 @@ test(
             await supervisor.handle({
               kind: "preview",
               id: change.id,
-              surfaces: [],
             });
             await supervisor.handle({ kind: "submit", id: change.id });
             const deadline = Date.now() + 90000;
